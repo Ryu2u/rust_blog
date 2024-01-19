@@ -1,0 +1,30 @@
+
+.nav-head{
+    margin: auto;
+    justify-content: center;
+    align-items: center;
+}
+.nav-head div{
+    padding: 5px;
+    margin: 10px;
+}
+
+.home-icon{
+    font-size: 28px;
+}
+.home-icon:hover{
+    cursor: pointer;
+    border-radius: 10px;
+    box-shadow: 0 0 20px grey;
+}
+
+.menu-list div{
+    z-index:  1;
+
+}
+
+ .menu-list div:hover{
+     cursor: pointer;
+     border-radius: 10px;
+     box-shadow: 0 0 20px grey;
+ }
