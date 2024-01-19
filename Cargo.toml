@@ -1,0 +1,17 @@
+[package]
+name = "rust_blog"
+version = "0.1.0"
+edition = "2021"
+
+# See more .gukeys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+#[[test]]
+#name = "test"
+#path = "tests"
+
+[dependencies]
+tracing = "0.1.37"
+tracing-subscriber = {version = "0.3",features = ["env-filter"]}
+actix-web = "4"
+serde_json = {version = "1.0.91",features = []}
+serde = {version = "1.0.152",features = ["derive"]}
+derive_more = "0.99.17"
