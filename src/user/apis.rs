@@ -61,9 +61,9 @@ pub async fn api_result() -> Result<impl Responder, Exception> {
 #[cfg(test)]
 mod test {
     use actix_web::{App, test, web};
-    use crate::{api_greet, api_result};
+    use crate::{api_greet};
 
-    #[actix_web::test]
+    #[tokio::test]
     async fn test_greet() {
         let app = test::init_service(App::new().service({
             web::scope("/app")

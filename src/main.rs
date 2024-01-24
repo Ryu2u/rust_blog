@@ -1,20 +1,27 @@
-use std::fmt::{Display, Formatter, write};
+use std::env;
+use std::fmt::{Display, Formatter};
+use std::fs::File;
+use std::io::Read;
+use std::time::{SystemTime, UNIX_EPOCH};
 use actix_web::{App, error, guard, http, HttpRequest, HttpResponse, HttpServer, Responder, web};
 use actix_web::body::BoxBody;
-use actix_web::error::HttpError;
+
 use actix_web::guard::{Guard, GuardContext};
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
 use serde::{Serialize, Deserialize};
 
-use tracing::log::{error, info};
-use derive_more::{Display, Error};
-use serde::de::Unexpected::Option;
+use tracing::log::{debug, error, info};
+use derive_more::{Error};
+use dotenv::dotenv;
+use rbatis::RBatis;
+use rbdc_sqlite::SqliteDriver;
 
 
 mod user;
 
 use user::apis::{*};
+use crate::user::structs::User;
 
 
 #[derive(Debug)]
@@ -22,7 +29,7 @@ struct AppState {
     app_name: String,
 }
 
-#[derive(Debug,Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct R<T: Serialize> {
     code: i32,
     msg: String,
@@ -118,17 +125,34 @@ impl<T: Serialize> Responder for R<T> {
     }
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
+    // init log
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_target(false)
         .pretty()
         .init();
+    // init env
+    dotenv().ok();
 
-    let server = ("127.0.0.1", 8002);
+    for (key, value) in dotenv::vars() {
+        debug!("{} | {}",key,value);
+    }
 
-    info!("start server -> {:?}",server);
+    // get ip
+    let server_ip = env::var("SERVER_IP")
+        .expect("can't get env [SERVER_IP], please check the .env file!");
+    // get port
+    let server_port = env::var("SERVER_PORT")
+        .expect("can't get env [SERVER_PORT], please check the .env file!");
+
+    let server = format!("{}:{}", server_ip, server_port);
+
+    info!("server is started by {}",server);
+
+    init_rbatis().await;
+
     HttpServer::new(|| {
         App::new()
             .app_data(web::Data::new(AppState {
@@ -152,6 +176,32 @@ fn test_scope() -> actix_web::Scope {
         .route("/tests", web::post().to(api_body))
         .route("/state", web::get().to(api_state))
         .route("/result", web::get().to(api_result))
+}
+
+
+async fn init_rbatis() {
+    let db_path = env::var("DATABASE_URL")
+        .expect("can't get env [DATABASE_URL], please check the .env file!");
+
+    let sqlite_url = format!("sqlite://{}", db_path);
+    info!("sqlite_url -> {}",sqlite_url);
+    let rbatis = RBatis::new();
+    rbatis.init(SqliteDriver {}, sqlite_url.as_str()).unwrap();
+
+    let db_path = std::path::Path::new(&db_path);
+
+    if !db_path.exists() {
+        info!("{:?} is not exists,start to init!",db_path);
+        let mut file = File::open("schema.sql").expect("schema.sql is not exists!");
+
+        let mut init_sql = String::new();
+        file.read_to_string(&mut init_sql).expect("can't read file schema.sql");
+        rbatis.exec(init_sql.as_str(), vec![]).await.expect("execute init sql failed!");
+    }
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
+    let user = User::new("admin","123", "admin", "salt", None, None, None, now as i32);
+
+    User::insert(&rbatis, &user).await.expect("insert user failed");
 }
 
 
