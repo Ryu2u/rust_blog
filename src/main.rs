@@ -62,12 +62,12 @@ impl<T: Serialize> R<T> {
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 enum Exception {
     ValidationError { field: String },
     InternalError,
     NotFound,
-    BadRequest,
+    BadRequest(String),
 }
 
 
@@ -85,7 +85,7 @@ impl Display for Exception {
         match &self {
             Exception::ValidationError { field } => write!(f, "Validation error on field : {}", field),
             Exception::InternalError => write!(f, "internal error"),
-            Exception::BadRequest => write!(f, "bad request"),
+            Exception::BadRequest(msg) => write!(f, "{}", msg),
             Exception::NotFound => write!(f, "not found")
         }
     }
@@ -95,7 +95,7 @@ impl Display for Exception {
 impl error::ResponseError for Exception {
     fn status_code(&self) -> StatusCode {
         match *self {
-            Exception::BadRequest => StatusCode::BAD_REQUEST,
+            Exception::BadRequest(_) => StatusCode::BAD_REQUEST,
             Exception::ValidationError { .. } => StatusCode::BAD_REQUEST,
             Exception::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             Exception::NotFound => StatusCode::NOT_FOUND
@@ -151,10 +151,11 @@ async fn main() -> std::io::Result<()> {
 
     info!("server is started by {}",server);
 
-    init_rbatis().await;
+    let rbatis = init_rbatis().await;
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(rbatis.clone()))
             .app_data(web::Data::new(AppState {
                 app_name: "rust_blog".to_string()
             }))
@@ -179,7 +180,7 @@ fn test_scope() -> actix_web::Scope {
 }
 
 
-async fn init_rbatis() {
+async fn init_rbatis() -> RBatis {
     let db_path = env::var("DATABASE_URL")
         .expect("can't get env [DATABASE_URL], please check the .env file!");
 
@@ -193,15 +194,14 @@ async fn init_rbatis() {
     if !db_path.exists() {
         info!("{:?} is not exists,start to init!",db_path);
         let mut file = File::open("schema.sql").expect("schema.sql is not exists!");
-
         let mut init_sql = String::new();
         file.read_to_string(&mut init_sql).expect("can't read file schema.sql");
         rbatis.exec(init_sql.as_str(), vec![]).await.expect("execute init sql failed!");
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
+        let user = User::new("admin", "123", "admin", "salt", None, None, None, now as i32);
+        User::insert(&rbatis, &user).await.expect("insert user failed");
     }
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
-    let user = User::new("admin","123", "admin", "salt", None, None, None, now as i32);
-
-    User::insert(&rbatis, &user).await.expect("insert user failed");
+    rbatis
 }
 
 
