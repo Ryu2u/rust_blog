@@ -1,0 +1,55 @@
+.info-bg {
+    border-radius: 12px;
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+}
+
+.user {
+    padding: 15px 15px 15px;
+    display: flex;
+    position: relative;
+    align-items: center;
+    font-size: 16px;
+    flex-direction: column;
+}
+
+.avatar-wrapper {
+
+}
+
+.user-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+}
+
+.username{
+    display: block;
+    font-weight: 700;
+    padding-left: 6px;
+}
+
+.info{
+    margin-top: 6px;
+    word-break: break-word;
+    font-size: 12px;
+
+}
+
+
+.divider{
+    margin: 6px 0;
+    width: 90%;
+    height: 1px;
+    background-color: #8888;
+}
+
+.user-link{
+}
+
+.link-item{
+    padding: 0 10px;
+}

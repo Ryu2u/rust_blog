@@ -1,30 +1,70 @@
 
-.nav-head{
+.header{
+    position: fixed;
+    z-index: 9999;
+    top:0;
+    background-color: indianred;
+    width: 100%;
+    height: 60px;
+}
+
+.header-item{
     margin: auto;
-    justify-content: center;
-    align-items: center;
-}
-.nav-head div{
-    padding: 5px;
-    margin: 10px;
+    max-width: 1000px;
 }
 
-.home-icon{
-    font-size: 28px;
+.logo-div{
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffff;
+    line-height: 60px;
 }
-.home-icon:hover{
+
+.logo-div:hover{
     cursor: pointer;
-    border-radius: 10px;
-    box-shadow: 0 0 20px grey;
-}
-
-.menu-list div{
-    z-index:  1;
 
 }
 
- .menu-list div:hover{
-     cursor: pointer;
-     border-radius: 10px;
-     box-shadow: 0 0 20px grey;
- }
+
+.container{
+    margin-top: 60px;
+    width: 60%;
+    min-width: 1000px;
+    /*font-size: 20px;*/
+    margin-left: auto;
+    margin-right: auto;
+
+}
+
+.content{
+    padding: 20px;
+    background-color: darkorange;
+}
+
+.side-list{
+    width: 60%;
+    min-width: 350px;
+    /*background-color: cornflowerblue;*/
+}
+
+.footer{
+    background-color: mediumpurple;
+    width: 100%;
+    line-height: 60px;
+    text-align: center;
+}
+
+.card-widget{
+    border: 1px solid #e3e8f7;
+    background-color: #fff;
+    border-radius: 12px;
+    transition: 0.3s;
+    position: relative;
+}
+
+
+.side-content{
+    min-width: 350px;
+    background-color: cornflowerblue;
+    position: fixed;
+}

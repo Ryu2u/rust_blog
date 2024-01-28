@@ -1,0 +1,35 @@
+
+body {
+  background-color: #8888;
+  margin: 0;
+  padding: 0;
+
+  &::-webkit-scrollbar {
+    background: #696969;
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: #ffff;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: black;
+  }
+}
+
+
+.flex {
+  display: flex;
+}
+
+.card-widget {
+  position: relative;
+  margin: 5px 5px 10px 5px;
+  padding: 7px;
+  border: 1px solid #e3e8f7;
+  background-color: #fff;
+  border-radius: 12px;
+  transition: 0.3s;
+}
