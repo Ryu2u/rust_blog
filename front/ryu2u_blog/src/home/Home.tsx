@@ -2,6 +2,8 @@ import './home.css'
 import {Card} from "../components/Card";
 import {UserInfo} from "../components/UserInfo";
 import {Weather} from "../components/Weather";
+import {Affix, FloatButton} from "antd";
+import {QuestionCircleOutlined, SettingOutlined, SyncOutlined} from '@ant-design/icons';
 
 export function Home() {
     return (
@@ -253,12 +255,12 @@ export function Home() {
                     <div className={"side-content"}>
                         <UserInfo/>
                         <Weather/>
-                        <Card />
-                        <Card />
-                        <Card />
-                        <Card />
-                        <Card />
-                        <Card />
+                        <Card/>
+                        <Card/>
+                        <Card/>
+                        <Card/>
+                        <Card/>
+                        <Card/>
                     </div>
                 </div>
             </div>
@@ -271,6 +273,12 @@ export function Home() {
                 <br/>
             </div>
 
+            <FloatButton.Group shape="square" style={{right: 50}}>
+                <FloatButton icon={<QuestionCircleOutlined/>}/>
+                <FloatButton icon={<SettingOutlined spin/>}/>
+                <FloatButton icon={<SyncOutlined/>}/>
+                <FloatButton.BackTop visibilityHeight={0}/>
+            </FloatButton.Group>
 
         </>
     )
