@@ -1,51 +1,50 @@
+use std::time::{SystemTime, UNIX_EPOCH};
 use rbatis::{crud, impl_insert, impl_select};
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct User {
     pub id: Option<i32>,
-    pub username: Option<String>,
-    password: Option<String>,
-    pub nick_name: Option<String>,
+    pub username: String,
+    password: String,
+    pub nick_name: String,
     salt: Option<String>,
     /// 0 -> female
     /// 1 -> male
     /// 2 -> other
-    pub gender: Option<i32>,
+    pub gender: i32,
     pub avatar_path: Option<String>,
     pub signature: Option<String>,
-    created_time: Option<i32>,
+    created_time: i64,
     /// 0 -> unlocked
     /// 1 -> locked
-    pub locked: Option<i32>,
+    pub locked: i32,
 }
 
 impl User {
     pub fn new(username: &str,
                password: &str,
                nick_name: &str,
-               salt: &str,
-               gender: Option<i32>,
-               avatar_path: Option<String>,
-               signature: Option<String>,
-               created_time: i32)
+    )
                -> Self {
+        let now = SystemTime::now();
+        let created_time = now.duration_since(UNIX_EPOCH).unwrap().as_millis() as i64;
         User {
             id: None,
-            username: Some(username.to_string()),
-            password: Some(password.to_string()),
-            nick_name: Some(nick_name.to_string()),
-            salt: Some(salt.to_string()),
-            gender,
-            avatar_path,
-            signature,
-            created_time: Some(created_time),
-            locked: Some(0),
+            username: username.to_string(),
+            password: password.to_string(),
+            nick_name: nick_name.to_string(),
+            salt: None,
+            gender: 1,
+            avatar_path: None,
+            signature: None,
+            created_time,
+            locked: 0,
         }
     }
 
     pub fn filter_pwd(&mut self) {
-        self.password = None;
+        self.password = "".to_string();
     }
 }
 
