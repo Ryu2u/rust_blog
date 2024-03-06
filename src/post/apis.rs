@@ -15,6 +15,8 @@ async fn api_post_add(post: web::Json<Post>, db: web::Data<RBatis>) -> Result<im
     let _ = span!(Level::DEBUG,"api_post_add");
     info!("{:?}",post);
 
+    todo!("format content");
+
     let post = Post::new(post.title.clone(),
                          post.author.clone(),
                          post.original_content.clone(),
