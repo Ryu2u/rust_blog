@@ -21,9 +21,14 @@ use serde_json::json;
 
 
 mod user;
+mod post;
+mod utils;
 
 use user::apis::{*};
+use crate::post::structs::Post;
 use crate::user::structs::User;
+
+use post::apis::{*};
 
 
 #[derive(Debug)]
@@ -174,6 +179,7 @@ async fn main() -> std::io::Result<()> {
                     .guard(ContentTypeGuard)
                     .service(test_scope())
                     .service(user_scope())
+                    .service(post_scope())
             })
     }).bind(server)?
         .run()
@@ -207,9 +213,12 @@ async fn init_rbatis() -> RBatis {
         let mut init_sql = String::new();
         file.read_to_string(&mut init_sql).expect("can't read file schema.sql");
         rbatis.exec(init_sql.as_str(), vec![]).await.expect("execute init sql failed!");
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
-        let user = User::new("admin", "123", "admin", "salt", None, None, None, now as i32);
+        let user = User::new("admin", "123", "admin");
         User::insert(&rbatis, &user).await.expect("insert user failed");
+        let mut post = Post::new("title".to_string(), "author".to_string(), "original_content"
+            .to_string(), "format_content".to_string(), 12);
+        post.summary = Some("summary".to_string());
+        Post::insert(&rbatis, &post).await.expect("insert post failed");
     }
     rbatis
 }
