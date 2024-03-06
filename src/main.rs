@@ -1,7 +1,7 @@
 use std::env;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 use actix_web::{App, error, guard, http, HttpRequest, HttpResponse, HttpServer, Responder, web};
 use actix_web::body::BoxBody;
@@ -9,6 +9,7 @@ use actix_web::body::BoxBody;
 use actix_web::guard::{Guard, GuardContext};
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
+use actix_web::web::get;
 use serde::{Serialize, Deserialize};
 
 use tracing::log::{debug, error, info};
@@ -16,6 +17,7 @@ use derive_more::{Error};
 use dotenv::dotenv;
 use rbatis::RBatis;
 use rbdc_sqlite::SqliteDriver;
+use serde_json::json;
 
 
 mod user;
@@ -136,9 +138,17 @@ async fn main() -> std::io::Result<()> {
     // init env
     dotenv().ok();
 
-    for (key, value) in dotenv::vars() {
-        debug!("{} | {}",key,value);
-    }
+    let mut file = File::open("E:\\MarkDown\\笔记\\Rust\\Rust.md").unwrap();
+    let mut str = String::new();
+    file.read_to_string(&mut str).unwrap();
+    let html  = markdown::to_html(&str);
+    info!("{}",html);
+    let mut out = File::create("test.html").unwrap();
+    out.write_all(html.as_bytes()).unwrap();
+
+    // for (key, value) in dotenv::vars() {
+    //     debug!("{} | {}",key,value);
+    // }
 
     // get ip
     let server_ip = env::var("SERVER_IP")

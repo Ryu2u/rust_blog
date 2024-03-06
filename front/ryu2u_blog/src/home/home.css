@@ -28,7 +28,7 @@
 
 .container{
     margin-top: 60px;
-    width: 60%;
+    width: 80%;
     min-width: 1000px;
     /*font-size: 20px;*/
     margin-left: auto;
@@ -38,14 +38,10 @@
 
 .content{
     padding: 20px;
-    background-color: darkorange;
+    /*background-color: darkorange;*/
+    background-color: #F5F5F5;
 }
 
-.side-list{
-    width: 60%;
-    min-width: 350px;
-    /*background-color: cornflowerblue;*/
-}
 
 .footer{
     background-color: mediumpurple;
@@ -62,8 +58,14 @@
     position: relative;
 }
 
+.side-list{
+    width: 20%;
+    max-width: 300px;
+}
 
 .side-content{
+    position: sticky;
+    top: 60px;
     min-width: 350px;
-    background-color: cornflowerblue;
+    /*background-color: cornflowerblue;*/
 }
