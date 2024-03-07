@@ -1,6 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
-use rbatis::crud;
+use rbatis::{crud, impl_select};
 use serde::{Serialize, Deserialize};
+use crate::utils::time_utils::get_sys_time;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Post {
@@ -29,8 +30,7 @@ impl Post {
         format_content: String,
         word_count: i32,
     ) -> Self {
-        let now = SystemTime::now();
-        let created_time = now.duration_since(UNIX_EPOCH).unwrap().as_millis() as i64;
+        let created_time = get_sys_time();
         Post {
             id: None,
             title,
@@ -51,3 +51,9 @@ impl Post {
     }
 }
 crud!(Post{});
+
+impl_select!(
+    Post{
+        select_by_id(id:i32) => "`where id = #{id}`"
+    }
+);

@@ -37,26 +37,36 @@
 }
 
 .content{
+    margin: 5px;
     padding: 20px;
-    /*background-color: darkorange;*/
-    background-color: #F5F5F5;
+    background-color: #ffff;
+    border-radius: 10px;
+    width: 80%;
+    box-shadow: 0 0 10px 2px #817b7b;
+    word-break: break-word;
+    /*animation: slideDown 0.3s ease-in-out;*/
+}
+
+
+@keyframes slideDown {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 
 .footer{
-    background-color: mediumpurple;
+    /*background-color: mediumpurple;*/
     width: 100%;
     line-height: 60px;
     text-align: center;
 }
 
-.card-widget{
-    border: 1px solid #e3e8f7;
-    background-color: #fff;
-    border-radius: 12px;
-    transition: 0.3s;
-    position: relative;
-}
 
 .side-list{
     width: 20%;
@@ -67,5 +77,4 @@
     position: sticky;
     top: 60px;
     min-width: 350px;
-    /*background-color: cornflowerblue;*/
 }

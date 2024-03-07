@@ -1,6 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use rbatis::{crud, impl_insert, impl_select};
 use serde::{Serialize, Deserialize};
+use crate::utils::time_utils::get_sys_time;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct User {
@@ -27,8 +28,7 @@ impl User {
                nick_name: &str,
     )
                -> Self {
-        let now = SystemTime::now();
-        let created_time = now.duration_since(UNIX_EPOCH).unwrap().as_millis() as i64;
+        let created_time = get_sys_time();
         User {
             id: None,
             username: username.to_string(),
@@ -51,8 +51,12 @@ impl User {
 crud!(User{},"tb_user");
 impl_select!(
     User{select_by_username_pwd(username:String,password:String)
-        => "`where username =  #{username} and password = #{password}`"},"tb_user");
+        => "`where username =  #{username} and password = #{password}`"},"tb_user"
+);
 
+impl_select!(
+    User{select_by_id(id:i32) => "`where id = #{id}`"},"tb_user"
+);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginDto {

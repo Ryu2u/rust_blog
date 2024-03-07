@@ -1,4 +1,4 @@
-use actix_web::{post, Responder, web};
+use actix_web::{get, post, Responder, web};
 use rbatis::RBatis;
 use rbatis::rbdc::Error;
 use crate::{AppState, R, Exception, User, error};
@@ -9,6 +9,7 @@ use crate::user::structs::LoginDto;
 pub fn user_scope() -> actix_web::Scope {
     actix_web::web::scope("/user")
         .service(api_login)
+        .service(api_user_get)
 }
 
 
@@ -43,6 +44,26 @@ async fn api_login(login_dto: web::Json<LoginDto>,
 
     // scope.in_scope(|| {});
     // Ok(R::ok_obj(login_dto))
+}
+
+#[instrument]
+#[get("/get/{id}")]
+pub async fn api_user_get(id: web::Path<i32>,db: web::Data<RBatis>) -> Result<impl Responder,
+    Exception>{
+
+    if let Ok(mut res) = User::select_by_id(&**db,*id).await{
+        if res.is_empty() {
+            return Err(Exception::BadRequest("user is not exits!".to_string()));
+        }
+        let mut user = res.pop().unwrap();
+        user.filter_pwd();
+        info!("{:?}",user);
+        Ok(R::<User>::ok_obj(user))
+    }else{
+        Err(Exception::InternalError)
+    }
+
+
 }
 
 #[instrument]

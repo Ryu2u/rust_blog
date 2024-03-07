@@ -1,10 +1,11 @@
 
-html{
+html {
   overflow: auto;
 }
 
 body {
   //background-color: #8888;
+  background-image: linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%);
   margin: 0;
   padding: 0;
 
@@ -23,6 +24,10 @@ body {
   }
 }
 
+a {
+
+
+}
 
 .flex {
   display: flex;
@@ -37,3 +42,10 @@ body {
   border-radius: 12px;
   transition: 0.3s;
 }
+
+.fa {
+  margin-right: 5px;
+
+}
+
+/////////////

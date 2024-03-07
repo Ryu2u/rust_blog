@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
+use actix_cors::Cors;
 use actix_web::{App, error, guard, http, HttpRequest, HttpResponse, HttpServer, Responder, web};
 use actix_web::body::BoxBody;
 
@@ -143,6 +144,7 @@ async fn main() -> std::io::Result<()> {
     // init env
     dotenv().ok();
 
+    /*
     let mut file = File::open("E:\\MarkDown\\笔记\\Rust\\Rust.md").unwrap();
     let mut str = String::new();
     file.read_to_string(&mut str).unwrap();
@@ -151,6 +153,7 @@ async fn main() -> std::io::Result<()> {
     let mut out = File::create("test.html").unwrap();
     out.write_all(html.as_bytes()).unwrap();
 
+    */
     // for (key, value) in dotenv::vars() {
     //     debug!("{} | {}",key,value);
     // }
@@ -169,11 +172,17 @@ async fn main() -> std::io::Result<()> {
     let rbatis = init_rbatis().await;
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:4123")
+            .allowed_methods(vec!["GET", "POST"])
+            .allow_any_header();
+
         App::new()
             .app_data(web::Data::new(rbatis.clone()))
             .app_data(web::Data::new(AppState {
                 app_name: "rust_blog".to_string()
             }))
+            .wrap(cors)
             .service({
                 web::scope("")
                     .guard(ContentTypeGuard)
