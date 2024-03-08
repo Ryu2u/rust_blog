@@ -1,7 +1,18 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-use rbatis::{crud, impl_select, impl_select_page, RBatis};
-use serde::{Serialize, Deserialize};
 use crate::utils::time_utils::get_sys_time;
+use actix_easy_multipart::tempfile::Tempfile;
+use actix_easy_multipart::text::Text;
+use actix_easy_multipart::MultipartForm;
+use rbatis::{crud, impl_select, impl_select_page, RBatis};
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+#[derive(Debug, MultipartForm)]
+pub struct FileForm {
+    pub title: Option<Text<String>>,
+    pub num: Text<i32>,
+    pub file: Tempfile,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Post {
@@ -12,6 +23,7 @@ pub struct Post {
     pub original_content: String,
     pub format_content: String,
     pub summary: Option<String>,
+    pub cover_img: Option<String>,
     pub visits: i32,
     pub disallow_comment: i32,
     pub password: Option<String>,
@@ -39,6 +51,7 @@ impl Post {
             original_content,
             format_content,
             summary: None,
+            cover_img: None,
             visits: 0,
             disallow_comment: 0,
             password: None,
@@ -50,15 +63,15 @@ impl Post {
         }
     }
 
-    pub async fn count_all(db:&RBatis) -> i32{
-        let count = db.query_decode("select count(*) as count from post",vec![])
-            .await.unwrap();
+    pub async fn count_all(db: &RBatis) -> i32 {
+        let count = db
+            .query_decode("select count(*) as count from post", vec![])
+            .await
+            .unwrap();
         count
     }
-
-
 }
-crud!(Post{});
+crud!(Post {});
 
 impl_select!(
     Post{
@@ -72,11 +85,16 @@ impl_select!(
     }
 );
 
+impl_select!(
+    Post{
+        select_by_title(title:String) => "`where title = #{title}` limit 1"
+    }
+);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PageInfo<T>
-    where
-        T: Serialize
+where
+    T: Serialize,
 {
     pub page_num: i32,
     pub page_size: i32,

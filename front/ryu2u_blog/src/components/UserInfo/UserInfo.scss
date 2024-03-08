@@ -8,6 +8,7 @@
 }
 
 .user {
+    background-color: var(--color-post-content-bg-default);
     padding: 15px 15px 15px;
     display: flex;
     position: relative;
@@ -47,7 +48,15 @@
     background-color: #8888;
 }
 
-.user-link{
+.user-link {
+    text-align: center;
+    a{
+        //color: black;
+        text-decoration: none;
+    }
+    a:visited{
+        //color: black;
+    }
 }
 
 .link-item{

@@ -12,13 +12,17 @@ edition = "2021"
 dotenv = "0.15.0"
 tracing = "0.1.37"
 tracing-subscriber = {version = "0.3",features = ["env-filter"]}
-actix-web = "4"
-actix-cors = "0.6.4"
 tokio = "1.25.0"
 serde_json = {version = "1.0.91",features = []}
 serde = {version = "1.0.152",features = ["derive"]}
 derive_more = "0.99.17"
 chrono = "0.4.23"
+# actix
+actix-web = "4"
+actix-easy-multipart = "3.0.0"
+actix-cors = "0.6.4"
+actix-session = {version = "0.7.2" ,features = ['cookie-session']}
+futures-util = "0.3.26"
 
 # ORM
 #rbatis deps
@@ -26,3 +30,4 @@ rbs = { version = "4.5"}
 rbatis = { version = "4.5"}
 rbdc-sqlite = { version = "4.5" }
 markdown = "1.0.0-alpha.16"
+

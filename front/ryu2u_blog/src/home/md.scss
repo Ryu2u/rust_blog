@@ -974,9 +974,9 @@ span.CodeMirror-selectedtext {
 ////////////////////////////////////////
 
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   .markdown-body,
-  [data-theme="light"] {
+  [data-theme="dark"] {
     /*dark*/
     color-scheme: dark;
     --color-prettylights-syntax-comment: #8b949e;

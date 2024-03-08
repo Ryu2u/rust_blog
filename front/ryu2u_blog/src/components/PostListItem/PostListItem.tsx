@@ -1,28 +1,44 @@
-
-
 import "./PostListItem.scss"
+import {useNavigate} from "react-router";
+import {useEffect, useState} from "react";
+import {Post} from "../../common/Structs";
 
-export function PostListItem({dir}) {
+export function PostListItem({dir, postItemJson}) {
+    const navigate = useNavigate();
+    const [post, setPost] = useState(new Post());
+
+    useEffect(() => {
+        if (postItemJson) {
+            let data = JSON.parse(postItemJson);
+            data.created_time = new Date(data.created_time);
+            data.update_time = new Date(data.update_time);
+            setPost(data);
+        }
+    }, []);
+
+    function postClick() {
+        navigate(`/post/${post.id}`);
+    }
+
     return (
         <>
-            <div className={dir? 'post-list-item':'post-list-item post-left'}>
+            <div className={dir ? 'post-list-item' : 'post-list-item post-left'}>
                 <div className={"post-bg"}>
-                    <img  src={"https://media.istockphoto.com/id/1496108471/zh/%E7%85%A7%E7%89%87/the-matterhorn-mountain-peaks-are-reflected-in-the-lake.jpg?s=2048x2048&w=is&k=20&c=hL-M_yAA0fNiuSr5bd90yc0cKUwl7bBYlgw6MYemRGc="}/>
+                    <img alt={"post-alt"} src={"https://source.unsplash.com/random"}/>
                 </div>
                 <div className={"recent-post-info"}>
                     <div className={"recent-post-title"}>
-                        recent-post-title
+                        <a onClick={() => postClick()} href={""} className={"recent-post-title-a"}>
+                            {post.title}
+                        </a>
                     </div>
                     <div className={"recent-post-time"}>
-                        发表于2022-07-29|更新于2022-07-29|Java
+                        发表于{post.created_time ? post.created_time.toLocaleString():''}|
+                        更新于{post.update_time ? post.update_time.toLocaleString(): ''}|
+                        Java
                     </div>
                     <div className={"recent-post-summary"}>
-                        recent-post-ssummarysummarysummarysummaryummary
-                        recent-post-ssummarysummarysummarysummaryummary
-                        recent-post-ssummarysummarysummarysummaryummary
-                        recent-post-ssummarysummarysummarysummaryummary
-                        recent-post-ssummarysummarysummarysummaryummary
-                        recent-post-ssummarysummarysummarysummaryummary
+                        {post.summary}
                     </div>
                 </div>
 

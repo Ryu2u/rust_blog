@@ -1,17 +1,28 @@
 import {Weather} from "./Weather";
-import {useRef} from "react";
+import {useEffect, useRef} from "react";
 import {UserInfo} from "./UserInfo/UserInfo";
 import {Card} from "./Card/Card";
+import {CatalogCard} from "./Card/CatalogCard";
 
-export const SideBar = () => {
-    const side_div=  useRef(null);
+export function SideBar({catalogJson}) {
+
+    useEffect(() => {
+
+        console.log("sidebar => ");
+        console.log(catalogJson);
+
+    },[]);
 
     return (
         <>
             <div className={"side-list"}>
-                <div ref={side_div} className={"side-content"}>
-                    <UserInfo/>
-                    <Weather/>
+                <UserInfo/>
+                <Weather/>
+                <div className={"catalog"}>
+                    {
+                        !!catalogJson &&
+                        <CatalogCard catalogJson={catalogJson}/>
+                    }
                     <Card/>
                     <Card/>
                     <Card/>

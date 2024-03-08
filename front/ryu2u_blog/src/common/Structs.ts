@@ -31,6 +31,7 @@ export class Post {
     original_content: string;
     format_content: string;
     summary?: string;
+    cover_img?:string;
     visits: number;
     disallow_comment: number;
     password?: string;

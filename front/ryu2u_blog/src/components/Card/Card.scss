@@ -1,8 +1,47 @@
-.card-widget{
-  border: 1px solid #e3e8f7;
-  background-color: #fff;
-  border-radius: 12px;
-  transition: 0.3s;
-  position: relative;
-  box-shadow: 0 0 10px 2px #817b7b;
+
+.catalog {
+  position: sticky;
+  top: 60px;
+}
+
+.catalog-card {
+  font-size: 14px;
+  animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.catalog-card > li {
+  text-decoration: none;
+  list-style-type: none;
+}
+
+.catalog-card > ul {
+  padding: 0;
+}
+
+.catalog-card {
+
+  li {
+    text-decoration: none;
+    list-style-type: none;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  a:visited {
+    color: blue;
+    text-decoration: none;
+  }
 }
