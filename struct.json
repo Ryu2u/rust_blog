@@ -1,17 +1,25 @@
 
+//{
+//  "title": "",
+//  "author": "",
+//  "is_view": 0,
+//  "original_content" : "",
+//  "format_content" : "",
+//  "summary": "",
+//  "visits": 0,
+//  "disallow_comment" : 0,
+//  "password" : "",
+//  "top_priority" : 0,
+//  "likes" : 0,
+//  "word_count" : 0,
+//  "created_time" : 0,
+//  "update_time" : 0
+//}
+
 {
-  "title": "",
-  "author": "",
-  "is_view": 0,
-  "original_content" : "",
-  "format_content" : "",
-  "summary": "",
-  "visits": 0,
-  "disallow_comment" : 0,
-  "password" : "",
-  "top_priority" : 0,
-  "likes" : 0,
-  "word_count" : 0,
-  "created_time" : 0,
-  "update_time" : 0
+  "page_num" : 0,
+  "page_size" : 0,
+  "total" : 0,
+  "list" : [
+  ]
 }

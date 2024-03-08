@@ -1,23 +1,30 @@
-import './home.css'
-import {Card} from "../components/Card";
-import {UserInfo} from "../components/UserInfo";
-import {Weather} from "../components/Weather";
+import './home.scss'
 import {FloatButton} from "antd";
 import {QuestionCircleOutlined, SettingOutlined, SyncOutlined} from '@ant-design/icons';
-import {useEffect, useRef, useState} from "react";
-import gfm from '@bytemd/plugin-gfm'
+import {useEffect} from "react";
 import './md.scss'
-import {Temp} from "../components/Temp";
 import {Header} from "../components/Header";
 import {Footer} from "../components/Footer";
 import {SideBar} from "../components/SideBar";
-import {PostPage} from "../components/PostPage";
+import PostService from "../service/PostService";
+import {PageInfo} from "../common/Structs";
+import {PostListItem} from "../components/PostListItem/PostListItem";
 
 export function Home() {
 
-    // useEffect(() => {
-    //
-    // }, [side_div])
+
+    useEffect(() => {
+        let pageInfo = new PageInfo();
+        pageInfo.page_num = 1;
+        pageInfo.page_size = 10;
+        pageInfo.total = 0;
+        pageInfo.list = [];
+        PostService.postListPage(pageInfo).then((result) => {
+            console.log(result.obj) ;
+        });
+
+
+    }, [])
 
 
     return (
@@ -25,7 +32,24 @@ export function Home() {
             <Header/>
 
             <div className={"container flex"}>
-                <div className={"content"}>
+                <div className={"post-list"}>
+                    <PostListItem dir={true}/>
+                    <PostListItem dir={false}/>
+
+                    <PostListItem dir={true}/>
+                    <PostListItem dir={false}/>
+
+                    <PostListItem dir={true}/>
+                    <PostListItem dir={false}/>
+
+                    <PostListItem dir={true}/>
+                    <PostListItem dir={false}/>
+
+                    <PostListItem dir={true}/>
+                    <PostListItem dir={false}/>
+
+                    <PostListItem dir={true}/>
+                    <PostListItem dir={false}/>
 
                 </div>
 

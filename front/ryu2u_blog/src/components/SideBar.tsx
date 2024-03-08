@@ -1,7 +1,7 @@
-import {UserInfo} from "./UserInfo";
 import {Weather} from "./Weather";
-import {Card} from "./Card";
 import {useRef} from "react";
+import {UserInfo} from "./UserInfo/UserInfo";
+import {Card} from "./Card/Card";
 
 export const SideBar = () => {
     const side_div=  useRef(null);

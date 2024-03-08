@@ -2,7 +2,7 @@ import './App.css'
 import {BrowserRouter} from "react-router-dom";
 import {Navigate, Route, Routes} from "react-router";
 import {Home} from "./home/Home";
-import {PostPage} from "./components/PostPage";
+import {PostPage} from "./components/Post/PostPage";
 
 function App() {
 

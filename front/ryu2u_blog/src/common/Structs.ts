@@ -1,4 +1,10 @@
 
+export class PageInfo{
+    page_num:number;
+    page_size:number;
+    total: number;
+    list: any[];
+}
 export class Result{
     code: number;
     msg: string;

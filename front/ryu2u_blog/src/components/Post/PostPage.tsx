@@ -1,14 +1,10 @@
-import {Temp} from "./Temp";
-import "./Post.scss"
+import "./PostPage.scss"
 import {FloatButton} from "antd";
 import {QuestionCircleOutlined, SettingOutlined, SyncOutlined} from '@ant-design/icons';
-import {Header} from "./Header";
-import {SideBar} from "./SideBar";
-import {Footer} from "./Footer";
 import {useEffect, useRef, useState} from "react";
 import {useParams} from "react-router";
-import {Post, Result} from "../common/Structs";
-import http_client from "../common/HttpClient";
+import {Post} from "../../common/Structs";
+import PostService from "../../service/PostService";
 
 export function PostPage() {
     const [loading, setLoading] = useState(true);
@@ -20,8 +16,7 @@ export function PostPage() {
         const post_id = param['id'];
         console.log(`post_id : ${post_id}`);
 
-        http_client.get("/post/get/6").then((res: any) => {
-            let result: Result = res;
+        PostService.getPostById(6).then((result) => {
             console.log(result.obj);
             let data: Post = result.obj;
             data.created_time = new Date(data.created_time);
@@ -32,7 +27,7 @@ export function PostPage() {
             setTimeout(() => {
                 setLoading(false);
             }, 1000)
-        });
+        })
 
     }, [param])
 
