@@ -1,0 +1,40 @@
+.login-wrapper {
+  display: table;
+  // 注意设置宽度和
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  color: red;
+}
+
+.login-cell {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.login-form {
+  max-width: 500px;
+  padding: 24px;
+  margin: 0 auto;
+  text-align: left;
+  border: 1px solid #8888;
+  border-radius: 10px;
+  box-shadow: 0 0 5px 0 #8888;
+}
+
+.login-form-forget {
+  float: right;
+}
+
+.ant-col-rtl .login-form-forgot {
+  float: left;
+}
+
+.login-form-button {
+  width: 100%;
+}
+
+.login-div {
+
+
+}

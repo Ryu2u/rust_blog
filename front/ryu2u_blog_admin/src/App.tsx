@@ -4,6 +4,7 @@ import {BrowserRouter, Route, Routes, Navigate,} from "react-router-dom";
 import {Dashboard} from "./admin/dashboard/Dashboard";
 import {ArticlePage} from "./admin/article/ArticlePage";
 import {CommentPage} from "./admin/comment/CommentPage";
+import {LoginPage} from "./login/LoginPage";
 
 function App() {
 
@@ -18,6 +19,7 @@ function App() {
                         <Route path={"/comment"} element={<CommentPage/>}></Route>
                         <Route path={"/moments"} element={<CommentPage/>}></Route>
                     </Route>
+                    <Route path={"/login"} element={<LoginPage/>}></Route>
                     <Route path={"/*"} element={<Navigate to={"/dashboard"}/>}></Route>
                 </Routes>
             </BrowserRouter>
