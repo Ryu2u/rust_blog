@@ -16,6 +16,8 @@ export function Home() {
 
     useEffect(() => {
         getPageList(1, 10);
+
+
     }, [])
 
     function getPageList(pageNum: number, pageSize: number) {
@@ -37,7 +39,6 @@ export function Home() {
     return (
         <>
             <Header/>
-
             <div className={"container flex"}>
                 <div className={"post-list"}>
                     {

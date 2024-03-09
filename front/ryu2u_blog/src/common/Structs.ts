@@ -46,3 +46,27 @@ export class Post {
     tag: string;
 
 }
+
+export interface PoetryData {
+    id: string
+    content: string
+    popularity: number
+    origin: {
+        title: string
+        dynasty: string
+        author: string
+        content: string[]
+        translate: string[]
+    },
+    matchTags: string[]
+    recommendedReason: string
+    cacheAt: string
+}
+
+export interface PoetryRequestData {
+    status: string
+    data: PoetryData
+    token: string
+    ipAddress: string
+    warning: null | string
+}

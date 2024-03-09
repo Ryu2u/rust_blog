@@ -1,7 +1,64 @@
 import "./UserInfo.scss"
 import {Tooltip} from "antd";
+import {useEffect, useRef, useState} from "react";
+import * as randPoetry  from "jinrishici";
+import {PoetryRequestData} from "../../common/Structs";
 
 export function UserInfo() {
+
+    const loadingRef = useRef<boolean>(false);
+
+    useEffect(() => {
+        if (loadingRef.current){
+            return;
+        }
+        loadingRef.current = true;
+        let dom = document.querySelector(".write_poem");
+        randPoetry.load((res:PoetryRequestData) => {
+            let poetry = res.data;
+            console.log(`${poetry.content} --${poetry.origin.author}<${poetry.origin.title}>`);
+            let data = '';
+            let content = poetry.content;
+            let author = poetry.origin.author;
+            let rawContent = poetry.origin.content;
+            let dynasty = poetry.origin.dynasty;
+            let title = poetry.origin.title;
+            data += content;
+            data += `——${author}《${title}》`
+            let index = 0
+            if (dom) {
+                writing(dom, data, index, -1).then();
+            }
+        })
+
+    },[]);
+
+    async function writing(dom: Element, data: string, index: number, flag: number) {
+        if (index == data.length) {
+            setTimeout(() => {
+                if (index == 0 || index == data.length) {
+                    flag = -flag;
+                }
+                index += flag;
+                dom.innerHTML = data.substring(0, index);
+                setTimeout(() => {
+                    writing(dom, data, index, flag);
+                }, 200);
+            }, 2000);
+        } else {
+            setTimeout(() => {
+                if (index == 0 || index == data.length) {
+                    flag = -flag;
+                }
+                index += flag;
+                dom.innerHTML = data.substring(0, index);
+                setTimeout(() => {
+                    writing(dom, data, index, flag);
+                }, 50);
+            })
+        }
+    }
+
     return (
         <>
             <div className={"card-widget"}>
@@ -14,9 +71,9 @@ export function UserInfo() {
                             Hai Tao
                         </a>
                     </div>
-                    <div className={"info"}>
-                        朝辞白帝彩云间，千里江陵一日还。 <br/>
-                        --《早发白帝城 / 白帝下江陵》
+                    <div className={"info write_poem"}>
+                        {/*{poetry.content} <br/>*/}
+                        {/*--{poetry.origin?.author}《{poetry.origin?.title}》*/}
                     </div>
 
                     <div className={"divider"}>

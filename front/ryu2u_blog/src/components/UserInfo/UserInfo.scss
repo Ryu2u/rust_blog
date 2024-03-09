@@ -37,7 +37,25 @@
     margin-top: 6px;
     word-break: break-word;
     font-size: 12px;
+    font-weight: bold;
+}
 
+.write_poem {
+
+}
+
+.write_poem::after {
+    content: '|';
+    animation: poem_blink 1s infinite;
+}
+
+@keyframes poem_blink {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 

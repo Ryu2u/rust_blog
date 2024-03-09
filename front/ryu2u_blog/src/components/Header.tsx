@@ -1,8 +1,10 @@
 import {useNavigate} from "react-router";
+import {useEffect} from "react";
 
 export function Header() {
 
     const navigate = useNavigate();
+
 
     function logoClick(){
         navigate('/home');

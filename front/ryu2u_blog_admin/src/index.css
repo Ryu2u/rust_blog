@@ -1,0 +1,28 @@
+
+#root {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-bg-default);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-bg-default: linear-gradient(to right, #434343 0%, black 100%);;
+        --color-font-default: #ffff;
+        --color-post-content-bg-default: #0d1117;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --color-bg-default:linear-gradient(to top, #d9afd9 0%, #97d9e1 100%);
+        --color-font-default: #000;
+        --color-post-content-bg-default: #ffffff;
+    }
+}
