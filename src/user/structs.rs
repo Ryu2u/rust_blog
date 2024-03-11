@@ -58,4 +58,5 @@ impl_select!(
 pub struct LoginDto {
     pub username: String,
     pub password: String,
+    pub remember: bool
 }

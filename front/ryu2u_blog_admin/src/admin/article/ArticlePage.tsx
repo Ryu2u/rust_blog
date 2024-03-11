@@ -4,6 +4,8 @@ import {DeliveredProcedureOutlined, SaveOutlined} from "@ant-design/icons";
 import type {DraggableData, DraggableEvent} from 'react-draggable';
 import Draggable from 'react-draggable';
 import {useRef, useState} from "react";
+import PostService from "../../service/PostService";
+import {Post} from "../../common/Structs";
 
 const layout = {
     labelCol: {span: 4},
@@ -14,9 +16,11 @@ const layout = {
 export function ArticlePage() {
 
     const [form] = Form.useForm();
+    const [originContent, setOriginContent] = useState("");
+
 
     function getContent(content: string) {
-        // console.log(content);
+        setOriginContent(content);
     }
 
     const [open, setOpen] = useState(false);
@@ -54,20 +58,27 @@ export function ArticlePage() {
 
     const onFinish = (values: any) => {
         console.log('Finish:', values);
-        setTimeout(() => {
-            setOpen(false);
-            form.resetFields();
-        }, 500);
+        let post: Post = values;
+        post.is_view = post.is_view ? 1 : 0;
+        post.disallow_comment = post.disallow_comment ? 1 : 0;
+        post.original_content = originContent;
+        post.format_content = '';
+        console.log(post);
+        PostService.post_add(post).then((res) => {
+
+        })
+        // setOpen(false);
+        // form.resetFields();
     };
 
     return (
         <>
             <div className={"article-tool-div"}>
-                <Button type={"default"} onClick={showModal}>
+                <Button type={"default"}>
                     <SaveOutlined/>
                     保存
                 </Button>
-                <Button type={"primary"}>
+                <Button type={"primary"} onClick={showModal}>
                     <DeliveredProcedureOutlined/>
                     发布
                 </Button>

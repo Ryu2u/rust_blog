@@ -5,7 +5,7 @@ import {Outlet, useNavigate} from "react-router";
 import {
     AppstoreOutlined,
     BarChartOutlined,
-    CloudOutlined, ContainerOutlined, DashboardOutlined, InfoCircleOutlined,
+    CloudOutlined, ContainerOutlined, DashboardOutlined, InfoCircleOutlined, LoginOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined, MessageOutlined, ReadOutlined, ReconciliationOutlined,
     ShopOutlined,
@@ -15,7 +15,7 @@ import {
     VideoCameraOutlined,
 } from '@ant-design/icons';
 import type {MenuProps} from 'antd';
-import {Button, Layout, Menu, theme} from 'antd';
+import {Avatar, Button, Layout, Menu, theme} from 'antd';
 import {createElement} from "react";
 
 const {Header, Content, Footer, Sider} = Layout;
@@ -96,6 +96,11 @@ export function Admin() {
         navigate(e.key);
     };
 
+
+    const logout = () => {
+        navigate("/login");
+    }
+
     return (
         <Layout hasSider className={"layout-div"}>
             <Sider
@@ -115,6 +120,20 @@ export function Admin() {
                       items={items}
                       onClick={menuClick}
                 />
+                <div className={"flex current-profile"}>
+                    <div className={"user-avatar"}>
+                        <Avatar size={40} src={<img src={"../../public/vite.svg"} alt="avatar"/>}/>
+                    </div>
+                    <div className={"flex profile-btn"}>
+                        <div className={"profile-btn-item"}>
+                         <Button >1</Button>
+                        </div>
+                        <div className={"profile-btn-item"}>
+                            <Button shape="circle" icon={<LoginOutlined />} onClick={logout}>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             </Sider>
             <Layout className={"layout-content"}
                     style={{

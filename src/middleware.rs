@@ -3,6 +3,7 @@ use actix_session::SessionExt;
 
 use crate::{AppState, Exception};
 use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}, error, Error, web};
+use actix_web::http::Method;
 use futures_util::future::LocalBoxFuture;
 use tracing::log::{error, info};
 
@@ -54,6 +55,11 @@ impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let url = req.path();
         info!("request url is : {}", url);
+        info!("{}",req.method() == Method::OPTIONS);
+        if req.method() == Method::OPTIONS {
+            let fut = self.service.call(req);
+            return Box::pin(async move { Ok(fut.await?) });
+        }
 
         let state_op: Option<&web::Data<AppState>> = req.app_data();
         let white_list_op: Option<&FilterWhiteList> = req.app_data();
@@ -70,7 +76,6 @@ impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
             Some(white_list) => {
                 let white_list = &white_list.0;
                 info!("white_list : {:?}",white_list);
-
                 let mut valid: bool = false;
                 let _ = white_list.iter().for_each(|str| {
                     if url.contains(str) {
@@ -86,7 +91,8 @@ impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
                 // todo 验证身份
                 let session = req.get_session();
 
-                if let Ok(Some(_)) = session.get::<i32>("user_id") {
+                if let Ok(Some(id)) = session.get::<i32>("user_id") {
+                    info!("session: id -> {id}");
                     valid = true;
                 }
 

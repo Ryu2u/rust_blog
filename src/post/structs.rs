@@ -24,14 +24,14 @@ pub struct Post {
     pub format_content: String,
     pub summary: Option<String>,
     pub cover_img: Option<String>,
-    pub visits: i32,
-    pub disallow_comment: i32,
+    pub visits: Option<i32>,
+    pub disallow_comment: Option<i32>,
     pub password: Option<String>,
-    pub top_priority: i32,
-    pub likes: i32,
-    pub word_count: i32,
-    pub created_time: i64,
-    pub update_time: i64,
+    pub top_priority: Option<i32>,
+    pub likes: Option<i32>,
+    pub word_count: Option<i32>,
+    pub created_time: Option<i64>,
+    pub update_time: Option<i64>,
 }
 
 impl Post {
@@ -52,14 +52,14 @@ impl Post {
             format_content,
             summary: None,
             cover_img: None,
-            visits: 0,
-            disallow_comment: 0,
+            visits: Some(0),
+            disallow_comment: Some(1),
             password: None,
-            top_priority: 0,
-            likes: 0,
-            word_count,
-            created_time,
-            update_time: created_time.clone(),
+            top_priority: Some(0),
+            likes: Some(0),
+            word_count: Some(word_count),
+            created_time: Some(created_time),
+            update_time: Some(created_time.clone()),
         }
     }
 
@@ -93,8 +93,8 @@ impl_select!(
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PageInfo<T>
-where
-    T: Serialize,
+    where
+        T: Serialize,
 {
     pub page_num: i32,
     pub page_size: i32,

@@ -1,9 +1,18 @@
-import axios from "axios";
+import axios, {AxiosError} from "axios";
+import {Result} from "./Structs";
+import {message} from "antd";
 
 
 const http_client = axios.create({});
 
+http_client.defaults.withCredentials = true;
 http_client.defaults.baseURL = "http://localhost:8002";
+message.config({
+    top: 50,
+    duration: 2,
+    maxCount: 4,
+    rtl: false,
+});
 
 //一些配置，发起请求和响应可以打印出来查看
 http_client.interceptors.request.use((config) => {
@@ -25,6 +34,15 @@ http_client.interceptors.response.use((config) => {
         return config.data;
     }
     return config;
+}, (error: AxiosError) => {
+    if (error.response) {
+        let result: Result = error.response.data as any;
+        if (result.msg) {
+            message.error(result.msg);
+        }
+    } else {
+        message.error("请求失败!");
+    }
 })
 
 export default http_client;

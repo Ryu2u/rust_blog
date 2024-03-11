@@ -39,7 +39,7 @@ async fn api_login(
                 user.filter_pwd();
                 info!("login success -> {:?}", user);
                 session.insert("user_id", user.id).expect("can't insert session");
-                Ok(serde_json::to_string(&user))
+                Ok(R::<User>::ok_obj(user.clone()))
             }
         }
         Err(e) => {

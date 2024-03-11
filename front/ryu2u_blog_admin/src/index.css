@@ -11,6 +11,9 @@ html {
     padding: 0;
     background-color: var(--color-bg-default);
 }
+.flex{
+    display: flex;
+}
 
 @media (prefers-color-scheme: dark) {
     :root {

@@ -66,7 +66,9 @@ async fn main() -> std::io::Result<()> {
         // 跨域设置
         let cors = Cors::default()
             .allowed_origin("http://localhost:4123")
-            .allowed_methods(vec!["GET", "POST"])
+            .allowed_origin("http://localhost:4124")
+            .supports_credentials()
+            .allowed_methods(vec!["GET", "POST","OPTIONS"])
             .allow_any_header();
         let white_list = FilterWhiteList(
             vec![

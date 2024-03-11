@@ -1,16 +1,22 @@
 import './LoginPage.scss'
 import {LockOutlined, UserOutlined} from '@ant-design/icons';
-import {Button, Checkbox, Form, Input} from 'antd';
+import {Button, Checkbox, Form, Input, message} from 'antd';
 import { useNavigate} from "react-router";
+import LoginService from "../service/LoginService";
 
 
 export function LoginPage() {
 
+    const [messageApi, contextHolder] = message.useMessage();
     const navigate = useNavigate();
 
     const onFinish = (values: any) => {
         console.log('Received values of form: ', values);
-        navigate("/");
+        // navigate("/");
+        LoginService.login(values['username'],values['password'],values['remember']).then((r) => {
+            messageApi.success(r.msg);
+            navigate('/');
+        })
     };
 
     return (

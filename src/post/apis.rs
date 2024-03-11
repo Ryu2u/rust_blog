@@ -82,7 +82,17 @@ async fn api_post_get(
         }
         let mut post = res.pop().unwrap();
         info!("{:?}", post);
-        post.visits += 1;
+
+        match post.visits {
+            None => {
+                post.visits = Some(1);
+            }
+            Some(mut v) => {
+                v += 1;
+                post.visits = Some(v);
+            }
+        }
+
         if let Err(_) = Post::update_by_column(&**db, &post, "id").await {
             Err(Exception::BadRequest("update post failed!".to_string()))
         } else {
