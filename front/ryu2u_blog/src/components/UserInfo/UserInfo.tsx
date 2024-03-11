@@ -1,7 +1,8 @@
 import "./UserInfo.scss"
 import {Tooltip} from "antd";
-import {useEffect, useRef, useState} from "react";
-import * as randPoetry  from "jinrishici";
+import {useEffect, useRef} from "react";
+// @ts-ignore
+import * as randPoetry from "jinrishici";
 import {PoetryRequestData} from "../../common/Structs";
 
 export function UserInfo() {
@@ -9,19 +10,19 @@ export function UserInfo() {
     const loadingRef = useRef<boolean>(false);
 
     useEffect(() => {
-        if (loadingRef.current){
+        if (loadingRef.current) {
             return;
         }
         loadingRef.current = true;
         let dom = document.querySelector(".write_poem");
-        randPoetry.load((res:PoetryRequestData) => {
+        randPoetry.load((res: PoetryRequestData) => {
             let poetry = res.data;
             console.log(`${poetry.content} --${poetry.origin.author}<${poetry.origin.title}>`);
             let data = '';
             let content = poetry.content;
             let author = poetry.origin.author;
-            let rawContent = poetry.origin.content;
-            let dynasty = poetry.origin.dynasty;
+            // let rawContent = poetry.origin.content;
+            // let dynasty = poetry.origin.dynasty;
             let title = poetry.origin.title;
             data += content;
             data += `——${author}《${title}》`
@@ -31,7 +32,7 @@ export function UserInfo() {
             }
         })
 
-    },[]);
+    }, []);
 
     async function writing(dom: Element, data: string, index: number, flag: number) {
         if (index == data.length) {
@@ -54,7 +55,7 @@ export function UserInfo() {
                 dom.innerHTML = data.substring(0, index);
                 setTimeout(() => {
                     writing(dom, data, index, flag);
-                }, 50);
+                }, 200);
             })
         }
     }

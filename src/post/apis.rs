@@ -116,7 +116,7 @@ mod test {
 
     #[tokio::test]
     async fn test_post_add() {
-        let path = "D:\\Haitao\\MarkDown\\笔记";
+        let path = "E:\\MarkDown";
         // let file = File::open(Path::new(path)).await;
         let res_dir = read_dir(Path::new(path));
         match res_dir {

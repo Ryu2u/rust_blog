@@ -1,7 +1,7 @@
 import './home.scss'
 import {FloatButton} from "antd";
 import {QuestionCircleOutlined, SettingOutlined, SyncOutlined} from '@ant-design/icons';
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useState} from "react";
 import {Header} from "../components/Header";
 import {Footer} from "../components/Footer";
 import {SideBar} from "../components/SideBar";
@@ -65,7 +65,7 @@ export function Home() {
                     </div>
                 </div>
 
-                <SideBar/>
+                <SideBar catalogJson={""}/>
             </div>
 
             <Footer/>
