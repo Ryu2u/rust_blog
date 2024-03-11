@@ -21,7 +21,7 @@ async fn api_post_add(
 ) -> Result<impl Responder, Exception> {
     let _ = span!(Level::DEBUG, "api_post_add");
     info!("{:?}", post);
-    if post.author.len() > 10 {
+    if post.author.len() > 100 {
         return Err(Exception::BadRequest("author is too long!".to_string()));
     }
 
