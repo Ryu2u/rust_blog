@@ -3,16 +3,9 @@ import {useEffect, useState} from "react";
 import {Outlet, useNavigate} from "react-router";
 
 import {
-    AppstoreOutlined,
-    BarChartOutlined,
-    CloudOutlined, ContainerOutlined, DashboardOutlined, InfoCircleOutlined, LoginOutlined,
+    DashboardOutlined, InfoCircleOutlined, LoginOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined, MessageOutlined, ReadOutlined, ReconciliationOutlined,
-    ShopOutlined,
-    TeamOutlined,
-    UploadOutlined,
-    UserOutlined,
-    VideoCameraOutlined,
 } from '@ant-design/icons';
 import type {MenuProps} from 'antd';
 import {Avatar, Button, Layout, Menu, theme} from 'antd';
@@ -30,7 +23,7 @@ const items: MenuProps['items'] = [
         danger: false // 展示错误状态样式
     },
     {
-        key: "/article", // item 唯一标志
+        key: "/article/list", // item 唯一标志
         title: '文章', // 设置收缩时展示的悬浮标题
         label: "文章", // 菜单显示在界面上的标题项
         icon: createElement(ReadOutlined), // 图标
@@ -80,7 +73,7 @@ export function Admin() {
 
     useEffect(() => {
 
-        window.onresize = (e) => {
+        window.onresize = () => {
             // console.log(window.innerWidth);
             if (window.innerWidth < 1100) {
                 setCollapsed(true);
@@ -122,14 +115,14 @@ export function Admin() {
                 />
                 <div className={"flex current-profile"}>
                     <div className={"user-avatar"}>
-                        <Avatar size={40} src={<img src={"../../public/vite.svg"} alt="avatar"/>}/>
+                        <Avatar size={40} src={<img src={"../../public/react.svg"} alt="avatar"/>}/>
                     </div>
                     <div className={"flex profile-btn"}>
                         <div className={"profile-btn-item"}>
-                         <Button >1</Button>
+                            <Button>1</Button>
                         </div>
                         <div className={"profile-btn-item"}>
-                            <Button shape="circle" icon={<LoginOutlined />} onClick={logout}>
+                            <Button shape="circle" icon={<LoginOutlined/>} onClick={logout}>
                             </Button>
                         </div>
                     </div>

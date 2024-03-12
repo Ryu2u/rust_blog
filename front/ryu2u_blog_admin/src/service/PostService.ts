@@ -7,6 +7,10 @@ namespace PostService {
         return http_client.post(`/post/add`, post);
     }
 
+    export function postListPage(pageInfo: PageInfo): Promise<Result> {
+        return http_client.post(`/post/page`, pageInfo);
+    }
+
 }
 
 export default PostService;
