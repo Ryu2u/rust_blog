@@ -1,11 +1,11 @@
 use crate::post::structs::PageInfo;
 use crate::utils::time_utils::get_sys_time;
 use crate::{info, Exception, Post, R};
-use actix_web::web::to;
+
 use actix_web::{get, post, web, Responder};
 use rbatis::RBatis;
-use rbatis::rbdc::db::ExecResult;
-use rbatis::rbdc::Error;
+
+
 use tracing::{instrument, span, Level};
 
 pub fn post_scope() -> actix_web::Scope {
@@ -52,7 +52,7 @@ async fn api_post_add(
 #[instrument]
 #[post("/page")]
 async fn api_post_list_page(
-    mut page_info: web::Json<PageInfo<Post>>,
+    page_info: web::Json<PageInfo<Post>>,
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
     post_list_page(page_info, db, false).await
@@ -61,7 +61,7 @@ async fn api_post_list_page(
 #[instrument]
 #[post("/admin/list/page")]
 async fn api_post_list_page_admin(
-    mut page_info: web::Json<PageInfo<Post>>,
+    page_info: web::Json<PageInfo<Post>>,
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
     post_list_page(page_info, db, true).await
@@ -203,10 +203,10 @@ mod test {
     use rbatis::RBatis;
     use rbdc_sqlite::SqliteDriver;
     use std::fs::{read_dir, File};
-    use std::future::Future;
-    use std::io::{Read, Write};
+    
+    use std::io::{Read};
     use std::path::Path;
-    use tracing_subscriber::fmt::format;
+    
 
     #[tokio::test]
     async fn test_post_add() {

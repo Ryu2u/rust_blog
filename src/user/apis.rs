@@ -3,10 +3,10 @@ use crate::user::structs::LoginDto;
 use crate::{error, AppState, Exception, User, R};
 use actix_easy_multipart::MultipartForm;
 use actix_web::{get, post, web, Responder};
-use rbatis::rbdc::Error;
+
 use rbatis::RBatis;
-use std::fs::File;
-use std::io::Seek;
+
+
 use actix_session::Session;
 use tracing::log::info;
 use tracing::{event, instrument, span, Level};
@@ -123,13 +123,13 @@ pub async fn api_file_test(form: MultipartForm<FileForm>) -> Result<impl Respond
 mod test {
     use crate::api_greet;
     use actix_web::{test, web, App};
-    use tracing::instrument;
+    
 
     #[tokio::test]
     async fn test_greet() {
         let app = test::init_service(
             App::new()
-                .service({ web::scope("/app").route("/greet/{name}", web::get().to(api_greet)) }),
+                .service(web::scope("/app").route("/greet/{name}", web::get().to(api_greet))),
         )
             .await;
         let req = test::TestRequest::get().uri("/app/greet/123").to_request();

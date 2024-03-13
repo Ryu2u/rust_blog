@@ -1,7 +1,7 @@
 use std::future::{ready, Ready};
 use actix_session::SessionExt;
 
-use crate::{AppState, Exception};
+use crate::{AppState};
 use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}, error, Error, web};
 use actix_web::http::Method;
 use futures_util::future::LocalBoxFuture;

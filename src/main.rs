@@ -3,12 +3,12 @@ extern crate core;
 use actix_cors::Cors;
 use actix_easy_multipart::MultipartFormConfig;
 use actix_web::body::BoxBody;
-use actix_web::{error, guard, http, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_web::{error, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use std::env;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{Read};
-use std::time::{SystemTime, UNIX_EPOCH};
+
 use actix_session::SessionMiddleware;
 use actix_session::storage::CookieSessionStore;
 use actix_web::cookie::Key;
@@ -16,15 +16,15 @@ use actix_web::cookie::Key;
 use actix_web::guard::{Guard, GuardContext};
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
-use actix_web::web::get;
+
 use serde::{Deserialize, Serialize};
 
-use derive_more::Error;
+
 use dotenv::dotenv;
 use rbatis::RBatis;
 use rbdc_sqlite::SqliteDriver;
-use serde_json::json;
-use tracing::log::{debug, error, info};
+
+use tracing::log::{error, info};
 
 mod middleware;
 mod post;
@@ -147,6 +147,7 @@ impl<T: Serialize> R<T> {
         }
     }
 
+    #[allow(unused)]
     fn ok_msg_obj(msg: &str, obj: T) -> R<T> {
         R {
             code: 200,
@@ -158,7 +159,6 @@ impl<T: Serialize> R<T> {
 
 #[derive(Debug)]
 enum Exception {
-    ValidationError { field: String },
     InternalError,
     NotFound,
     BadRequest(String),
@@ -177,9 +177,6 @@ impl Guard for ContentTypeGuard {
 impl Display for Exception {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match &self {
-            Exception::ValidationError { field } => {
-                write!(f, "Validation error on field : {}", field)
-            }
             Exception::InternalError => write!(f, "internal error"),
             Exception::BadRequest(msg) => write!(f, "{}", msg),
             Exception::NotFound => write!(f, "not found"),
@@ -191,7 +188,6 @@ impl error::ResponseError for Exception {
     fn status_code(&self) -> StatusCode {
         match *self {
             Exception::BadRequest(_) => StatusCode::BAD_REQUEST,
-            Exception::ValidationError { .. } => StatusCode::BAD_REQUEST,
             Exception::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             Exception::NotFound => StatusCode::NOT_FOUND,
         }

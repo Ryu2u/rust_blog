@@ -1,7 +1,7 @@
 use crate::utils::time_utils::get_sys_time;
-use rbatis::{crud, impl_insert, impl_select};
+use rbatis::{crud, impl_select};
 use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
+
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct User {
