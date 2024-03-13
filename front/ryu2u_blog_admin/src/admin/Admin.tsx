@@ -10,6 +10,7 @@ import {
 import type {MenuProps} from 'antd';
 import {Avatar, Button, Layout, Menu, theme} from 'antd';
 import {createElement} from "react";
+import LoginService from "../service/LoginService";
 
 const {Header, Content, Footer, Sider} = Layout;
 
@@ -91,7 +92,11 @@ export function Admin() {
 
 
     const logout = () => {
-        navigate("/login");
+        LoginService.logout().then((res) => {
+            if (res && res.code == 200) {
+                navigate('/login');
+            }
+        });
     }
 
     return (

@@ -68,7 +68,7 @@ async fn main() -> std::io::Result<()> {
             .allowed_origin("http://localhost:4123")
             .allowed_origin("http://localhost:4124")
             .supports_credentials()
-            .allowed_methods(vec!["GET", "POST","OPTIONS"])
+            .allowed_methods(vec!["GET", "POST", "OPTIONS"])
             .allow_any_header();
         let white_list = FilterWhiteList(
             vec![
@@ -131,10 +131,10 @@ impl<T: Serialize> R<T> {
         }
     }
 
-    fn ok_msg(msg: String) -> R<()> {
+    fn ok_msg(msg: &str) -> R<()> {
         R {
             code: 200,
-            msg,
+            msg: msg.to_string(),
             obj: (),
         }
     }
@@ -143,6 +143,14 @@ impl<T: Serialize> R<T> {
         R {
             code: 200,
             msg: "success".to_string(),
+            obj,
+        }
+    }
+
+    fn ok_msg_obj(msg: &str, obj: T) -> R<T> {
+        R {
+            code: 200,
+            msg: msg.to_string(),
             obj,
         }
     }
@@ -161,7 +169,8 @@ struct ContentTypeGuard;
 impl Guard for ContentTypeGuard {
     fn check(&self, req: &GuardContext<'_>) -> bool {
         info!("uri -> {}", req.head().uri);
-        req.head().headers.contains_key(http::header::CONTENT_TYPE)
+        // req.head().headers.contains_key(http::header::CONTENT_TYPE)
+        true
     }
 }
 

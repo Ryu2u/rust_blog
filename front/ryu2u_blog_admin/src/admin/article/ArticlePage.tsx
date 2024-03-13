@@ -13,7 +13,7 @@ export function ArticlePage() {
     }, [])
 
     const toArticleEdit = () => {
-        navigate("/article/edit");
+        navigate("/article/new");
     }
 
     return (

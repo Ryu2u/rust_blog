@@ -1,11 +1,12 @@
 import {MdEditor} from "../../comonents/MdEditor";
-import {Button, Form, Input, Modal, Switch} from "antd";
+import {Button, Form, Input, message, Modal, Switch} from "antd";
 import {DeliveredProcedureOutlined, SaveOutlined} from "@ant-design/icons";
 import type {DraggableData, DraggableEvent} from 'react-draggable';
 import Draggable from 'react-draggable';
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import PostService from "../../service/PostService";
 import {Post} from "../../common/Structs";
+import {useParams} from "react-router-dom";
 
 const layout = {
     labelCol: {span: 4},
@@ -17,7 +18,25 @@ export function ArticleEditPage() {
 
     const [form] = Form.useForm();
     const [originContent, setOriginContent] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [initValue, setInitValue] = useState("");
+    const param = useParams();
+    const postRef = useRef(new Post());
 
+    useEffect(() => {
+        const id = param['id'];
+        if (id) {
+            PostService.post_get(id).then(res => {
+                let post: Post = res.obj;
+                postRef.current = post;
+                setInitValue(post.original_content);
+                setLoading(false);
+            })
+        } else {
+            setLoading(false);
+        }
+
+    }, [param])
 
     function getContent(content: string) {
         setOriginContent(content);
@@ -43,6 +62,7 @@ export function ArticleEditPage() {
 
     const onStart = (_event: DraggableEvent, uiData: DraggableData) => {
         const {clientWidth, clientHeight} = window.document.documentElement;
+        // @ts-ignore
         const targetRect = draggleRef.current?.getBoundingClientRect();
         if (!targetRect) {
             return;
@@ -58,6 +78,14 @@ export function ArticleEditPage() {
 
     const onFinish = (values: any) => {
         console.log('Finish:', values);
+        if (postRef.current.id) {
+            addPost(values);
+        } else {
+            updatePost();
+        }
+    };
+
+    function addPost(values: any) {
         let post: Post = values;
         post.is_view = post.is_view ? 1 : 0;
         post.disallow_comment = post.disallow_comment ? 1 : 0;
@@ -69,12 +97,25 @@ export function ArticleEditPage() {
             setOpen(false);
             form.resetFields();
         })
-    };
+    }
+
+    function updatePost() {
+        postRef.current.original_content = originContent;
+        PostService.post_update(postRef.current).then(res => {
+            message.success(res.msg);
+
+        });
+
+    }
+
+    const saveClick = () => {
+        updatePost();
+    }
 
     return (
         <>
             <div className={"article-tool-div"}>
-                <Button type={"default"}>
+                <Button type={"default"} onClick={saveClick}>
                     <SaveOutlined/>
                     保存
                 </Button>
@@ -83,7 +124,10 @@ export function ArticleEditPage() {
                     发布
                 </Button>
             </div>
-            <MdEditor setContent={getContent}/>
+            {
+                !loading &&
+                <MdEditor getContent={getContent} content={initValue}/>
+            }
             <Modal
                 title={
                     <div

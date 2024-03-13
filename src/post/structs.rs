@@ -81,7 +81,13 @@ impl_select!(
 
 impl_select!(
     Post{
-        select_page(offset:i32,size: i32) => "`limit ${offset} , #{size}`"
+        select_page(offset:i32,size: i32) => "`where is_view = 1 limit ${offset} , #{size}`"
+    }
+);
+
+impl_select!(
+    Post{
+        select_page_admin(offset:i32,size: i32) => "`limit ${offset} , #{size}`"
     }
 );
 

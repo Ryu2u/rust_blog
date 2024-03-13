@@ -1,5 +1,7 @@
-import http_client from "../common/HttpClient";
 import {PageInfo, Post, Result} from "../common/Structs";
+import {http_client} from "../common/AxioConfig";
+
+
 
 namespace PostService {
 
@@ -8,9 +10,17 @@ namespace PostService {
     }
 
     export function postListPage(pageInfo: PageInfo): Promise<Result> {
-        return http_client.post(`/post/page`, pageInfo);
+        return http_client.post(`/post/admin/list/page`, pageInfo);
     }
 
+    export function post_get(id: number): Promise<Result> {
+        return http_client.get(`/post/admin/get/${id}`);
+    }
+
+    export function post_update(data: Post):Promise<Result> {
+        return http_client.post(`/post/admin/update`,data);
+
+    }
 }
 
 export default PostService;

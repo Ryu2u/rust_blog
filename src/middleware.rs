@@ -54,8 +54,7 @@ impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let url = req.path();
-        info!("request url is : {}", url);
-        info!("{}",req.method() == Method::OPTIONS);
+        info!("request url is : {} {} ",req.method(), url);
         if req.method() == Method::OPTIONS {
             let fut = self.service.call(req);
             return Box::pin(async move { Ok(fut.await?) });
@@ -68,10 +67,10 @@ impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
             info!("app_state : {}", app_state.app_name);
         }
 
-
         match white_list_op {
             None => {
                 Box::pin(async move { Err(error::ErrorUnauthorized("unauthorized")) })
+                // Box::pin(async move { Err(Exception::NotFound) })
             }
             Some(white_list) => {
                 let white_list = &white_list.0;

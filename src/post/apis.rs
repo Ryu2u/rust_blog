@@ -4,6 +4,8 @@ use crate::{info, Exception, Post, R};
 use actix_web::web::to;
 use actix_web::{get, post, web, Responder};
 use rbatis::RBatis;
+use rbatis::rbdc::db::ExecResult;
+use rbatis::rbdc::Error;
 use tracing::{instrument, span, Level};
 
 pub fn post_scope() -> actix_web::Scope {
@@ -11,6 +13,9 @@ pub fn post_scope() -> actix_web::Scope {
         .service(api_post_add)
         .service(api_post_get)
         .service(api_post_list_page)
+        .service(api_post_list_page_admin)
+        .service(api_post_get_admin)
+        .service(api_post_update)
 }
 
 #[instrument]
@@ -19,13 +24,102 @@ async fn api_post_add(
     post: web::Json<Post>,
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
+    match check_post(&**db, &post).await {
+        Ok(md_html) => {
+            let post = Post::new(
+                post.title.clone(),
+                post.author.clone(),
+                post.original_content.clone(),
+                md_html,
+                post.format_content.len() as i32,
+            );
+
+            match Post::insert(&**db, &post).await {
+                Ok(_) => {
+                    Ok(R::<()>::ok_msg("添加成功!"))
+                }
+                Err(_) => {
+                    Err(Exception::BadRequest("add post failed!".to_string()))
+                }
+            }
+        }
+        Err(e) => {
+            Err(e)
+        }
+    }
+}
+
+#[instrument]
+#[post("/page")]
+async fn api_post_list_page(
+    mut page_info: web::Json<PageInfo<Post>>,
+    db: web::Data<RBatis>,
+) -> Result<impl Responder, Exception> {
+    post_list_page(page_info, db, false).await
+}
+
+#[instrument]
+#[post("/admin/list/page")]
+async fn api_post_list_page_admin(
+    mut page_info: web::Json<PageInfo<Post>>,
+    db: web::Data<RBatis>,
+) -> Result<impl Responder, Exception> {
+    post_list_page(page_info, db, true).await
+}
+
+
+#[instrument]
+#[get("/admin/get/{id}")]
+async fn api_post_get_admin(
+    id: web::Path<i32>,
+    db: web::Data<RBatis>,
+) -> Result<impl Responder, Exception> {
+    post_get(id, db, true).await
+}
+
+#[instrument]
+#[get("/get/{id}")]
+async fn api_post_get(
+    id: web::Path<i32>,
+    db: web::Data<RBatis>,
+) -> Result<impl Responder, Exception> {
+    post_get(id, db, false).await
+}
+
+#[instrument]
+#[post("/admin/update")]
+async fn api_post_update(
+    mut post: web::Json<Post>,
+    db: web::Data<RBatis>,
+) -> Result<impl Responder, Exception> {
+    match check_post(&**db, &post).await {
+        Err(e) => Err(e),
+        Ok(format_str) => {
+            post.format_content = format_str;
+            post.update_time = Some(get_sys_time());
+
+            match Post::update_by_column(&**db, &post, "id").await {
+                Ok(_) => {
+                    Ok(R::<()>::ok_msg("更新成功!"))
+                }
+                Err(_) => {
+                    Err(Exception::BadRequest("更新失败，请重试".to_string()))
+                }
+            }
+        }
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+async fn check_post(db: &RBatis, post: &Post) -> Result<String, Exception> {
     let _ = span!(Level::DEBUG, "api_post_add");
     info!("{:?}", post);
     if post.author.len() > 100 {
         return Err(Exception::BadRequest("author is too long!".to_string()));
     }
 
-    if let Ok(vec) = Post::select_by_title(&**db, post.title.clone()).await {
+    if let Ok(vec) = Post::select_by_title(db, post.title.clone()).await {
         if !vec.is_empty() {
             return Err(Exception::BadRequest(format!(
                 "title -> [{}] is exists",
@@ -36,33 +130,28 @@ async fn api_post_add(
     // "format md -> html"
     let md_html = markdown::to_html(post.original_content.as_str());
 
-    let post = Post::new(
-        post.title.clone(),
-        post.author.clone(),
-        post.original_content.clone(),
-        md_html,
-        post.format_content.len() as i32,
-    );
-
-    if let Err(_) = Post::insert(&**db, &post).await {
-        Err(Exception::BadRequest("add post failed!".to_string()))
-    } else {
-        Ok(R::<()>::ok_msg("add success".to_string()))
-    }
+    Ok(md_html)
 }
 
-#[instrument]
-#[post("/page")]
-async fn api_post_list_page(
-    mut page_info: web::Json<PageInfo<Post>>,
-    db: web::Data<RBatis>,
-) -> Result<impl Responder, Exception> {
+
+async fn post_list_page(mut page_info: web::Json<PageInfo<Post>>,
+                        db: web::Data<RBatis>, is_admin: bool) -> Result<impl Responder, Exception> {
     let page_num = page_info.page_num;
     let page_size = page_info.page_size;
     let limit = (page_num - 1) * page_size;
     let total = Post::count_all(&**db).await;
     page_info.total = total;
-    if let Ok(vec) = Post::select_page(&**db, limit, page_size).await {
+    let res;
+    if is_admin {
+        res = Post::select_page_admin(&**db, limit, page_size).await;
+    } else {
+        res = Post::select_page(&**db, limit, page_size).await;
+    }
+    if let Ok(mut vec) = res {
+        vec.iter_mut().for_each(|i| {
+            i.format_content = "".to_string();
+            i.original_content = "".to_string();
+        });
         page_info.list = Some(vec);
         Ok(R::<PageInfo<Post>>::ok_obj(page_info.clone()))
     } else {
@@ -70,19 +159,24 @@ async fn api_post_list_page(
     }
 }
 
-#[instrument]
-#[get("/get/{id}")]
-async fn api_post_get(
-    id: web::Path<i32>,
-    db: web::Data<RBatis>,
-) -> Result<impl Responder, Exception> {
+
+async fn post_get(id: web::Path<i32>,
+                  db: web::Data<RBatis>,
+                  is_admin: bool) -> Result<impl Responder, Exception> {
     if let Ok(mut res) = Post::select_by_id(&**db, *id).await {
         if res.is_empty() {
             return Err(Exception::NotFound);
         }
         let mut post = res.pop().unwrap();
-        info!("{:?}", post);
 
+        if is_admin {
+            return Ok(R::<Post>::ok_obj(post));
+        }
+        if post.is_view != 1 {
+            return Err(Exception::NotFound);
+        }
+
+        info!("{:?}", post);
         match post.visits {
             None => {
                 post.visits = Some(1);
@@ -92,7 +186,6 @@ async fn api_post_get(
                 post.visits = Some(v);
             }
         }
-
         if let Err(_) = Post::update_by_column(&**db, &post, "id").await {
             Err(Exception::BadRequest("update post failed!".to_string()))
         } else {
@@ -102,6 +195,7 @@ async fn api_post_get(
         Err(Exception::InternalError)
     }
 }
+
 
 #[cfg(test)]
 mod test {

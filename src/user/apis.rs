@@ -15,6 +15,7 @@ pub fn user_scope() -> actix_web::Scope {
     actix_web::web::scope("/user")
         .service(api_login)
         .service(api_user_get)
+        .service(api_logout)
 }
 
 #[post("/login")]
@@ -47,9 +48,13 @@ async fn api_login(
             Err(Exception::BadRequest("Error".to_string()))
         }
     }
+}
 
-    // scope.in_scope(|| {});
-    // Ok(R::ok_obj(login_dto))
+#[post("/logout")]
+pub async fn api_logout(session: Session) -> Result<impl Responder, Exception> {
+    info!("api_logout in");
+    session.clear();
+    Ok(R::<()>::ok())
 }
 
 #[instrument]
