@@ -5,9 +5,15 @@ use crate::{info, Exception, Post, R};
 use actix_web::{get, post, web, Responder};
 use rbatis::RBatis;
 
-
 use tracing::{instrument, span, Level};
 
+/// 文章 接口
+/// api_post_add -> 文章添加
+/// api_post_get -> 根据id 获取仅供展示的文章 ()
+/// api_post_list_page -> 分页获取仅供展示的文章列表
+/// api_post_list_page_admin -> 分页获取所有文章列表
+/// api_post_list_get_admin -> 根据id获取文章
+/// api_post_list_update -> 根据id更新文章
 pub fn post_scope() -> actix_web::Scope {
     actix_web::web::scope("/post")
         .service(api_post_add)
@@ -24,7 +30,7 @@ async fn api_post_add(
     post: web::Json<Post>,
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
-    match check_post(&**db, &post).await {
+    match check_post(&db, &post).await {
         Ok(md_html) => {
             let post = Post::new(
                 post.title.clone(),
@@ -35,17 +41,11 @@ async fn api_post_add(
             );
 
             match Post::insert(&**db, &post).await {
-                Ok(_) => {
-                    Ok(R::<()>::ok_msg("添加成功!"))
-                }
-                Err(_) => {
-                    Err(Exception::BadRequest("add post failed!".to_string()))
-                }
+                Ok(_) => Ok(R::<()>::ok_msg("添加成功!")),
+                Err(_) => Err(Exception::BadRequest("add post failed!".to_string())),
             }
         }
-        Err(e) => {
-            Err(e)
-        }
+        Err(e) => Err(e),
     }
 }
 
@@ -66,7 +66,6 @@ async fn api_post_list_page_admin(
 ) -> Result<impl Responder, Exception> {
     post_list_page(page_info, db, true).await
 }
-
 
 #[instrument]
 #[get("/admin/get/{id}")]
@@ -99,12 +98,8 @@ async fn api_post_update(
             post.update_time = Some(get_sys_time());
 
             match Post::update_by_column(&**db, &post, "id").await {
-                Ok(_) => {
-                    Ok(R::<()>::ok_msg("更新成功!"))
-                }
-                Err(_) => {
-                    Err(Exception::BadRequest("更新失败，请重试".to_string()))
-                }
+                Ok(_) => Ok(R::<()>::ok_msg("更新成功!")),
+                Err(_) => Err(Exception::BadRequest("更新失败，请重试".to_string())),
             }
         }
     }
@@ -112,6 +107,12 @@ async fn api_post_update(
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
+///
+/// 判断post对象是否合法
+///
+/// db: 数据库对象
+/// post: 文章对象
+///
 async fn check_post(db: &RBatis, post: &Post) -> Result<String, Exception> {
     let _ = span!(Level::DEBUG, "api_post_add");
     info!("{:?}", post);
@@ -133,20 +134,27 @@ async fn check_post(db: &RBatis, post: &Post) -> Result<String, Exception> {
     Ok(md_html)
 }
 
-
-async fn post_list_page(mut page_info: web::Json<PageInfo<Post>>,
-                        db: web::Data<RBatis>, is_admin: bool) -> Result<impl Responder, Exception> {
+///
+/// 根据id获取文章
+/// page_info: 分页对象
+/// db: 数据库对象
+/// is_admin: 是否能够获取未展示的文章
+///
+async fn post_list_page(
+    mut page_info: web::Json<PageInfo<Post>>,
+    db: web::Data<RBatis>,
+    is_admin: bool,
+) -> Result<impl Responder, Exception> {
     let page_num = page_info.page_num;
     let page_size = page_info.page_size;
     let limit = (page_num - 1) * page_size;
-    let total = Post::count_all(&**db).await;
+    let total = Post::count_all(&db).await;
     page_info.total = total;
-    let res;
-    if is_admin {
-        res = Post::select_page_admin(&**db, limit, page_size).await;
+    let res = if is_admin {
+        Post::select_page_admin(&**db, limit, page_size).await
     } else {
-        res = Post::select_page(&**db, limit, page_size).await;
-    }
+        Post::select_page(&**db, limit, page_size).await
+    };
     if let Ok(mut vec) = res {
         vec.iter_mut().for_each(|i| {
             i.format_content = "".to_string();
@@ -159,10 +167,17 @@ async fn post_list_page(mut page_info: web::Json<PageInfo<Post>>,
     }
 }
 
-
-async fn post_get(id: web::Path<i32>,
-                  db: web::Data<RBatis>,
-                  is_admin: bool) -> Result<impl Responder, Exception> {
+///
+/// 根据id获取文章
+/// id: 文章id
+/// db: 数据库对象
+/// is_admin: 是否能够获取未展示的文章
+///
+async fn post_get(
+    id: web::Path<i32>,
+    db: web::Data<RBatis>,
+    is_admin: bool,
+) -> Result<impl Responder, Exception> {
     if let Ok(mut res) = Post::select_by_id(&**db, *id).await {
         if res.is_empty() {
             return Err(Exception::NotFound);
@@ -186,7 +201,7 @@ async fn post_get(id: web::Path<i32>,
                 post.visits = Some(v);
             }
         }
-        if let Err(_) = Post::update_by_column(&**db, &post, "id").await {
+        if Post::update_by_column(&**db, &post, "id").await.is_err() {
             Err(Exception::BadRequest("update post failed!".to_string()))
         } else {
             Ok(R::<Post>::ok_obj(post))
@@ -196,17 +211,15 @@ async fn post_get(id: web::Path<i32>,
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use crate::Post;
     use rbatis::RBatis;
     use rbdc_sqlite::SqliteDriver;
     use std::fs::{read_dir, File};
-    
-    use std::io::{Read};
+
+    use std::io::Read;
     use std::path::Path;
-    
 
     #[tokio::test]
     async fn test_post_add() {

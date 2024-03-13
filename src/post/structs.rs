@@ -5,8 +5,7 @@ use actix_easy_multipart::MultipartForm;
 use rbatis::{crud, impl_select, RBatis};
 use serde::{Deserialize, Serialize};
 
-
-
+/// http form 传值测试
 #[derive(Debug, MultipartForm)]
 pub struct FileForm {
     pub title: Option<Text<String>>,
@@ -14,6 +13,7 @@ pub struct FileForm {
     pub file: Tempfile,
 }
 
+/// 文章实体对象
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Post {
     pub id: Option<i32>,
@@ -35,6 +35,7 @@ pub struct Post {
 }
 
 impl Post {
+    /// 构造函数
     pub fn new(
         title: String,
         author: String,
@@ -59,48 +60,52 @@ impl Post {
             likes: Some(0),
             word_count: Some(word_count),
             created_time: Some(created_time),
-            update_time: Some(created_time.clone()),
+            update_time: Some(created_time),
         }
     }
 
+    /// 查询 文章的数量
     pub async fn count_all(db: &RBatis) -> i32 {
-        let count = db
-            .query_decode("select count(*) as count from post", vec![])
+        db.query_decode("select count(*) as count from post", vec![])
             .await
-            .unwrap();
-        count
+            .unwrap()
     }
 }
 crud!(Post {});
 
+// 根据id 获取文章
 impl_select!(
     Post{
         select_by_id(id:i32) => "`where id = #{id}`"
     }
 );
 
+// 分页获取 已展示 的文章
 impl_select!(
     Post{
         select_page(offset:i32,size: i32) => "`where is_view = 1 limit ${offset} , #{size}`"
     }
 );
 
+// 分页查询所有的文章 (需要登录)
 impl_select!(
     Post{
         select_page_admin(offset:i32,size: i32) => "`limit ${offset} , #{size}`"
     }
 );
 
+// 根据 title 字段查询文章， title 不能重复
 impl_select!(
     Post{
         select_by_title(title:String) => "`where title = #{title}` limit 1"
     }
 );
 
+/// 分页 实体对象
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PageInfo<T>
-    where
-        T: Serialize,
+where
+    T: Serialize,
 {
     pub page_num: i32,
     pub page_size: i32,

@@ -2,7 +2,6 @@ use crate::utils::time_utils::get_sys_time;
 use rbatis::{crud, impl_select};
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct User {
     pub id: Option<i32>,
@@ -46,7 +45,7 @@ impl User {
 
 crud!(User {}, "tb_user");
 impl_select!(
-    User{select_by_username_pwd(username:String,password:String)
+    User{select_by_username_pwd(username:&str,password:&str)
         => "`where username =  #{username} and password = #{password}`"},"tb_user"
 );
 
@@ -58,5 +57,5 @@ impl_select!(
 pub struct LoginDto {
     pub username: String,
     pub password: String,
-    pub remember: bool
+    pub remember: bool,
 }

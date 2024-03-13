@@ -1,9 +1,12 @@
-use std::future::{ready, Ready};
 use actix_session::SessionExt;
+use std::future::{ready, Ready};
 
-use crate::{AppState};
-use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}, error, Error, web};
+use crate::AppState;
 use actix_web::http::Method;
+use actix_web::{
+    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
+    error, web, Error,
+};
 use futures_util::future::LocalBoxFuture;
 use tracing::log::{error, info};
 
@@ -11,40 +14,41 @@ use tracing::log::{error, info};
 // 1. Middleware initialization, middleware factory gets called with
 //    next service in chain as parameter.
 // 2. Middleware's call method gets called with normal request.
+/// 权限过滤器
 pub struct AuthFilter;
 
-// 过滤器白名单
+/// 过滤器白名单
 pub struct FilterWhiteList<'a>(pub Vec<&'a str>);
 
 // Middleware factory is `Transform` trait
 // `S` - type of the next service
 // `B` - type of response's body
 impl<S, B> Transform<S, ServiceRequest> for AuthFilter
-    where
-        S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=Error>,
-        S::Future: 'static,
-        B: 'static,
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
 {
     type Response = ServiceResponse<B>;
     type Error = Error;
-    type Transform = SayHiMiddleware<S>;
+    type Transform = AuthFilterMiddleware<S>;
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(SayHiMiddleware { service }))
+        ready(Ok(AuthFilterMiddleware { service }))
     }
 }
 
-pub struct SayHiMiddleware<S> {
+pub struct AuthFilterMiddleware<S> {
     service: S,
 }
 
-impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
-    where
-        S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=Error>,
-        S::Future: 'static,
-        B: 'static,
+impl<S, B> Service<ServiceRequest> for AuthFilterMiddleware<S>
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
 {
     type Response = ServiceResponse<B>;
     type Error = Error;
@@ -52,12 +56,13 @@ impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
 
     forward_ready!(service);
 
+    /// 权限过滤器验证
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let url = req.path();
-        info!("request url is : {} {} ",req.method(), url);
+        info!("request url is : {} {} ", req.method(), url);
         if req.method() == Method::OPTIONS {
             let fut = self.service.call(req);
-            return Box::pin(async move { Ok(fut.await?) });
+            return Box::pin(async move { fut.await });
         }
 
         let state_op: Option<&web::Data<AppState>> = req.app_data();
@@ -74,9 +79,9 @@ impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
             }
             Some(white_list) => {
                 let white_list = &white_list.0;
-                info!("white_list : {:?}",white_list);
+                info!("white_list : {:?}", white_list);
                 let mut valid: bool = false;
-                let _ = white_list.iter().for_each(|str| {
+                white_list.iter().for_each(|str| {
                     if url.contains(str) {
                         valid = true;
                     }
@@ -84,7 +89,7 @@ impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
 
                 if valid {
                     let fut = self.service.call(req);
-                    return Box::pin(async move { Ok(fut.await?) });
+                    return Box::pin(async move { fut.await });
                 }
 
                 // todo 验证身份
@@ -97,7 +102,7 @@ impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
 
                 if valid {
                     let fut = self.service.call(req);
-                    return Box::pin(async move { Ok(fut.await?) });
+                    Box::pin(async move { fut.await })
                 } else {
                     // Unable to verify identity
                     error!("unable to verify identity!");

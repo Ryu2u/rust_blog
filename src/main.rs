@@ -2,81 +2,43 @@ extern crate core;
 
 use actix_cors::Cors;
 use actix_easy_multipart::MultipartFormConfig;
-use actix_web::body::BoxBody;
-use actix_web::{error, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_web::{error, web, App, HttpServer};
 use std::env;
-use std::fmt::{Display, Formatter};
-use std::fs::File;
-use std::io::{Read};
-
-use actix_session::SessionMiddleware;
 use actix_session::storage::CookieSessionStore;
+use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
-
-use actix_web::guard::{Guard, GuardContext};
-use actix_web::http::header::ContentType;
-use actix_web::http::StatusCode;
-
-use serde::{Deserialize, Serialize};
-
-
 use dotenv::dotenv;
-use rbatis::RBatis;
-use rbdc_sqlite::SqliteDriver;
-
 use tracing::log::{error, info};
+use crate::post::structs::Post;
+use crate::user::structs::User;
+use config::*;
+use user::apis::*;
+use crate::middleware::{AuthFilter, FilterWhiteList};
+use post::apis::*;
 
+mod config;
 mod middleware;
 mod post;
 mod user;
 mod utils;
 
-use crate::post::structs::Post;
-use crate::user::structs::User;
-use user::apis::*;
-
-use crate::middleware::{AuthFilter, FilterWhiteList};
-use post::apis::*;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    // init log
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .pretty()
-        .init();
-    // init env
-    dotenv().ok();
+    let (server, blog_origin, admin_origin, db_path) = before_start();
 
-    // get ip
-    let server_ip =
-        env::var("SERVER_IP").expect("can't get env [SERVER_IP], please check the .env file!");
-    // get port
-    let server_port =
-        env::var("SERVER_PORT").expect("can't get env [SERVER_PORT], please check the .env file!");
+    let rbatis = init_rbatis(db_path).await;
 
-    let server = format!("{}:{}", server_ip, server_port);
-
-    info!("server is started by {}", server);
-
-    let rbatis = init_rbatis().await;
-
+    info!("config init success!");
     HttpServer::new(move || {
         // 跨域设置
         let cors = Cors::default()
-            .allowed_origin("http://localhost:4123")
-            .allowed_origin("http://localhost:4124")
+            .allowed_origin(blog_origin.as_str())
+            .allowed_origin(admin_origin.as_str())
             .supports_credentials()
             .allowed_methods(vec!["GET", "POST", "OPTIONS"])
             .allow_any_header();
-        let white_list = FilterWhiteList(
-            vec![
-                "/user/login",
-                "/post/get/",
-                "/post/page",
-            ]
-        );
+        let white_list = FilterWhiteList(vec!["/user/login", "/post/get/", "/post/page"]);
 
         App::new()
             // 配置全局对象
@@ -95,12 +57,11 @@ async fn main() -> std::io::Result<()> {
                 // create cookie based session middleware
                 SessionMiddleware::builder(CookieSessionStore::default(), Key::from(&[0; 64]))
                     .cookie_secure(false)
-                    .build()
+                    .build(),
             )
             .service({
                 web::scope("")
                     .guard(ContentTypeGuard)
-                    .service(test_scope())
                     .service(user_scope())
                     .service(post_scope())
             })
@@ -110,157 +71,37 @@ async fn main() -> std::io::Result<()> {
         .await
 }
 
-#[derive(Debug)]
-struct AppState {
-    app_name: String,
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-struct R<T: Serialize> {
-    code: i32,
-    msg: String,
-    obj: T,
-}
+/// load log and env
+fn before_start() -> (String, String, String, String) {
+    // init log
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .pretty()
+        .init();
+    // init env
+    dotenv().ok();
 
-impl<T: Serialize> R<T> {
-    fn ok() -> R<()> {
-        R {
-            code: 200,
-            msg: "success".to_string(),
-            obj: (),
-        }
-    }
+    // get ip
+    let server_ip = env::var("SERVER_IP")
+        .expect("can't get env [SERVER_IP], please check the .env file!");
+    // get port
+    let server_port = env::var("SERVER_PORT")
+        .expect("can't get env [SERVER_PORT], please check the .env file!");
 
-    fn ok_msg(msg: &str) -> R<()> {
-        R {
-            code: 200,
-            msg: msg.to_string(),
-            obj: (),
-        }
-    }
+    let blog_origin = env::var("BLOG_ORIGIN")
+        .expect("can't get env [BLOG_ORIGIN], please check the .env file!");
 
-    fn ok_obj(obj: T) -> R<T> {
-        R {
-            code: 200,
-            msg: "success".to_string(),
-            obj,
-        }
-    }
+    let admin_origin = env::var("ADMIN_ORIGIN")
+        .expect("can't get env [ADMIN_ORIGIN], please check the .env file!");
 
-    #[allow(unused)]
-    fn ok_msg_obj(msg: &str, obj: T) -> R<T> {
-        R {
-            code: 200,
-            msg: msg.to_string(),
-            obj,
-        }
-    }
-}
-
-#[derive(Debug)]
-enum Exception {
-    InternalError,
-    NotFound,
-    BadRequest(String),
-}
-
-struct ContentTypeGuard;
-
-impl Guard for ContentTypeGuard {
-    fn check(&self, req: &GuardContext<'_>) -> bool {
-        info!("uri -> {}", req.head().uri);
-        // req.head().headers.contains_key(http::header::CONTENT_TYPE)
-        true
-    }
-}
-
-impl Display for Exception {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            Exception::InternalError => write!(f, "internal error"),
-            Exception::BadRequest(msg) => write!(f, "{}", msg),
-            Exception::NotFound => write!(f, "not found"),
-        }
-    }
-}
-
-impl error::ResponseError for Exception {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            Exception::BadRequest(_) => StatusCode::BAD_REQUEST,
-            Exception::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            Exception::NotFound => StatusCode::NOT_FOUND,
-        }
-    }
-    fn error_response(&self) -> HttpResponse {
-        let result = R {
-            code: self.status_code().as_u16().into(),
-            msg: format!("{}", self),
-            obj: (),
-        };
-        error!("Error: {:?}", result);
-        HttpResponse::build(self.status_code())
-            .insert_header(ContentType::html())
-            .body(serde_json::to_string(&result).unwrap())
-    }
-}
-
-impl<T: Serialize> Responder for R<T> {
-    type Body = BoxBody;
-
-    fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
-        let body = serde_json::to_string(&self).unwrap();
-        HttpResponse::Ok()
-            // .content_type(ContentType::json())
-            .body(body)
-    }
-}
-
-fn test_scope() -> actix_web::Scope {
-    actix_web::web::scope("/test")
-        .route("/hello/{name}", web::get().to(api_greet))
-        .route("/tests", web::post().to(api_body))
-        .route("/state", web::get().to(api_state))
-        .route("/result", web::get().to(api_result))
-        .route("/upload", web::post().to(api_file_test))
-}
-
-async fn init_rbatis() -> RBatis {
     let db_path = env::var("DATABASE_URL")
         .expect("can't get env [DATABASE_URL], please check the .env file!");
 
-    let sqlite_url = format!("sqlite://{}", db_path);
-    info!("sqlite_url -> {}", sqlite_url);
-    let rbatis = RBatis::new();
-    rbatis.init(SqliteDriver {}, sqlite_url.as_str()).unwrap();
 
-    let db_path = std::path::Path::new(&db_path);
+    info!("server is started by {}:{}  blog_origin:{}  admin_origin:{}",server_ip, server_port,
+                         blog_origin, admin_origin );
 
-    if !db_path.exists() {
-        info!("{:?} is not exists,start to init!", db_path);
-        let mut file = File::open("schema.sql").expect("schema.sql is not exists!");
-        let mut init_sql = String::new();
-        file.read_to_string(&mut init_sql)
-            .expect("can't read file schema.sql");
-        rbatis
-            .exec(init_sql.as_str(), vec![])
-            .await
-            .expect("execute init sql failed!");
-        let user = User::new("admin", "123", "admin");
-        User::insert(&rbatis, &user)
-            .await
-            .expect("insert user failed");
-        let mut post = Post::new(
-            "title".to_string(),
-            "author".to_string(),
-            "original_content".to_string(),
-            "format_content".to_string(),
-            12,
-        );
-        post.summary = Some("summary".to_string());
-        Post::insert(&rbatis, &post)
-            .await
-            .expect("insert post failed");
-    }
-    rbatis
+    (format!("{}:{}", server_ip, server_port), blog_origin, admin_origin, db_path)
 }
