@@ -1,21 +1,53 @@
 import {useNavigate} from "react-router";
-import {useEffect} from "react";
 
 export function Header() {
 
     const navigate = useNavigate();
 
-
-    function logoClick(){
+    function logoClick() {
         navigate('/home');
+    }
+
+    const homeClick = () => {
+        navigate("/home");
     }
 
     return (
         <>
             <div className={"header"}>
-                <div className={"header-item"}>
+                <div className={"flex header-item"}>
                     <div className={"logo-div"} onClick={() => logoClick()}>
-                        Ryu2u の Blog
+                        🍑 の Blog
+                    </div>
+                    <div className={"header-menu"}>
+                        <ul>
+                            <a href={"#"} onClick={homeClick}>
+                                <li>
+                                    <span className={"fa fa-home"}></span>主页
+                                </li>
+                            </a>
+                            <a href={"#"}>
+                                <li>
+                                    <span className={"fa fa-align-justify"}></span>分类
+                                </li>
+                            </a>
+                            <a href={"#"}>
+                                <li>
+                                    <span className={"fa fa-link"}></span>链接
+                                </li>
+                            </a>
+                            <li>
+                                <a href={"#"}>
+                                    <span className={"fa fa-info-circle"}></span>关于
+                                </a>
+                            </li>
+                            <a href={"#"}>
+                                <li>
+                                    <span className={"fa fa-search"}></span>搜索
+                                </li>
+                            </a>
+                        </ul>
+
                     </div>
                 </div>
             </div>

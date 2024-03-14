@@ -15,12 +15,35 @@
   margin: auto;
   max-width: 1000px;
 }
+.header-menu{
+  margin-left: 100px;
+  overflow-x: hidden;
+}
+.header-menu ul{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  a{
+    text-decoration: none;
+    line-height: 60px;
+  }
+  li{
+    display: inline;
+    margin: 10px;
+    padding: 10px 20px;
+  }
+  li:hover{
+    background-color: #817b7b;
+    border-radius: 10px;
+  }
+}
 
 .logo-div {
   font-size: 20px;
   font-weight: 700;
   line-height: 60px;
 }
+
 
 .logo-div:hover {
   cursor: pointer;

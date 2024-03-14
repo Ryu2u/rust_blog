@@ -64,9 +64,15 @@ impl Post {
         }
     }
 
-    /// 查询 文章的数量
+    /// 查询所有文章的数量
     pub async fn count_all(db: &RBatis) -> i32 {
         db.query_decode("select count(*) as count from post", vec![])
+            .await
+            .unwrap()
+    }
+
+    pub async fn count_view(db: &RBatis) -> i32 {
+        db.query_decode("select count(*) as count from post where is_view = 1", vec![])
             .await
             .unwrap()
     }
@@ -83,14 +89,14 @@ impl_select!(
 // 分页获取 已展示 的文章
 impl_select!(
     Post{
-        select_page(offset:i32,size: i32) => "`where is_view = 1 limit ${offset} , #{size}`"
+        select_page(offset:i32,size: i32) => "`where is_view = 1 order by update_time desc limit  ${offset} , #{size}`"
     }
 );
 
 // 分页查询所有的文章 (需要登录)
 impl_select!(
     Post{
-        select_page_admin(offset:i32,size: i32) => "`limit ${offset} , #{size}`"
+        select_page_admin(offset:i32,size: i32) => "`order by update_time desc limit ${offset} , #{size}`"
     }
 );
 
@@ -104,8 +110,8 @@ impl_select!(
 /// 分页 实体对象
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PageInfo<T>
-where
-    T: Serialize,
+    where
+        T: Serialize,
 {
     pub page_num: i32,
     pub page_size: i32,

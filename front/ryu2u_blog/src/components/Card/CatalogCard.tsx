@@ -3,7 +3,7 @@ import {useEffect, useState} from "react";
 
 export function CatalogCard({catalogJson}) {
 
-    const [catalog,setCatalog] = useState("");
+    const [catalog, setCatalog] = useState("");
 
     useEffect(() => {
         let tree = JSON.parse(catalogJson);
@@ -13,7 +13,7 @@ export function CatalogCard({catalogJson}) {
         console.log("dom Tree => ");
         console.log(domTree);
         setCatalog(domTree.innerHTML);
-    },[catalogJson]);
+    }, [catalogJson]);
 
 
     function getChapterDomTree(chapterTreeData: CatalogItem[], parentNode?: HTMLElement): HTMLElement {
@@ -21,7 +21,7 @@ export function CatalogCard({catalogJson}) {
             parentNode = createNodeByHtmlStr('<ul class="markdown-toc-list"></ul>')[0] as HTMLElement;
         }
         chapterTreeData.forEach(chapterItem => {
-            let itemDom = createNodeByHtmlStr(`<li><a class="toc-level-${chapterItem.level}" href="#header-${chapterItem.id}">${chapterItem.title}</a></li>`)[0] as HTMLElement;
+            let itemDom = createNodeByHtmlStr(`<li class=""><a class="toc-level-${chapterItem.level}" href="#header-${chapterItem.id}"><div class="toc-li">${chapterItem.title}</div></a></li>`)[0] as HTMLElement;
             parentNode!.appendChild(itemDom);
             if (chapterItem.children) {
                 let catalogList = createNodeByHtmlStr('<ul class="markdown-toc-list"></ul>')[0] as HTMLElement;
@@ -29,24 +29,25 @@ export function CatalogCard({catalogJson}) {
                 getChapterDomTree(chapterItem.children, catalogList);
             }
         });
-
         return parentNode;
     }
 
-// 根据html字符串生成dom元素
+    // 根据html字符串生成dom元素
     function createNodeByHtmlStr(htmlStr: string): HTMLCollection {
         let div = document.createElement('div');
         div.innerHTML = htmlStr;
-        let children = div.children;
-        return children;
+        return div.children;
     }
 
 
     return (
         <>
-            <div className={"card-widget catalog-card"} dangerouslySetInnerHTML={{
-                __html: catalog
-            }}>
+            <div className={"card-widget catalog-card"}>
+                <h3>目录</h3>
+                <div dangerouslySetInnerHTML={{
+                    __html: catalog
+                }}>
+                </div>
             </div>
         </>
     )

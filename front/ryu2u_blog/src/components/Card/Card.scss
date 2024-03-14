@@ -30,6 +30,8 @@
 }
 
 .catalog-card {
+  max-height: 600px;
+  overflow-y: auto;
 
   li {
     text-decoration: none;
@@ -41,7 +43,23 @@
   }
 
   a:visited {
-    color: blue;
+    color: var(--color-font-default);
     text-decoration: none;
   }
+}
+
+.toc-level-1 {
+  text-decoration: none;
+}
+
+.catalog-card ul {
+  margin: 0;
+}
+
+.toc-level-1:visited {
+  color: var(--color-font-default);
+}
+
+.catalog-card .toc-li:hover {
+  background-color: #F5f5f5;
 }

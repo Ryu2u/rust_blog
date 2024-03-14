@@ -70,12 +70,6 @@ export function Home() {
 
             <Footer/>
 
-            <FloatButton.Group shape="square" style={{right: 50}}>
-                <FloatButton icon={<QuestionCircleOutlined/>}/>
-                <FloatButton icon={<SettingOutlined spin/>}/>
-                <FloatButton icon={<SyncOutlined/>}/>
-                <FloatButton.BackTop visibilityHeight={0}/>
-            </FloatButton.Group>
         </>
     )
 }

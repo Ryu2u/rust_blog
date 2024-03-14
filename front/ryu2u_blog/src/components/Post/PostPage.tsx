@@ -22,7 +22,6 @@ export function PostPage() {
     const [loading, setLoading] = useState(true);
     const post_content_ref = useRef<HTMLDivElement | null>(null);
     const postRef = useRef(new Post());
-    // const [post, setPost] = useState(new Post());
     const param = useParams();
     const [catalogJson, setCatalogJson] = useState("");
 
@@ -85,40 +84,39 @@ export function PostPage() {
             data.created_time = new Date(data.created_time);
             data.update_time = new Date(data.update_time);
             postRef.current = data;
-            // console.log("post --> ")
-            // console.log(postRef);
-            // setTimeout(() => {
-                let div = post_content_ref.current;
-                let hLevel: CatalogItem[] = [];
-                div?.childNodes.forEach((e, index) => {
-                    const titleTag = ["H1", "H2", "H3", "H4", "H5", "H6"];
-                    if (titleTag.includes(e.nodeName)) {
-                        if (e.nodeName == "H1") {
-                            hLevel.push({hNum: 1, title: e.innerText, id: index});
-                        } else if (e.nodeName == "H2") {
-                            hLevel.push({hNum: 2, title: e.innerText, id: index})
-                        } else if (e.nodeName == "H3") {
-                            hLevel.push({hNum: 3, title: e.innerText, id: index})
-                        } else if (e.nodeName == "H4") {
-                            hLevel.push({hNum: 4, title: e.innerText, id: index})
-                        } else if (e.nodeName == "H5") {
-                            hLevel.push({hNum: 5, title: e.innerText, id: index})
-                        } else if (e.nodeName == "H6") {
-                            hLevel.push({hNum: 6, title: e.innerText, id: index})
-                        }
-                        const id = "header-" + index;
-                        e.setAttribute("id", id);
-                    }
-                });
-                let tree = toTree(hLevel);
-                // console.log(JSON.stringify(tree));
-                setCatalogJson(JSON.stringify(tree));
-                setLoading(false);
-
-            // }, 1000)
+            genToc();
         })
 
-    }, [])
+    }, [post_content_ref.current])
+
+    function genToc() {
+        let div = post_content_ref.current;
+        let hLevel: CatalogItem[] = [];
+        // @ts-ignore
+        div?.childNodes.forEach((e, index) => {
+            const titleTag = ["H1", "H2", "H3", "H4", "H5", "H6"];
+            if (titleTag.includes(e.nodeName)) {
+                if (e.nodeName == "H1") {
+                    hLevel.push({hNum: 1, title: e.innerText, id: index});
+                } else if (e.nodeName == "H2") {
+                    hLevel.push({hNum: 2, title: e.innerText, id: index})
+                } else if (e.nodeName == "H3") {
+                    hLevel.push({hNum: 3, title: e.innerText, id: index})
+                } else if (e.nodeName == "H4") {
+                    hLevel.push({hNum: 4, title: e.innerText, id: index})
+                } else if (e.nodeName == "H5") {
+                    hLevel.push({hNum: 5, title: e.innerText, id: index})
+                } else if (e.nodeName == "H6") {
+                    hLevel.push({hNum: 6, title: e.innerText, id: index})
+                }
+                const id = "header-" + index;
+                e.setAttribute("id", id);
+            }
+        });
+        let tree = toTree(hLevel);
+        setCatalogJson(JSON.stringify(tree));
+        setLoading(false);
+    }
 
     return (
         <>

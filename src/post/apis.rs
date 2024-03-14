@@ -94,6 +94,10 @@ async fn api_post_update(
     match check_post(&**db, &post).await {
         Err(e) => Err(e),
         Ok(format_str) => {
+            if post.id.is_none() {
+                return Err(Exception::BadRequest("该文章不存在!".to_string()));
+            }
+
             post.format_content = format_str;
             post.update_time = Some(get_sys_time());
 
@@ -148,11 +152,12 @@ async fn post_list_page(
     let page_num = page_info.page_num;
     let page_size = page_info.page_size;
     let limit = (page_num - 1) * page_size;
-    let total = Post::count_all(&db).await;
-    page_info.total = total;
+
     let res = if is_admin {
+        page_info.total = Post::count_all(&db).await;
         Post::select_page_admin(&**db, limit, page_size).await
     } else {
+        page_info.total = Post::count_view(&db).await;
         Post::select_page(&**db, limit, page_size).await
     };
     if let Ok(mut vec) = res {

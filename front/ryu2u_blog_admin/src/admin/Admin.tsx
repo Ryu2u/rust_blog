@@ -120,7 +120,7 @@ export function Admin() {
                 />
                 <div className={"flex current-profile"}>
                     <div className={"user-avatar"}>
-                        <Avatar size={40} src={<img src={"../../public/react.svg"} alt="avatar"/>}/>
+                        <Avatar size={40} src={<img src={"/react.svg"} alt="avatar"/>}/>
                     </div>
                     <div className={"flex profile-btn"}>
                         <div className={"profile-btn-item"}>

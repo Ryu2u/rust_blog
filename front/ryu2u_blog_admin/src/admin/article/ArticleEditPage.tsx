@@ -1,12 +1,13 @@
 import {MdEditor} from "../../comonents/MdEditor";
 import {Button, Form, Input, message, Modal, Switch} from "antd";
-import {DeliveredProcedureOutlined, SaveOutlined} from "@ant-design/icons";
+import {DeliveredProcedureOutlined, ExclamationCircleFilled, SaveOutlined, SettingOutlined} from "@ant-design/icons";
 import type {DraggableData, DraggableEvent} from 'react-draggable';
 import Draggable from 'react-draggable';
 import {useEffect, useRef, useState} from "react";
 import PostService from "../../service/PostService";
 import {Post} from "../../common/Structs";
-import {useParams} from "react-router-dom";
+import {useParams,useNavigate} from "react-router-dom";
+import {post} from "axios";
 
 const layout = {
     labelCol: {span: 4},
@@ -15,7 +16,9 @@ const layout = {
 
 
 export function ArticleEditPage() {
+    const {confirm} = Modal;
 
+    const navigate = useNavigate();
     const [form] = Form.useForm();
     const [originContent, setOriginContent] = useState("");
     const [loading, setLoading] = useState(true);
@@ -48,12 +51,28 @@ export function ArticleEditPage() {
     const draggleRef = useRef<HTMLDivElement | null>(null);
 
     const showModal = () => {
-        setOpen(true);
+        openModal();
     };
+
+    function openModal() {
+        setOpen(true);
+        if (postRef.current.id) {
+            form.setFieldsValue({
+                id: postRef.current.id,
+                title: postRef.current.title,
+                author: postRef.current.author,
+                is_view: postRef.current.is_view,
+                summary: postRef.current.summary,
+                disallow_comment: postRef.current.disallow_comment,
+                password: postRef.current.password,
+                top_priority: postRef.current.top_priority,
+                cover_img: postRef.current.cover_img
+            });
+        }
+    }
 
     const handleOk = (_: React.MouseEvent<HTMLElement>) => {
         form.submit();
-        // setOpen(false);
     };
 
     const handleCancel = (_: React.MouseEvent<HTMLElement>) => {
@@ -77,48 +96,46 @@ export function ArticleEditPage() {
 
 
     const onFinish = (values: any) => {
-        console.log('Finish:', values);
+        postRef.current = values;
+        console.log(postRef.current);
+        postRef.current.original_content = originContent;
+        postRef.current.format_content = '';
         if (postRef.current.id) {
-            addPost(values);
-        } else {
             updatePost();
+        } else {
+            addPost();
         }
     };
 
-    function addPost(values: any) {
-        let post: Post = values;
-        post.is_view = post.is_view ? 1 : 0;
-        post.disallow_comment = post.disallow_comment ? 1 : 0;
-        post.original_content = originContent;
-        post.format_content = '';
-        console.log(post);
-        PostService.post_add(post).then((res) => {
-            console.log(res);
+    function addPost() {
+        PostService.post_add(postRef.current).then((res) => {
+            message.success(res.msg);
             setOpen(false);
-            form.resetFields();
+            navigate('/article/list');
         })
+
     }
 
     function updatePost() {
-        postRef.current.original_content = originContent;
         PostService.post_update(postRef.current).then(res => {
             message.success(res.msg);
-
+            setOpen(false);
+            navigate('/article/list');
         });
-
     }
 
-    const saveClick = () => {
-        updatePost();
-    }
 
     return (
         <>
             <div className={"article-tool-div"}>
-                <Button type={"default"} onClick={saveClick}>
-                    <SaveOutlined/>
-                    保存
-                </Button>
+                {/*<Button type={"default"} onClick={saveClick}>*/}
+                {/*    <SaveOutlined/>*/}
+                {/*    保存*/}
+                {/*</Button>*/}
+                {/*<Button type={"default"} onClick={settingClick}>*/}
+                {/*    <SettingOutlined/>*/}
+                {/*    设置*/}
+                {/*</Button>*/}
                 <Button type={"primary"} onClick={showModal}>
                     <DeliveredProcedureOutlined/>
                     发布
@@ -172,6 +189,12 @@ export function ArticleEditPage() {
                 )}
             >
                 <Form {...layout} form={form} onFinish={onFinish}>
+                    <Form.Item name={"id"}
+                               label={"id"}
+                               hidden={true}
+                               rules={[{required: false}]}>
+                        <Input/>
+                    </Form.Item>
                     <Form.Item name={"title"}
                                label={"标题"}
                                rules={[{required: true, message: '请输入文章标题!', max: 30}]}
@@ -186,8 +209,8 @@ export function ArticleEditPage() {
                     </Form.Item>
                     <Form.Item name={"is_view"}
                                label={"展示"}
-                               valuePropName="checked"
                                initialValue={true}
+                               normalize={(value) => value ? 1 : 0}
                                rules={[{required: true, message: ''}]}
                     >
                         <Switch/>
@@ -200,9 +223,9 @@ export function ArticleEditPage() {
                     </Form.Item>
 
                     <Form.Item name={"disallow_comment"}
-                               label={"允许评论"}
+                               label={"不允许评论"}
                                initialValue={true}
-                               valuePropName="checked"
+                               normalize={(value) => value ? 1 : 0}
                                rules={[{required: false, message: ''}]}
                     >
                         <Switch/>
@@ -217,7 +240,7 @@ export function ArticleEditPage() {
 
                     <Form.Item name={"top_priority"}
                                label={"置顶"}
-                               valuePropName="checked"
+                               normalize={(value) => value ? 1 : 0}
                                rules={[{required: false, message: 'Please input title!'}]}
                     >
                         <Switch/>
@@ -229,7 +252,6 @@ export function ArticleEditPage() {
                     >
                         <Input/>
                     </Form.Item>
-
                 </Form>
             </Modal>
 

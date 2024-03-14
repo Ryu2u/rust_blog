@@ -1437,11 +1437,25 @@ span.CodeMirror-selectedtext {
 }
 
 .markdown-body pre {
+  position: relative;
   margin-top: 0;
   margin-bottom: 0;
   font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
   font-size: 12px;
   word-wrap: normal;
+  padding-top: 10px;
+}
+
+.markdown-body pre:before{
+  background: #fc625d;
+  border-radius: 50%;
+  box-shadow: 20px 0 #fdbc40,40px 0 #35cd4b;
+  content: ' ';
+  height: 12px;
+  left: 14px;
+  margin-top: -20px;
+  position: absolute;
+  width: 12px;
 }
 
 .markdown-body .octicon {
@@ -1829,7 +1843,7 @@ span.CodeMirror-selectedtext {
 
 .markdown-body .highlight pre,
 .markdown-body pre {
-  padding: 16px;
+  padding: 30px 16px 16px 16px;
   overflow: auto;
   font-size: 85%;
   line-height: 1.45;

@@ -13,7 +13,7 @@ export function MdEditor({getContent, content}) {
     const [value, setValue] = useState('')
 
     useEffect(() => {
-        console.log('content  -> ' + content);
+        // console.log('content  -> ' + content);
         if (!content) {
             content = '';
         }
