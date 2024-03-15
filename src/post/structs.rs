@@ -51,7 +51,11 @@ pub struct Post {
     // 逻辑删除
     pub is_deleted: Option<i32>,
 
+    ///////////////////// 以下是数据库不存在字段 insert时需要值为None
+    // 文章类别
     pub category: Option<String>,
+    // 文章标签
+    pub tags: Option<Vec<String>>,
 }
 
 impl Post {
@@ -83,6 +87,7 @@ impl Post {
             update_time: Some(created_time),
             is_deleted: Some(0),
             category: None,
+            tags: None,
         }
     }
 
@@ -93,6 +98,7 @@ impl Post {
             .unwrap()
     }
 
+    /// 统计文章总数(已展示的)
     pub async fn count_view(db: &RBatis) -> i32 {
         db.query_decode("select count(*) as count from post where is_view = 1", vec![])
             .await
