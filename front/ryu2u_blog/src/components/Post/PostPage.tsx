@@ -58,6 +58,7 @@ export function PostPage() {
             while (arr.length > 0) {
                 let children = getChildrenByLevel(currentItem, arr, level);
                 if (children.length == 0) {
+                    // @ts-ignore
                     currentItem = arr.shift();
                     if (!currentItem) return;
 
@@ -127,7 +128,7 @@ export function PostPage() {
                 </div>
                 <div className={"post-meta"}>
                     <span className={"fa fa-calendar"}> </span>
-                    发表于 {loading ? '' : postRef.current.created_time.toLocaleString()}|
+                    发表于{loading ? '' : postRef.current.created_time.toLocaleString()}|
                     <span className={"fa fa-history"}> </span>
                     更新于{loading ? '' : postRef.current.update_time.toLocaleString()} |
                     <span className={"fa fa-archive"}></span>
@@ -147,13 +148,6 @@ export function PostPage() {
             </div>
 
             <Footer/>
-
-            <FloatButton.Group shape="square" style={{right: 50}}>
-                <FloatButton icon={<QuestionCircleOutlined/>}/>
-                <FloatButton icon={<SettingOutlined spin/>}/>
-                <FloatButton icon={<SyncOutlined/>}/>
-                <FloatButton.BackTop visibilityHeight={0}/>
-            </FloatButton.Group>
         </>
     )
 }

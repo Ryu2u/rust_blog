@@ -3,16 +3,99 @@
 <head>
     <meta charset="UTF-8"/>
     <!--a 标签统一使用新窗口打开-->
-<!--    <base target="_blank"/>-->
+    <!--    <base target="_blank"/>-->
     <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
     <link href="https://cdn.jsdelivr.net/npm/qweather-icons@1.6.0/font/qweather-icons.css" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>🍑HaiTao's Blog</title>
+    <style>
+        #loading-div {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: 99999;
+            background-image: var(--color-bg-default);
+            opacity: 1;
+            transition: opacity 1s ease;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-bg-default: linear-gradient(to right, #434343 0%, black 100%);;
+                --color-font-default: #ffff;
+                --color-post-content-bg-default: #0d1117;
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --color-bg-default: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
+                --color-font-default: #000;
+                --color-post-content-bg-default: #ffffff;
+            }
+        }
+
+
+        @keyframes disappear {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .ball {
+            height: 30px;
+            width: 30px;
+            border: 1px solid blue;
+            border-right: none;
+            border-radius: 100%;
+            animation: loading 1s linear infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+
+        /*－－－－－－－－－－－－－－－－－－－－－－－－－
+        not necessary,It's only make the ball center
+        非必需，下面的样式，只是为了使ball元素居中显示
+        －－－－－－－－－－－－－－－－－－－－－－－－－－－*/
+        .ball {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #root {
+            /*display: none;*/
+        }
+
+    </style>
     <script>
+        window.onload = () => {
+            let div = document.getElementById("loading-div");
+            let root = document.getElementById("root");
+            root.hidden = true;
+            div.style.opacity = "0";
+            root.hidden = false;
+            div.remove();
+        }
     </script>
 </head>
 <body>
+<div id="loading-div">
+    <div class="ball"></div>
+</div>
 <div id="root"></div>
 <script type="module" src="./src/main.tsx"></script>
 <script>

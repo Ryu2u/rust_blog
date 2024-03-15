@@ -6,6 +6,7 @@ use actix_web::{get, post, web, Responder};
 use rbatis::RBatis;
 
 use tracing::{instrument, span, Level};
+use crate::utils::md_to_html;
 
 /// 文章 接口
 /// api_post_add -> 文章添加
@@ -14,6 +15,7 @@ use tracing::{instrument, span, Level};
 /// api_post_list_page_admin -> 分页获取所有文章列表
 /// api_post_list_get_admin -> 根据id获取文章
 /// api_post_list_update -> 根据id更新文章
+/// api_post_list_del -> 根据id删除文章(逻辑删除)
 pub fn post_scope() -> actix_web::Scope {
     actix_web::web::scope("/post")
         .service(api_post_add)
@@ -22,6 +24,7 @@ pub fn post_scope() -> actix_web::Scope {
         .service(api_post_list_page_admin)
         .service(api_post_get_admin)
         .service(api_post_update)
+        .service(api_post_del)
 }
 
 #[instrument]
@@ -30,7 +33,7 @@ async fn api_post_add(
     post: web::Json<Post>,
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
-    match check_post(&db, &post).await {
+    match check_post(&*db, &*post).await {
         Ok(md_html) => {
             let post = Post::new(
                 post.title.clone(),
@@ -109,6 +112,28 @@ async fn api_post_update(
     }
 }
 
+#[instrument]
+#[get("/admin/del/{id}")]
+async fn api_post_del(id: web::Path<i32>, db: web::Data<RBatis>) -> Result<impl Responder, Exception> {
+    // 判断是否存在 -> 置逻辑删除
+    let res = Post::select_by_id(&**db, *id).await;
+    if res.is_err() {
+        return Err(Exception::NotFound);
+    }
+    let mut vec = res.unwrap();
+    if vec.is_empty() {
+        return Err(Exception::NotFound);
+    }
+    let mut post = vec.pop().unwrap();
+    post.is_deleted = Some(1);
+
+    if Post::update_by_column(&**db, &post, "id").await.is_err() {
+        return Err(Exception::BadRequest("删除失败，请重试!".to_string()));
+    }
+
+    Ok(R::<()>::ok_msg("删除成功!"))
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////
 
 ///
@@ -133,8 +158,7 @@ async fn check_post(db: &RBatis, post: &Post) -> Result<String, Exception> {
         }
     }
     // "format md -> html"
-    let md_html = markdown::to_html(post.original_content.as_str());
-
+    let md_html = md_to_html(post.original_content.as_str());
     Ok(md_html)
 }
 

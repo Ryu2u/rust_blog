@@ -139,17 +139,6 @@ pub async fn init_rbatis(db_path: String) -> RBatis {
         User::insert(&rbatis, &user)
             .await
             .expect("insert user failed");
-        let mut post = Post::new(
-            "title".to_string(),
-            "author".to_string(),
-            "original_content".to_string(),
-            "format_content".to_string(),
-            12,
-        );
-        post.summary = Some("summary".to_string());
-        Post::insert(&rbatis, &post)
-            .await
-            .expect("insert post failed");
     }
     rbatis
 }

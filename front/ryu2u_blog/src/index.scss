@@ -29,7 +29,7 @@ body {
   padding: 0;
 
   &::-webkit-scrollbar {
-    background: #696969;
+    background: var(--color-bg-default);
     width: 10px;
   }
 

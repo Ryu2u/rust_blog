@@ -26,7 +26,7 @@ export function PostListItem({dir, postItemJson}) {
         <>
             <div className={dir ? 'post-list-item' : 'post-list-item post-left'}>
                 <div className={"post-bg"}>
-                    <img alt={"post-alt"} src={"https://api.kdcc.cn"}/>
+                    <img alt={"post-alt"} src={post.cover_img ? post.cover_img : "https://api.kdcc.cn"}/>
                 </div>
                 <div className={"recent-post-info"}>
                     <div className={"recent-post-title"}>

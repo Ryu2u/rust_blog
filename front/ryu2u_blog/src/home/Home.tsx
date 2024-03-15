@@ -69,7 +69,6 @@ export function Home() {
             </div>
 
             <Footer/>
-
         </>
     )
 }

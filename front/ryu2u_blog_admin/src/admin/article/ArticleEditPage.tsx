@@ -1,12 +1,12 @@
 import {MdEditor} from "../../comonents/MdEditor";
 import {Button, Form, Input, message, Modal, Switch} from "antd";
-import {DeliveredProcedureOutlined, ExclamationCircleFilled, SaveOutlined, SettingOutlined} from "@ant-design/icons";
+import {DeleteOutlined, DeliveredProcedureOutlined, ExclamationCircleFilled, SaveOutlined, SettingOutlined} from "@ant-design/icons";
 import type {DraggableData, DraggableEvent} from 'react-draggable';
 import Draggable from 'react-draggable';
 import {useEffect, useRef, useState} from "react";
 import PostService from "../../service/PostService";
 import {Post} from "../../common/Structs";
-import {useParams,useNavigate} from "react-router-dom";
+import {useParams, useNavigate} from "react-router-dom";
 import {post} from "axios";
 
 const layout = {
@@ -124,6 +124,29 @@ export function ArticleEditPage() {
         });
     }
 
+    const deleteClick = () => {
+        confirm({
+            title: '是否需要删除改文章!',
+            icon: <ExclamationCircleFilled/>,
+            content: '请确认，该操作可能无法恢复!',
+            okText: '删除',
+            okType: 'danger',
+            cancelText: '取消',
+            onOk() {
+                if (!postRef.current.id) {
+                    alert("该文章不存在!");
+                    return;
+                }
+                PostService.post_delete(postRef.current.id).then(res => {
+                    message.success(res.msg);
+                })
+            },
+            onCancel() {
+                console.log('Cancel');
+            },
+        });
+    }
+
 
     return (
         <>
@@ -132,10 +155,10 @@ export function ArticleEditPage() {
                 {/*    <SaveOutlined/>*/}
                 {/*    保存*/}
                 {/*</Button>*/}
-                {/*<Button type={"default"} onClick={settingClick}>*/}
-                {/*    <SettingOutlined/>*/}
-                {/*    设置*/}
-                {/*</Button>*/}
+                <Button danger onClick={deleteClick}>
+                    <DeleteOutlined/>
+                    删除
+                </Button>
                 <Button type={"primary"} onClick={showModal}>
                     <DeliveredProcedureOutlined/>
                     发布
@@ -209,7 +232,7 @@ export function ArticleEditPage() {
                     </Form.Item>
                     <Form.Item name={"is_view"}
                                label={"展示"}
-                               initialValue={true}
+                               initialValue={1}
                                normalize={(value) => value ? 1 : 0}
                                rules={[{required: true, message: ''}]}
                     >
@@ -224,7 +247,7 @@ export function ArticleEditPage() {
 
                     <Form.Item name={"disallow_comment"}
                                label={"不允许评论"}
-                               initialValue={true}
+                               initialValue={1}
                                normalize={(value) => value ? 1 : 0}
                                rules={[{required: false, message: ''}]}
                     >

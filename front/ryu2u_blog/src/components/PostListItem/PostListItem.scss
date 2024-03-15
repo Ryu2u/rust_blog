@@ -8,7 +8,7 @@
   margin: 0 0 30px 0;
 }
 
-.post-list-item:hover{
+.post-list-item:hover {
   box-shadow: 0 0 10px 10px #817b7b;
 }
 
@@ -57,10 +57,11 @@
 
   .recent-post-summary {
     display: block;
-    height: 150px;
+    max-height: 3em;
+    padding: 0 20px;
     margin: 10px 0 10px 0;
     word-break: break-word;
-    overflow: hidden;
+    overflow-y: clip;
     text-overflow: ellipsis;
   }
 }

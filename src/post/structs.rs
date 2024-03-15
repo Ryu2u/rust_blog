@@ -2,7 +2,7 @@ use crate::utils::time_utils::get_sys_time;
 use actix_easy_multipart::tempfile::Tempfile;
 use actix_easy_multipart::text::Text;
 use actix_easy_multipart::MultipartForm;
-use rbatis::{crud, impl_select, RBatis};
+use rbatis::{crud, impl_insert, impl_select, RBatis};
 use serde::{Deserialize, Serialize};
 
 /// http form 传值测试
@@ -16,22 +16,42 @@ pub struct FileForm {
 /// 文章实体对象
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Post {
+    // 主键
     pub id: Option<i32>,
+    // 标题
     pub title: String,
+    // 作者
     pub author: String,
+    // 是否展示
     pub is_view: i32,
+    // 文章原内容
     pub original_content: String,
+    // 文章转换为html 后的内容
     pub format_content: String,
+    // 摘要
     pub summary: Option<String>,
+    // 封面
     pub cover_img: Option<String>,
+    // 访问量
     pub visits: Option<i32>,
+    // 禁止评论
     pub disallow_comment: Option<i32>,
+    // 密码
     pub password: Option<String>,
+    // 置顶
     pub top_priority: Option<i32>,
+    // 收藏数
     pub likes: Option<i32>,
+    // 文章字符数
     pub word_count: Option<i32>,
+    // 创建时间
     pub created_time: Option<i64>,
+    // 更新时间
     pub update_time: Option<i64>,
+    // 逻辑删除
+    pub is_deleted: Option<i32>,
+
+    pub category: Option<String>,
 }
 
 impl Post {
@@ -61,6 +81,8 @@ impl Post {
             word_count: Some(word_count),
             created_time: Some(created_time),
             update_time: Some(created_time),
+            is_deleted: Some(0),
+            category: None,
         }
     }
 
@@ -79,6 +101,12 @@ impl Post {
 }
 crud!(Post {});
 
+impl_insert!(
+    Post{
+        insert()
+    }
+);
+
 // 根据id 获取文章
 impl_select!(
     Post{
@@ -89,14 +117,17 @@ impl_select!(
 // 分页获取 已展示 的文章
 impl_select!(
     Post{
-        select_page(offset:i32,size: i32) => "`where is_view = 1 order by update_time desc limit  ${offset} , #{size}`"
+        select_page(offset:i32,size: i32) => "`where is_view = 1 and is_deleted = 0 order by \
+        top_priority desc , update_time desc limit  #{offset} , #{size}`"
     }
 );
 
 // 分页查询所有的文章 (需要登录)
 impl_select!(
     Post{
-        select_page_admin(offset:i32,size: i32) => "`order by update_time desc limit ${offset} , #{size}`"
+        select_page_admin(offset:i32,size: i32) => "`where is_deleted = 0 order by update_time \
+        desc \
+        limit ${offset} , #{size}`"
     }
 );
 

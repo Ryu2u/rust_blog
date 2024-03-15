@@ -2,7 +2,6 @@ import {PageInfo, Post, Result} from "../common/Structs";
 import {http_client} from "../common/AxioConfig";
 
 
-
 namespace PostService {
 
     export function post_add(post: Post): Promise<Result> {
@@ -17,9 +16,12 @@ namespace PostService {
         return http_client.get(`/post/admin/get/${id}`);
     }
 
-    export function post_update(data: Post):Promise<Result> {
-        return http_client.post(`/post/admin/update`,data);
+    export function post_update(data: Post): Promise<Result> {
+        return http_client.post(`/post/admin/update`, data);
+    }
 
+    export function post_delete(id: number): Promise<Result> {
+        return http_client.get(`/post/admin/del/${id}`);
     }
 }
 
