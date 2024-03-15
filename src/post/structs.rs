@@ -2,7 +2,7 @@ use crate::utils::time_utils::get_sys_time;
 use actix_easy_multipart::tempfile::Tempfile;
 use actix_easy_multipart::text::Text;
 use actix_easy_multipart::MultipartForm;
-use rbatis::{crud, impl_insert, impl_select, RBatis};
+use rbatis::{crud, impl_select, RBatis};
 use serde::{Deserialize, Serialize};
 
 /// http form 传值测试
@@ -100,12 +100,6 @@ impl Post {
     }
 }
 crud!(Post {});
-
-impl_insert!(
-    Post{
-        insert()
-    }
-);
 
 // 根据id 获取文章
 impl_select!(
