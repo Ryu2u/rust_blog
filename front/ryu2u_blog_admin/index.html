@@ -73,6 +73,17 @@
         }
     </style>
     <script>
+        const theme = localStorage.getItem('theme-key');
+        if (!theme) {
+            localStorage.setItem('theme-key', 'light');
+            document.documentElement.setAttribute('theme', 'light');
+        } else {
+            if (theme === 'light') {
+                document.documentElement.setAttribute('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('theme', 'dark');
+            }
+        }
         window.onload = () => {
             let div = document.getElementById("loading-div");
             div.style.opacity = "0";

@@ -48,7 +48,7 @@ async fn api_login(
                 session
                     .insert("user_id", user.id)
                     .expect("can't insert session");
-                Ok(R::<User>::ok_obj(user.clone()))
+                Ok(R::<User>::ok_msg_obj("登录成功!",user.clone()))
             }
         }
         Err(e) => {

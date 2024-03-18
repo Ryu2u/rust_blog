@@ -16,45 +16,45 @@ pub struct FileForm {
 /// 文章实体对象
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Post {
-    // 主键
+    /// 主键
     pub id: Option<i32>,
-    // 标题
+    /// 标题
     pub title: String,
-    // 作者
+    /// 作者
     pub author: String,
-    // 是否展示
+    /// 是否展示
     pub is_view: i32,
-    // 文章原内容
+    /// 文章原内容
     pub original_content: String,
-    // 文章转换为html 后的内容
+    /// 文章转换为html 后的内容
     pub format_content: String,
-    // 摘要
+    /// 摘要
     pub summary: Option<String>,
-    // 封面
+    /// 封面
     pub cover_img: Option<String>,
-    // 访问量
+    /// 访问量
     pub visits: Option<i32>,
-    // 禁止评论
+    /// 禁止评论
     pub disallow_comment: Option<i32>,
-    // 密码
+    /// 密码
     pub password: Option<String>,
-    // 置顶
+    /// 置顶
     pub top_priority: Option<i32>,
-    // 收藏数
+    /// 收藏数
     pub likes: Option<i32>,
-    // 文章字符数
+    /// 文章字符数
     pub word_count: Option<i32>,
-    // 创建时间
+    /// 创建时间
     pub created_time: Option<i64>,
-    // 更新时间
+    /// 更新时间
     pub update_time: Option<i64>,
-    // 逻辑删除
+    /// 逻辑删除
     pub is_deleted: Option<i32>,
 
     ///////////////////// 以下是数据库不存在字段 insert时需要值为None
-    // 文章类别
+    /// 文章类别
     pub category: Option<String>,
-    // 文章标签
+    /// 文章标签
     pub tags: Option<Vec<String>>,
 }
 
@@ -66,6 +66,7 @@ impl Post {
         original_content: String,
         format_content: String,
         word_count: i32,
+        summary:Option<String>
     ) -> Self {
         let created_time = get_sys_time();
         Post {
@@ -75,7 +76,7 @@ impl Post {
             is_view: 1,
             original_content,
             format_content,
-            summary: None,
+            summary,
             cover_img: None,
             visits: Some(0),
             disallow_comment: Some(1),
@@ -149,3 +150,58 @@ pub struct PageInfo<T>
     pub total: i32,
     pub list: Option<Vec<T>>,
 }
+
+
+/// 文章标签对象
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Tag {
+    /// 主键 自增
+    pub id: Option<i32>,
+    /// 标签名称
+    pub name: String,
+    /// 标签唯一标识
+    pub slug: String,
+    /// 标签描述
+    pub description: Option<String>,
+    /// 标签优先级
+    pub priority: Option<i32>,
+}
+crud!(Tag{});
+
+
+/// 文章类别
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Category {
+    /// 主键 自增
+    pub id: Option<i32>,
+    /// 类别名称
+    pub name: String,
+    /// 类别唯一标识 不能携带空格
+    pub slug: String,
+    /// 类别描述
+    pub description: Option<String>,
+    /// 类别优先级
+    pub priority: Option<i32>,
+    /// 父类别
+    pub parent_id: Option<i32>,
+}
+
+crud!(Category{});
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PostTag {
+    /// 主键 自增
+    pub id: Option<i32>,
+    pub post_id: i32,
+    pub tag_id: i32,
+}
+crud!(PostTag{});
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PostCategory {
+    /// 主键 自增
+    pub id: Option<i32>,
+    pub post_id: i32,
+    pub category_id: i32,
+}
+crud!(PostCategory{});

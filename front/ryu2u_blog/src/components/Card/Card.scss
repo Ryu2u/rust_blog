@@ -1,3 +1,14 @@
+.card-widget {
+  border: 1px solid #e3e8f7;
+  border-radius: 15px;
+  background-color: var(--color-post-content-bg-default);
+  color: var(--color-font-default);
+  position: relative;
+  margin: 5px 5px 10px 5px;
+  padding: 7px;
+  transition: 0.3s;
+  box-shadow: 0 6px 6px hsl(0deg 0% 0% / 0.3);
+}
 
 .catalog {
   position: sticky;
@@ -7,6 +18,16 @@
 .catalog-card {
   font-size: 14px;
   animation: slideDown 0.3s ease-in-out;
+
+  &::-webkit-scrollbar {
+    background-color: transparent;
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: var(--color-scrollbar-thumb);
+  }
 }
 
 @keyframes slideDown {

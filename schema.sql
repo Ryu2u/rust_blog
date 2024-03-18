@@ -10,10 +10,30 @@
  Target Server Version : 3035005
  File Encoding         : 65001
 
- Date: 08/03/2024 15:43:48
+ Date: 18/03/2024 17:57:02
 */
 
 PRAGMA foreign_keys = false;
+
+-- ----------------------------
+-- Table structure for PostCategory
+-- ----------------------------
+DROP TABLE IF EXISTS "PostCategory";
+CREATE TABLE "PostCategory" (
+                                "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                "post_id" INTEGER NOT NULL,
+                                "category_id" INTEGER NOT NULL
+);
+
+-- ----------------------------
+-- Table structure for PostTag
+-- ----------------------------
+DROP TABLE IF EXISTS "PostTag";
+CREATE TABLE "PostTag" (
+                           "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                           "post_id" INTEGER NOT NULL,
+                           "tag_id" INTEGER NOT NULL
+);
 
 -- ----------------------------
 -- Table structure for category
@@ -21,8 +41,11 @@ PRAGMA foreign_keys = false;
 DROP TABLE IF EXISTS "category";
 CREATE TABLE "category" (
                             "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
-                            "category" TEXT NOT NULL,
-                            "created_time" integer NOT NULL
+                            "name" TEXT NOT NULL,
+                            "slug" text NOT NULL,
+                            "description" TEXT,
+                            "priority" integer DEFAULT 0,
+                            "parent_id" INTEGER
 );
 
 -- ----------------------------
@@ -45,28 +68,8 @@ CREATE TABLE "post" (
                         "likes" integer NOT NULL,
                         "word_count" integer NOT NULL,
                         "created_time" integer NOT NULL,
-                        "update_time" integer NOT NULL
-);
-
--- ----------------------------
--- Table structure for post_category
--- ----------------------------
-DROP TABLE IF EXISTS "post_category";
-CREATE TABLE "post_category" (
-                                 "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                                 "post_id" INTEGER NOT NULL,
-                                 "category_id" INTEGER NOT NULL
-);
-
--- ----------------------------
--- Table structure for post_tag
--- ----------------------------
-DROP TABLE IF EXISTS "post_tag";
-CREATE TABLE "post_tag" (
-                            "id" INTEGER NOT NULL,
-                            "post_id" integer NOT NULL,
-                            "tag_id" INTEGER NOT NULL,
-                            PRIMARY KEY ("id")
+                        "update_time" integer NOT NULL,
+                        "is_deleted" integer NOT NULL
 );
 
 -- ----------------------------
@@ -75,8 +78,10 @@ CREATE TABLE "post_tag" (
 DROP TABLE IF EXISTS "tag";
 CREATE TABLE "tag" (
                        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                       "tag" TEXT NOT NULL,
-                       "created_time" integer NOT NULL
+                       "name" TEXT NOT NULL,
+                       "slug" text NOT NULL,
+                       "description" TEXT,
+                       "priority" integer DEFAULT 0
 );
 
 -- ----------------------------
@@ -95,6 +100,5 @@ CREATE TABLE "tb_user" (
                            "created_time" integer NOT NULL,
                            "locked" integer NOT NULL DEFAULT 0
 );
-
 
 PRAGMA foreign_keys = true;

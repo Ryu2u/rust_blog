@@ -139,6 +139,7 @@ export function ArticleEditPage() {
                 }
                 PostService.post_delete(postRef.current.id).then(res => {
                     message.success(res.msg);
+                    navigate('/article/list');
                 })
             },
             onCancel() {

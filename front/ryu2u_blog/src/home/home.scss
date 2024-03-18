@@ -3,10 +3,9 @@
   position: fixed;
   z-index: 9999;
   top: 0;
-  //background-color: indianred;
   background-color: var(--color-post-content-bg-default);
   color: var(--color-font-default);
-  box-shadow: 0 5px 10px 5px white;
+  box-shadow: 0 6px 6px hsl(0deg 0% 0% / 0.3);
   width: 100%;
   height: 60px;
 }

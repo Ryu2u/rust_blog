@@ -45,6 +45,8 @@ export const ArticleListPage = () => {
         {
             title: '摘要',
             dataIndex: 'summary',
+            width: 200,
+            ellipsis: true,
             key: 'summary',
         },
         {
@@ -78,19 +80,19 @@ export const ArticleListPage = () => {
             ),
         },
         {
-            title: '是否允许评论',
+            title: '允许评论',
             dataIndex: 'disallow_comment',
             key: 'disallow_comment',
             render: (disallow_comment,data,i) => <span key={i + data['id']}>{disallow_comment ? '是' : '否'}</span>
         },
         {
-            title: '是否加密',
+            title: '加密',
             dataIndex: 'password',
             key: 'password',
             render: (password,data,i) => <span key={i + data['id']}>{password ? '是' : '否'}</span>
         },
         {
-            title: '是否置顶',
+            title: '置顶',
             dataIndex: 'top_priority',
             key: 'top_priority',
             render: (top_priority,data,i) => <span key={i + data['id']}>{top_priority ? '是' : '否'}</span>

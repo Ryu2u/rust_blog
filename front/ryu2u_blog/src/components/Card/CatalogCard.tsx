@@ -1,5 +1,6 @@
 import {CatalogItem} from "../Post/PostPage";
 import {useEffect, useState} from "react";
+import './Card.scss'
 
 export function CatalogCard({catalogJson}) {
 

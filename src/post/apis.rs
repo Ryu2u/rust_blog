@@ -35,16 +35,17 @@ async fn api_post_add(
 ) -> Result<impl Responder, Exception> {
     match check_post(&*db, &*post).await {
         Ok(md_html) => {
-            let post = Post::new(
+            let mut post_new = Post::new(
                 post.title.clone(),
                 post.author.clone(),
                 post.original_content.clone(),
                 md_html,
                 post.format_content.len() as i32,
+                post.summary.clone(),
             );
 
-            match Post::insert(&**db, &post).await {
-                Ok(_) => Ok(R::<()>::ok_msg("添加成功!")),
+            match Post::insert(&**db, &post_new).await {
+                Ok(_) => Ok(R::ok_msg("添加成功!")),
                 Err(_) => Err(Exception::BadRequest("add post failed!".to_string())),
             }
         }
@@ -105,7 +106,7 @@ async fn api_post_update(
             post.update_time = Some(get_sys_time());
 
             match Post::update_by_column(&**db, &post, "id").await {
-                Ok(_) => Ok(R::<()>::ok_msg("更新成功!")),
+                Ok(_) => Ok(R::ok_msg("更新成功!")),
                 Err(_) => Err(Exception::BadRequest("更新失败，请重试".to_string())),
             }
         }
@@ -131,7 +132,7 @@ async fn api_post_del(id: web::Path<i32>, db: web::Data<RBatis>) -> Result<impl 
         return Err(Exception::BadRequest("删除失败，请重试!".to_string()));
     }
 
-    Ok(R::<()>::ok_msg("删除成功!"))
+    Ok(R::ok_msg("删除成功!"))
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -279,6 +280,7 @@ mod test {
                             original_content.clone(),
                             format_content.clone(),
                             original_content.len() as i32,
+                            None,
                         );
                         let rbatis = RBatis::new();
                         rbatis.init(SqliteDriver {}, "db/rust_blog.db").unwrap();

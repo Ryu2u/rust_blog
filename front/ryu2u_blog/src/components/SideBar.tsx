@@ -24,8 +24,6 @@ export function SideBar({catalogJson}) {
                         viewToc &&
                         <CatalogCard catalogJson={catalogJson}/>
                     }
-                    <Weather/>
-                    <Card/>
                 </div>
             </div>
 

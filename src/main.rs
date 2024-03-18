@@ -15,6 +15,7 @@ use config::*;
 use user::apis::*;
 use crate::middleware::{AuthFilter, FilterWhiteList};
 use post::apis::*;
+use crate::post::tag_apis::tag_scope;
 
 mod config;
 mod middleware;
@@ -64,6 +65,7 @@ async fn main() -> std::io::Result<()> {
                     .guard(ContentTypeGuard)
                     .service(user_scope())
                     .service(post_scope())
+                    .service(tag_scope())
             })
     })
         .bind(server)?

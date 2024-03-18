@@ -24,8 +24,19 @@ pub struct R<T: Serialize> {
     obj: T,
 }
 
+impl R<()> {
+    pub fn ok_msg(str: &str) -> R<()> {
+        R::<()>::ok_msg_unit(str)
+    }
+
+    pub fn ok() -> R<()>{
+        R::<()>::ok_unit()
+    }
+
+}
+
 impl<T: Serialize> R<T> {
-    pub fn ok() -> R<()> {
+    pub fn ok_unit() -> R<()> {
         R {
             code: 200,
             msg: "success".to_string(),
@@ -33,7 +44,7 @@ impl<T: Serialize> R<T> {
         }
     }
 
-    pub fn ok_msg(msg: &str) -> R<()> {
+    pub fn ok_msg_unit(msg: &str) -> R<()> {
         R {
             code: 200,
             msg: msg.to_string(),
@@ -49,7 +60,6 @@ impl<T: Serialize> R<T> {
         }
     }
 
-    #[allow(unused)]
     pub fn ok_msg_obj(msg: &str, obj: T) -> R<T> {
         R {
             code: 200,

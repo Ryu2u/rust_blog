@@ -44,14 +44,6 @@ body {
   }
 }
 
-.card-widget {
-  border: 1px solid #e3e8f7;
-  background-color: var(--color-post-content-bg-default);
-  color: var(--color-font-default);
-  border-radius: 12px;
-  position: relative;
-  box-shadow: 0 0 10px 2px #817b7b;
-}
 
 a {
   color: var(--color-font-default);
@@ -61,14 +53,6 @@ a {
   display: flex;
 }
 
-.card-widget {
-  position: relative;
-  margin: 5px 5px 10px 5px;
-  padding: 7px;
-  border: 1px solid #e3e8f7;
-  border-radius: 12px;
-  transition: 0.3s;
-}
 
 .fa {
   margin-right: 5px;
