@@ -20,20 +20,16 @@
             transition: opacity 1s ease;
         }
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --color-bg-default: linear-gradient(to right, #434343 0%, black 100%);;
-                --color-font-default: #ffff;
-                --color-post-content-bg-default: #0d1117;
-            }
+        :root[theme='dark'] {
+            --color-bg-default: linear-gradient(to right, #434343 0%, black 100%);;
+            --color-font-default: #ffff;
+            --color-post-content-bg-default: #0d1117;
         }
 
-        @media (prefers-color-scheme: light) {
-            :root {
-                --color-bg-default: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
-                --color-font-default: #000;
-                --color-post-content-bg-default: #ffffff;
-            }
+        :root[theme='dark'] {
+            --color-bg-default: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
+            --color-font-default: #000;
+            --color-post-content-bg-default: #ffffff;
         }
 
 
@@ -76,19 +72,25 @@
             transform: translateX(-50%);
         }
 
-        #root {
-            /*display: none;*/
-        }
-
     </style>
     <script>
+        const theme = localStorage.getItem('theme-key');
+        if (!theme) {
+            localStorage.setItem('theme-key', 'light');
+            document.documentElement.setAttribute('theme', 'light');
+        } else {
+            if (theme === 'light') {
+                document.documentElement.setAttribute('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('theme', 'dark');
+            }
+        }
         window.onload = () => {
             let div = document.getElementById("loading-div");
-            let root = document.getElementById("root");
-            root.hidden = true;
             div.style.opacity = "0";
-            root.hidden = false;
-            div.remove();
+            setTimeout(() => {
+                div.remove();
+            }, 1000);
         }
     </script>
 </head>
@@ -99,6 +101,7 @@
 <div id="root"></div>
 <script type="module" src="./src/main.tsx"></script>
 <script>
+
     document.addEventListener('visibilitychange', function () {
         let isLeaved = document.hidden;
         if (isLeaved) {

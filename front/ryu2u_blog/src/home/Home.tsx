@@ -1,6 +1,6 @@
 import './home.scss'
-import {FloatButton} from "antd";
-import {QuestionCircleOutlined, SettingOutlined, SyncOutlined} from '@ant-design/icons';
+import {Button, FloatButton} from "antd";
+import {MoonOutlined, QuestionCircleOutlined, SearchOutlined, SettingOutlined, SyncOutlined} from '@ant-design/icons';
 import {useEffect, useState} from "react";
 import {Header} from "../components/Header";
 import {Footer} from "../components/Footer";
@@ -8,6 +8,7 @@ import {SideBar} from "../components/SideBar";
 import PostService from "../service/PostService";
 import {PageInfo, Post} from "../common/Structs";
 import {PostListItem} from "../components/PostListItem/PostListItem";
+import {FloatList} from "../components/FloatList";
 
 export function Home() {
 
@@ -16,7 +17,6 @@ export function Home() {
 
     useEffect(() => {
         getPageList(1, 10);
-
 
     }, [])
 
@@ -34,6 +34,8 @@ export function Home() {
             console.log(postList);
         });
     }
+
+
 
 
     return (
@@ -69,6 +71,9 @@ export function Home() {
             </div>
 
             <Footer/>
+
+            <FloatList/>
+
         </>
     )
 }

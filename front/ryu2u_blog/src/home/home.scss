@@ -147,3 +147,14 @@ ul.pagination li a.active {
   min-width: 350px;
   margin-top: 20px;
 }
+
+.float-div {
+  position: fixed;
+  right: 10px;
+  bottom: 15px;
+  flex-direction: column;
+}
+
+.float-btn {
+  background-color: var(--color-float-btn);
+}

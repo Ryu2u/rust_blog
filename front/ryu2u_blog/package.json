@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ant-design/icons": "^5.2.6",
+    "@ant-design/icons": "^5.3.4",
     "@bytemd/plugin-gfm": "^1.21.0",
     "@bytemd/react": "^1.21.0",
     "antd": "^5.13.3",

@@ -1,19 +1,20 @@
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg-default: linear-gradient(to right, #434343 0%, black 100%);;
-    --color-font-default: #ffff;
-    --color-post-content-bg-default: #0d1117;
-  }
+:root[theme= 'dark'] {
+  --color-bg-default: linear-gradient(to right, #434343 0%, black 100%);;
+  --color-font-default: #ffff;
+  --color-post-content-bg-default: #0d1117;
+  --color-scrollbar-thumb: #8888;
+  --color-float-btn: #8888;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --color-bg-default:linear-gradient(to top, #d9afd9 0%, #97d9e1 100%);
-    --color-font-default: #000;
-    --color-post-content-bg-default: #ffffff;
-  }
+
+:root[theme= 'light'] {
+  --color-bg-default: linear-gradient(to top, #d9afd9 0%, #97d9e1 100%);
+  --color-font-default: #000;
+  --color-post-content-bg-default: #ffffff;
+  --color-scrollbar-thumb: #8888;
+  --color-float-btn: #f5f5f5;
 }
+
 
 html {
   overflow: auto;
@@ -29,13 +30,13 @@ body {
   padding: 0;
 
   &::-webkit-scrollbar {
-    background: var(--color-bg-default);
+    background-color: transparent;
     width: 10px;
   }
 
   &::-webkit-scrollbar-thumb {
     border-radius: 10px;
-    background-color: #ffff;
+    background: var(--color-scrollbar-thumb);
   }
 
   &::-webkit-scrollbar-thumb:hover {

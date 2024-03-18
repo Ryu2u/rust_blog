@@ -973,9 +973,9 @@ span.CodeMirror-selectedtext {
 ////////////////////////////////////////
 
 
-@media (prefers-color-scheme: dark) {
-  .markdown-body,
-  [data-theme="dark"] {
+//@media (prefers-color-scheme: dark) {
+//  .markdown-body, [theme="dark"] {
+  :root[theme='dark'] .markdown-body{
     /*dark*/
     color-scheme: dark;
     --color-prettylights-syntax-comment: #8b949e;
@@ -1028,11 +1028,11 @@ span.CodeMirror-selectedtext {
     --color-done-fg: #a371f7;
     --color-done-emphasis: #8957e5;
   }
-}
+//}
 
-@media (prefers-color-scheme: light) {
-  .markdown-body,
-  [data-theme="light"] {
+//@media (prefers-color-scheme: light) {
+:root[theme='light'] .markdown-body{
+  //.markdown-body, [theme="light"] {
     /*light*/
     color-scheme: light;
     --color-prettylights-syntax-comment: #57606a;
@@ -1085,7 +1085,7 @@ span.CodeMirror-selectedtext {
     --color-done-fg: #8250df;
     --color-done-emphasis: #8250df;
   }
-}
+//}
 
 .markdown-body {
   -ms-text-size-adjust: 100%;
