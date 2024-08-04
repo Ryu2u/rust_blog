@@ -1,9 +1,9 @@
 import './ArticlePage.scss'
 import {Table, TableProps, Tag} from "antd";
 import {useEffect, useRef, useState} from "react";
-import {PageInfo, Post} from "../../common/Structs";
+import {PageInfo, Post, PostTag} from "../../common/Structs";
 import PostService from "../../service/PostService";
-import {formatDate} from "../../common/utils";
+import {formatDate, getUuid} from "../../common/utils";
 import {EyeInvisibleOutlined, EyeOutlined} from "@ant-design/icons";
 import {useNavigate} from "react-router";
 
@@ -23,9 +23,10 @@ export const ArticleListPage = () => {
         {
             title: '标题',
             dataIndex: 'title',
+            width: 200,
             key: 'title',
             // 分别为 当前行的值 ， 每一行的数据对象 和 索引
-            render: (value, data, i) => <a key={i + data['id']} onClick={() => titleClick(data)}>{value}</a>,
+            render: (value, data, i) => <a key={getUuid()} onClick={() => titleClick(data)}>{value}</a>,
         },
         {
             title: '作者',
@@ -33,13 +34,13 @@ export const ArticleListPage = () => {
             key: 'author',
         },
         {
-            title: '是否展示',
+            title: '展示',
             dataIndex: 'is_view',
             key: 'is_view',
-            render: (is_view, data, i) => <span key={i + data['id']}>{is_view ?
-                <span style={{fontSize: '25px'}}> <EyeOutlined/></span>
+            render: (is_view) => <span key={getUuid()}>{is_view ?
+                <span key={getUuid()} style={{fontSize: '25px'}}> <EyeOutlined/></span>
                 :
-                <span style={{fontSize: '25px'}}> <EyeInvisibleOutlined/> </span>
+                <span key={getUuid()} style={{fontSize: '25px'}}> <EyeInvisibleOutlined/> </span>
             }</span>
         },
         {
@@ -50,7 +51,7 @@ export const ArticleListPage = () => {
             key: 'summary',
         },
         {
-            title: ' 文章字符数',
+            title: ' 字数',
             dataIndex: 'word_count',
             key: 'word_count',
         },
@@ -63,15 +64,15 @@ export const ArticleListPage = () => {
             title: '标签',
             key: 'tags',
             dataIndex: 'tags',
-            render: (tags,data,i) => (
+            render: (tags) => (
                 <>
                     {
                         tags
                         &&
-                        tags.map((tag) => {
+                        tags.map((tag: PostTag) => {
                             return (
-                                <Tag color={'volcano'} key={i + data['id']}>
-                                    {111}
+                                <Tag key={getUuid()} color={'volcano'}>
+                                    {tag['name']}
                                 </Tag>
                             );
                         })
@@ -83,31 +84,31 @@ export const ArticleListPage = () => {
             title: '允许评论',
             dataIndex: 'disallow_comment',
             key: 'disallow_comment',
-            render: (disallow_comment,data,i) => <span key={i + data['id']}>{disallow_comment ? '是' : '否'}</span>
+            render: (disallow_comment, data, i) => <span key={getUuid()}>{disallow_comment ? '是' : '否'}</span>
         },
         {
             title: '加密',
             dataIndex: 'password',
             key: 'password',
-            render: (password,data,i) => <span key={i + data['id']}>{password ? '是' : '否'}</span>
+            render: (password, data, i) => <span key={getUuid()}>{password ? '是' : '否'}</span>
         },
         {
             title: '置顶',
             dataIndex: 'top_priority',
             key: 'top_priority',
-            render: (top_priority,data,i) => <span key={i + data['id']}>{top_priority ? '是' : '否'}</span>
+            render: (top_priority, data, i) => <span key={getUuid()}>{top_priority ? '是' : '否'}</span>
         },
         {
             title: '创建时间',
             dataIndex: 'created_time',
             key: 'created_time',
-            render: (created_time,data,i) => <span key={i + data['id']}>{formatDate(new Date(created_time))}</span>
+            render: (created_time, data, i) => <span key={getUuid()}>{formatDate(new Date(created_time))}</span>
         },
         {
             title: '更新时间',
             dataIndex: 'update_time',
             key: 'update_time',
-            render: (update_time,data,i) => <span key={i + data['id']}>{formatDate(new Date(update_time))}</span>
+            render: (update_time, data, i) => <span key={getUuid()}>{formatDate(new Date(update_time))}</span>
         },
 
     ];
@@ -149,7 +150,10 @@ export const ArticleListPage = () => {
                         total: pageInfoRef.current.total,
                         defaultPageSize: 10
                     }}
-                    rowKey={obj => obj.id}
+                    rowKey={() => {
+                        let uuid = getUuid();
+                        return uuid;
+                    }}
                     dataSource={postList}/>
             </div>
         </>

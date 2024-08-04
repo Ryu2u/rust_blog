@@ -1,4 +1,6 @@
-use crate::post::structs::PageInfo;
+use std::io::Read;
+use actix_easy_multipart::MultipartForm;
+use crate::post::structs::{FileForm, PageInfo};
 use crate::utils::time_utils::get_sys_time;
 use crate::{info, Exception, Post, R};
 
@@ -6,6 +8,7 @@ use actix_web::{get, post, web, Responder};
 use rbatis::RBatis;
 
 use tracing::{instrument, span, Level};
+use crate::post::tag_apis::get_tag_by_post_id;
 use crate::utils::md_to_html;
 
 /// 文章 接口
@@ -14,8 +17,9 @@ use crate::utils::md_to_html;
 /// api_post_list_page -> 分页获取仅供展示的文章列表
 /// api_post_list_page_admin -> 分页获取所有文章列表
 /// api_post_list_get_admin -> 根据id获取文章
-/// api_post_list_update -> 根据id更新文章
-/// api_post_list_del -> 根据id删除文章(逻辑删除)
+/// api_post_update -> 根据id更新文章
+/// api_post_del -> 根据id删除文章(逻辑删除)
+/// api_post_test -> 根据md文件添加文章
 pub fn post_scope() -> actix_web::Scope {
     actix_web::web::scope("/post")
         .service(api_post_add)
@@ -25,6 +29,7 @@ pub fn post_scope() -> actix_web::Scope {
         .service(api_post_get_admin)
         .service(api_post_update)
         .service(api_post_del)
+        .service(api_file_test)
 }
 
 #[instrument]
@@ -35,7 +40,7 @@ async fn api_post_add(
 ) -> Result<impl Responder, Exception> {
     match check_post(&*db, &*post).await {
         Ok(md_html) => {
-            let mut post_new = Post::new(
+            let post_new = Post::new(
                 post.title.clone(),
                 post.author.clone(),
                 post.original_content.clone(),
@@ -95,6 +100,7 @@ async fn api_post_update(
     mut post: web::Json<Post>,
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
+    // todo: 更新操作时，如果标题未更改应该判断成功
     match check_post(&**db, &post).await {
         Err(e) => Err(e),
         Ok(format_str) => {
@@ -133,6 +139,54 @@ async fn api_post_del(id: web::Path<i32>, db: web::Data<RBatis>) -> Result<impl 
     }
 
     Ok(R::ok_msg("删除成功!"))
+}
+
+
+#[post("/test/form")]
+pub async fn api_file_test(form: MultipartForm<FileForm>) -> Result<impl Responder, Exception> {
+    let file_form = form.0;
+    info!("{:?}", file_form);
+    let num = file_form.num.0;
+    info!("NUM : {}", num);
+    let mut temp_file = file_form.file;
+    match temp_file.content_type {
+        None => {
+        }
+        Some(file_mime) => {
+
+            info!("{:?}",file_mime.subtype().as_str());
+            info!("{:?}",file_mime.suffix());
+            info!("{:?}",file_mime);
+        }
+    }
+    let file = temp_file.file.as_file_mut();
+    info!("file len : {:?}", file.metadata());
+    let mut file_content = String::new();
+    match file.read_to_string(&mut file_content) {
+        Ok(_) => {
+            info!("{:?}",file_content);
+
+            // let post_new = Post::new(
+            //     post.title.clone(),
+            //     post.author.clone(),
+            //     post.original_content.clone(),
+            //     md_html,
+            //     post.format_content.len() as i32,
+            //     post.summary.clone(),
+            // );
+            //
+            // match Post::insert(&**db, &post_new).await {
+            //     Ok(_) => Ok(R::ok_msg("添加成功!")),
+            //     Err(_) => Err(Exception::BadRequest("add post failed!".to_string())),
+            // }
+
+
+            Ok(R::ok())
+        }
+        Err(_) => {
+            Ok(R::ok())
+        }
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -186,10 +240,19 @@ async fn post_list_page(
         Post::select_page(&**db, limit, page_size).await
     };
     if let Ok(mut vec) = res {
-        vec.iter_mut().for_each(|i| {
-            i.format_content = "".to_string();
-            i.original_content = "".to_string();
-        });
+        let mut iter = vec.iter_mut();
+        while let Some(item) = iter.next() {
+            item.format_content = "".to_string();
+            item.original_content = "".to_string();
+            let tag_vec = get_tag_by_post_id(item.id.unwrap(), &**db).await;
+            item.tags = Some(tag_vec);
+        }
+
+        // vec.iter_mut().for_each( |item|   {
+        //     // get_tag_by_post_id(item.id.unwrap(),&**db).await;
+        //     item.format_content = "".to_string();
+        //     item.original_content = "".to_string();
+        // });
         page_info.list = Some(vec);
         Ok(R::<PageInfo<Post>>::ok_obj(page_info.clone()))
     } else {
@@ -250,6 +313,7 @@ mod test {
 
     use std::io::Read;
     use std::path::Path;
+    use crate::utils::md_to_html;
 
     #[tokio::test]
     async fn test_post_add() {
@@ -268,7 +332,7 @@ mod test {
                         let mut file = File::open(dir.path()).unwrap();
                         let mut str = String::new();
                         file.read_to_string(&mut str).unwrap();
-                        let html = markdown::to_html(&str);
+                        let html = md_to_html(&str);
                         println!("{}", html);
                         let title = dir.file_name().to_str().unwrap().to_string();
                         let author = "Ryu2u".to_string();

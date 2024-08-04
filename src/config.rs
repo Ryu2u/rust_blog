@@ -1,4 +1,4 @@
-use crate::{Post, User};
+use crate::{User};
 use actix_web::body::BoxBody;
 use actix_web::guard::{Guard, GuardContext};
 use actix_web::http::header::ContentType;

@@ -8,8 +8,11 @@ use serde::{Deserialize, Serialize};
 /// http form 传值测试
 #[derive(Debug, MultipartForm)]
 pub struct FileForm {
+    ///  文件标题
     pub title: Option<Text<String>>,
+    /// 数量?
     pub num: Text<i32>,
+    /// 文件对象
     pub file: Tempfile,
 }
 
@@ -53,9 +56,9 @@ pub struct Post {
 
     ///////////////////// 以下是数据库不存在字段 insert时需要值为None
     /// 文章类别
-    pub category: Option<String>,
+    pub category: Option<Category>,
     /// 文章标签
-    pub tags: Option<Vec<String>>,
+    pub tags: Option<Vec<Tag>>,
 }
 
 impl Post {
@@ -66,7 +69,7 @@ impl Post {
         original_content: String,
         format_content: String,
         word_count: i32,
-        summary:Option<String>
+        summary: Option<String>,
     ) -> Self {
         let created_time = get_sys_time();
         Post {
@@ -135,7 +138,7 @@ impl_select!(
 // 根据 title 字段查询文章， title 不能重复
 impl_select!(
     Post{
-        select_by_title(title:String) => "`where title = #{title}` limit 1"
+        select_by_title(title:String) => "`where title = #{title} and is_deleted = 0 limit 1`"
     }
 );
 
@@ -167,6 +170,12 @@ pub struct Tag {
     pub priority: Option<i32>,
 }
 crud!(Tag{});
+
+impl_select!(
+    Tag{
+        select_by_name_id(name:&str,id:i32) => "`where name = #{name} and id != #{id}`"
+    }
+);
 
 
 /// 文章类别

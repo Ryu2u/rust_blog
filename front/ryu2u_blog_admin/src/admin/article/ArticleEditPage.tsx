@@ -1,13 +1,12 @@
 import {MdEditor} from "../../comonents/MdEditor";
 import {Button, Form, Input, message, Modal, Switch} from "antd";
-import {DeleteOutlined, DeliveredProcedureOutlined, ExclamationCircleFilled, SaveOutlined, SettingOutlined} from "@ant-design/icons";
+import {DeleteOutlined, DeliveredProcedureOutlined, ExclamationCircleFilled} from "@ant-design/icons";
 import type {DraggableData, DraggableEvent} from 'react-draggable';
 import Draggable from 'react-draggable';
 import {useEffect, useRef, useState} from "react";
 import PostService from "../../service/PostService";
 import {Post} from "../../common/Structs";
 import {useParams, useNavigate} from "react-router-dom";
-import {post} from "axios";
 
 const layout = {
     labelCol: {span: 4},
@@ -29,7 +28,7 @@ export function ArticleEditPage() {
     useEffect(() => {
         const id = param['id'];
         if (id) {
-            PostService.post_get(id).then(res => {
+            PostService.post_get(parseInt(id)).then(res => {
                 let post: Post = res.obj;
                 postRef.current = post;
                 setInitValue(post.original_content);
@@ -162,7 +161,7 @@ export function ArticleEditPage() {
                 </Button>
                 <Button type={"primary"} onClick={showModal}>
                     <DeliveredProcedureOutlined/>
-                    发布
+                    {postRef.current.id ? "更新" : "发布"}
                 </Button>
             </div>
             {
@@ -198,7 +197,12 @@ export function ArticleEditPage() {
                 maskClosable={false}
                 onOk={handleOk}
                 onCancel={handleCancel}
-                okText={"发布"}
+                okText={
+                    postRef.current.id ?
+                        "更新"
+                        :
+                        "发布"
+                }
                 cancelText={"取消"}
                 width={600}
                 modalRender={(modal) => (

@@ -55,6 +55,7 @@ const items: MenuProps['items'] = [
         disabled: false, // 是否禁用
         danger: false // 展示错误状态样式
     },
+
 ]
 
 
@@ -139,7 +140,7 @@ export function Admin() {
                         minHeight: '97vh'
                     }}
             >
-                <Header style={{padding: '0', background: colorBgContainer}}/>
+                <Header className={"layout-header"} style={{padding: '0', background: colorBgContainer}}/>
                 <Content className={"content-div"}>
                     <div
                         className={"container"}

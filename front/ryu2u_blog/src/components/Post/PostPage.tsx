@@ -1,6 +1,4 @@
 import "./PostPage.scss"
-import {FloatButton} from "antd";
-import {QuestionCircleOutlined, SettingOutlined, SyncOutlined} from '@ant-design/icons';
 import {useEffect, useRef, useState} from "react";
 import {useParams} from "react-router";
 import {Post} from "../../common/Structs";

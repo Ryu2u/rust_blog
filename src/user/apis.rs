@@ -1,7 +1,5 @@
-use crate::post::structs::FileForm;
 use crate::user::structs::LoginDto;
 use crate::{error, Exception, User, R};
-use actix_easy_multipart::MultipartForm;
 use actix_web::{get, post, web, Responder};
 
 use rbatis::RBatis;
@@ -21,7 +19,6 @@ pub fn user_scope() -> actix_web::Scope {
         .service(api_login)
         .service(api_logout)
         .service(api_user_get)
-        .service(api_file_test)
 }
 
 #[post("/login")]
@@ -84,17 +81,6 @@ pub async fn api_user_get(
     }
 }
 
-#[post("/test/form")]
-pub async fn api_file_test(form: MultipartForm<FileForm>) -> Result<impl Responder, Exception> {
-    let file_form = form.0;
-    info!("{:?}", file_form);
-    let num = file_form.num.0;
-    info!("NUM : {}", num);
-    let mut temp_file = file_form.file;
-    let file = temp_file.file.as_file_mut();
-    info!("file len : {:?}", file.metadata());
-    Ok(R::<()>::ok())
-}
 
 #[cfg(test)]
 mod test {

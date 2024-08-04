@@ -8,6 +8,7 @@ const plugins = [
     // Add more plugins here
 ]
 
+// @ts-ignore
 export function MdEditor({getContent, content}) {
 
     const [value, setValue] = useState('')

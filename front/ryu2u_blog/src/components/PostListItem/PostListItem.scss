@@ -18,8 +18,12 @@
   text-align: center;
 }
 
+.post-bg, .recent-post-info {
+  min-width: 366px;
+}
+
 .post-left {
-  flex-direction: row-reverse;
+  flex-dieection: row-reverse;
 }
 
 .post-bg img {
@@ -75,7 +79,7 @@
   }
 }
 
-.post-divider{
+.post-divider {
   width: 1px;
   height: 100%;
   background-color: #696969;

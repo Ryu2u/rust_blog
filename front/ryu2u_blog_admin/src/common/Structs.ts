@@ -50,5 +50,13 @@ export class Post {
     update_time?: number | Date;
     ////////////////////////////////////////////////
     category?: string;
-    tags: string[] = []
+    tags: PostTag[] = []
+}
+
+
+export class PostTag {
+    id?: number;
+    name?: string;
+    slug?: string;
+    description?: string;
 }

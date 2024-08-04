@@ -31,3 +31,8 @@ html {
     --color-scrollbar-thumb: #8888;
     --color-float-btn: #f5f5f5;
 }
+
+body{
+    overflow-x: hidden;
+
+}
