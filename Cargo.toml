@@ -16,7 +16,7 @@ tokio = "1.25.0"
 serde_json = {version = "1.0.91",features = []}
 serde = {version = "1.0.152",features = ["derive"]}
 derive_more = "0.99.17"
-chrono = "0.4.23"
+chrono = "0.4.38"
 # actix
 actix-web = "4"
 actix-easy-multipart = "3.0.0"

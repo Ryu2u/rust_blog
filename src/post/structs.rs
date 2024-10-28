@@ -104,9 +104,12 @@ impl Post {
 
     /// 统计文章总数(已展示的)
     pub async fn count_view(db: &RBatis) -> i32 {
-        db.query_decode("select count(*) as count from post where is_view = 1", vec![])
-            .await
-            .unwrap()
+        db.query_decode(
+            "select count(*) as count from post where is_view = 1",
+            vec![],
+        )
+        .await
+        .unwrap()
     }
 }
 crud!(Post {});
@@ -145,15 +148,14 @@ impl_select!(
 /// 分页 实体对象
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PageInfo<T>
-    where
-        T: Serialize,
+where
+    T: Serialize,
 {
     pub page_num: i32,
     pub page_size: i32,
     pub total: i32,
     pub list: Option<Vec<T>>,
 }
-
 
 /// 文章标签对象
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -169,14 +171,13 @@ pub struct Tag {
     /// 标签优先级
     pub priority: Option<i32>,
 }
-crud!(Tag{});
+crud!(Tag {});
 
 impl_select!(
     Tag{
         select_by_name_id(name:&str,id:i32) => "`where name = #{name} and id != #{id}`"
     }
 );
-
 
 /// 文章类别
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -195,7 +196,7 @@ pub struct Category {
     pub parent_id: Option<i32>,
 }
 
-crud!(Category{});
+crud!(Category {});
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PostTag {
@@ -204,7 +205,7 @@ pub struct PostTag {
     pub post_id: i32,
     pub tag_id: i32,
 }
-crud!(PostTag{});
+crud!(PostTag {});
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PostCategory {
@@ -213,4 +214,4 @@ pub struct PostCategory {
     pub post_id: i32,
     pub category_id: i32,
 }
-crud!(PostCategory{});
+crud!(PostCategory {});

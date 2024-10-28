@@ -1189,7 +1189,8 @@ span.CodeMirror-selectedtext {
 }
 
 .markdown-body img {
-  border-style: none;
+  border: 1px solid #8888;
+  border-radius: 16px;
   max-width: 100%;
   box-sizing: content-box;
   background-color: var(--color-canvas-default);
@@ -1853,7 +1854,7 @@ span.CodeMirror-selectedtext {
   color: var(--color-fg-default);
   background-color: var(--color-canvas-subtle);
   border-radius: 6px;
-  border: 1px solid #696969;
+  border: 1px solid #8888;
 }
 
 .markdown-body pre code,

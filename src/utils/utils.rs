@@ -1,6 +1,5 @@
+use pulldown_cmark::Options;
 use std::time::SystemTime;
-use pulldown_cmark::{Options};
-
 
 pub fn md_to_html(str: &str) -> String {
     let time = SystemTime::now();
@@ -13,7 +12,6 @@ pub fn md_to_html(str: &str) -> String {
     println!("{}", html_output);
     html_output
 }
-
 
 /// 将name 转换为合格的字符串，没有空格，以下划线替换
 pub fn parse_slug(name: &str) -> String {

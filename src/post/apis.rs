@@ -1,15 +1,15 @@
-use std::io::Read;
-use actix_easy_multipart::MultipartForm;
 use crate::post::structs::{FileForm, PageInfo};
 use crate::utils::time_utils::get_sys_time;
 use crate::{info, Exception, Post, R};
+use actix_easy_multipart::MultipartForm;
+use std::io::Read;
 
 use actix_web::{get, post, web, Responder};
 use rbatis::RBatis;
 
-use tracing::{instrument, span, Level};
 use crate::post::tag_apis::get_tag_by_post_id;
 use crate::utils::md_to_html;
+use tracing::{instrument, span, Level};
 
 /// 文章 接口
 /// api_post_add -> 文章添加
@@ -121,7 +121,10 @@ async fn api_post_update(
 
 #[instrument]
 #[get("/admin/del/{id}")]
-async fn api_post_del(id: web::Path<i32>, db: web::Data<RBatis>) -> Result<impl Responder, Exception> {
+async fn api_post_del(
+    id: web::Path<i32>,
+    db: web::Data<RBatis>,
+) -> Result<impl Responder, Exception> {
     // 判断是否存在 -> 置逻辑删除
     let res = Post::select_by_id(&**db, *id).await;
     if res.is_err() {
@@ -141,7 +144,6 @@ async fn api_post_del(id: web::Path<i32>, db: web::Data<RBatis>) -> Result<impl 
     Ok(R::ok_msg("删除成功!"))
 }
 
-
 #[post("/test/form")]
 pub async fn api_file_test(form: MultipartForm<FileForm>) -> Result<impl Responder, Exception> {
     let file_form = form.0;
@@ -150,13 +152,11 @@ pub async fn api_file_test(form: MultipartForm<FileForm>) -> Result<impl Respond
     info!("NUM : {}", num);
     let mut temp_file = file_form.file;
     match temp_file.content_type {
-        None => {
-        }
+        None => {}
         Some(file_mime) => {
-
-            info!("{:?}",file_mime.subtype().as_str());
-            info!("{:?}",file_mime.suffix());
-            info!("{:?}",file_mime);
+            info!("{:?}", file_mime.subtype().as_str());
+            info!("{:?}", file_mime.suffix());
+            info!("{:?}", file_mime);
         }
     }
     let file = temp_file.file.as_file_mut();
@@ -164,7 +164,7 @@ pub async fn api_file_test(form: MultipartForm<FileForm>) -> Result<impl Respond
     let mut file_content = String::new();
     match file.read_to_string(&mut file_content) {
         Ok(_) => {
-            info!("{:?}",file_content);
+            info!("{:?}", file_content);
 
             // let post_new = Post::new(
             //     post.title.clone(),
@@ -180,12 +180,9 @@ pub async fn api_file_test(form: MultipartForm<FileForm>) -> Result<impl Respond
             //     Err(_) => Err(Exception::BadRequest("add post failed!".to_string())),
             // }
 
-
             Ok(R::ok())
         }
-        Err(_) => {
-            Ok(R::ok())
-        }
+        Err(_) => Ok(R::ok()),
     }
 }
 
@@ -311,9 +308,9 @@ mod test {
     use rbdc_sqlite::SqliteDriver;
     use std::fs::{read_dir, File};
 
+    use crate::utils::md_to_html;
     use std::io::Read;
     use std::path::Path;
-    use crate::utils::md_to_html;
 
     #[tokio::test]
     async fn test_post_add() {

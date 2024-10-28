@@ -1,4 +1,4 @@
-use crate::{User};
+use crate::User;
 use actix_web::body::BoxBody;
 use actix_web::guard::{Guard, GuardContext};
 use actix_web::http::header::ContentType;
@@ -29,10 +29,9 @@ impl R<()> {
         R::<()>::ok_msg_unit(str)
     }
 
-    pub fn ok() -> R<()>{
+    pub fn ok() -> R<()> {
         R::<()>::ok_unit()
     }
-
 }
 
 impl<T: Serialize> R<T> {
