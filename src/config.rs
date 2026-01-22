@@ -130,16 +130,16 @@ impl<T: Serialize> Responder for R<T> {
 pub async fn init_rbatis(db_path: String) -> RBatis {
     let sqlite_url = "sqlite://db/rust_blog.db".to_string();
     info!("sqlite_url -> {}", sqlite_url);
-    let rbatis = RBatis::new();
-    rbatis.init(SqliteDriver {}, sqlite_url.as_str()).unwrap();
     let db_path = std::path::Path::new(&db_path);
-
-    if !db_path.try_exists().expect("can't find db path}") {
+    let rbatis = RBatis::new();
+    if !db_path.exists() {
+        File::create(&db_path).expect("Unable to create file");
         info!("{:?} is not exists,start to init!", db_path);
         let mut file = File::open("schema.sql").expect("schema.sql is not exists!");
         let mut init_sql = String::new();
         file.read_to_string(&mut init_sql)
             .expect("can't read file schema.sql");
+        rbatis.init(SqliteDriver {}, sqlite_url.as_str()).unwrap();
         rbatis
             .exec(init_sql.as_str(), vec![])
             .await
@@ -148,6 +148,9 @@ pub async fn init_rbatis(db_path: String) -> RBatis {
         User::insert(&rbatis, &user)
             .await
             .expect("insert user failed");
+    } else {
+        rbatis.init(SqliteDriver {}, sqlite_url.as_str()).unwrap();
     }
+
     rbatis
 }

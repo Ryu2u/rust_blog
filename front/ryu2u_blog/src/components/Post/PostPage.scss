@@ -44,7 +44,7 @@
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 10px;
 }
 
 .post-meta span {
@@ -53,6 +53,13 @@
 
 .content {
   margin-bottom: var(--post-spacing);
+}
+
+.side-list {
+  position: sticky;
+  top: 80px; /* 与header高度保持一致，避免重叠 */
+  align-self: flex-start;
+  z-index: 100;
 }
 
 @media (max-width: 1024px) {
@@ -68,6 +75,8 @@
   .side-list {
     width: 100%;
     min-width: unset;
+    position: relative;
+    top: 0;
   }
   
   .post-title {

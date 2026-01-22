@@ -27,7 +27,7 @@ export function Header() {
                                 </a>
                             </li>
                             <li>
-                                <a href={"#"}>
+                                <a href={"#"} onClick={() => navigate("/category")}>
                                     <span className={"fa fa-align-justify"}></span>分类
                                 </a>
                             </li>

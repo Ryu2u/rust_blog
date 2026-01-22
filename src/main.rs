@@ -8,7 +8,7 @@ use actix_cors::Cors;
 use actix_easy_multipart::MultipartFormConfig;
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
-use actix_web::cookie::Key;
+use actix_web::cookie::{Key, SameSite};
 use actix_web::{error, web, App, HttpServer};
 use config::*;
 use dotenv::dotenv;
