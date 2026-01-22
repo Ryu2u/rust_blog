@@ -77,7 +77,7 @@ export function PostPage() {
         const post_id = param['id'];
         console.log(`post_id : ${post_id}`);
 
-        PostService.getPostById(post_id).then((result) => {
+        PostService.getPostById(Number(post_id)).then((result) => {
             console.log(result.obj);
             let data: Post = result.obj;
             data.created_time = new Date(data.created_time);
@@ -86,30 +86,31 @@ export function PostPage() {
             genToc();
         })
 
-    }, [post_content_ref.current])
+    }, [param])
 
     function genToc() {
         let div = post_content_ref.current;
         let hLevel: CatalogItem[] = [];
-        // @ts-ignore
+        
         div?.childNodes.forEach((e, index) => {
             const titleTag = ["H1", "H2", "H3", "H4", "H5", "H6"];
             if (titleTag.includes(e.nodeName)) {
+                const htmlElement = e as HTMLElement;
                 if (e.nodeName == "H1") {
-                    hLevel.push({hNum: 1, title: e.innerText, id: index});
+                    hLevel.push({hNum: 1, title: htmlElement.innerText, id: index});
                 } else if (e.nodeName == "H2") {
-                    hLevel.push({hNum: 2, title: e.innerText, id: index})
+                    hLevel.push({hNum: 2, title: htmlElement.innerText, id: index});
                 } else if (e.nodeName == "H3") {
-                    hLevel.push({hNum: 3, title: e.innerText, id: index})
+                    hLevel.push({hNum: 3, title: htmlElement.innerText, id: index});
                 } else if (e.nodeName == "H4") {
-                    hLevel.push({hNum: 4, title: e.innerText, id: index})
+                    hLevel.push({hNum: 4, title: htmlElement.innerText, id: index});
                 } else if (e.nodeName == "H5") {
-                    hLevel.push({hNum: 5, title: e.innerText, id: index})
+                    hLevel.push({hNum: 5, title: htmlElement.innerText, id: index});
                 } else if (e.nodeName == "H6") {
-                    hLevel.push({hNum: 6, title: e.innerText, id: index})
+                    hLevel.push({hNum: 6, title: htmlElement.innerText, id: index});
                 }
                 const id = "header-" + index;
-                e.setAttribute("id", id);
+                htmlElement.setAttribute("id", id);
             }
         });
         let tree = toTree(hLevel);
@@ -120,25 +121,28 @@ export function PostPage() {
     return (
         <>
             <Header/>
-            <div className={"post-info"}>
-                <div className={"post-title"}>
-                    {postRef.current.title}
-                </div>
-                <div className={"post-meta"}>
-                    <span className={"fa fa-calendar"}> </span>
-                    发表于{loading ? '' : postRef.current.created_time.toLocaleString()}|
-                    <span className={"fa fa-history"}> </span>
-                    更新于{loading ? '' : postRef.current.update_time.toLocaleString()} |
-                    <span className={"fa fa-archive"}></span>
-                    {postRef.current.category ? postRef.current.category : '未知分类'}
-                </div>
-            </div>
-
+            
             <div className={"container flex"}>
-                <div className={"content"}>
-                    <div ref={post_content_ref} id={"post-content"} data-theme="light" className={"markdown-body"} dangerouslySetInnerHTML={{
-                        __html: postRef.current.format_content
-                    }}>
+                <div className={"post-main"}>
+                    <div className={"post-info"}>
+                        <div className={"post-title"}>
+                            {postRef.current.title}
+                        </div>
+                        <div className={"post-meta"}>
+                            <span className={"fa fa-calendar"}> </span>
+                            发表于{loading ? '' : postRef.current.created_time.toLocaleString()}|
+                            <span className={"fa fa-history"}> </span>
+                            更新于{loading ? '' : postRef.current.update_time.toLocaleString()} |
+                            <span className={"fa fa-archive"}></span>
+                            {postRef.current.category ? postRef.current.category : '未知分类'}
+                        </div>
+                    </div>
+                    
+                    <div className={"content"}>
+                        <div ref={post_content_ref} id={"post-content"} data-theme="light" className={"markdown-body"} dangerouslySetInnerHTML={{
+                            __html: postRef.current.format_content
+                        }}>
+                        </div>
                     </div>
                 </div>
 

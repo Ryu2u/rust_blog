@@ -10,48 +10,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>🍑HaiTao's Blog</title>
     <style>
+        /* 基础变量定义 */
+        :root {
+            --transition: all 0.5s ease;
+            --border-radius: 8px;
+        }
+
+        /* 主题定义 */
+        :root[theme='light'] {
+            --color-bg-default: linear-gradient(135deg, #f9f7f7 0%, #e3f2fd 100%);
+            --color-font-default: #3a3a3a;
+            --color-post-content-bg-default: #ffffff;
+            --color-primary: #4a90e2;
+            --color-secondary: #50c878;
+            --color-accent: #ff6b6b;
+        }
+
+        :root[theme='dark'] {
+            --color-bg-default: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --color-font-default: #e0e0e0;
+            --color-post-content-bg-default: #2a2a40;
+            --color-primary: #6b9eff;
+            --color-secondary: #7dd3fc;
+            --color-accent: #ff8fab;
+        }
+
+        /* 加载动画容器 */
         #loading-div {
             position: fixed;
             width: 100%;
             height: 100%;
             z-index: 99999;
-            background-image: var(--color-bg-default);
+            background: var(--color-bg-default);
             opacity: 1;
-            transition: opacity 1s ease;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
         }
 
-        :root[theme='dark'] {
-            --color-bg-default: linear-gradient(to right, #434343 0%, black 100%);;
-            --color-font-default: #ffff;
-            --color-post-content-bg-default: #0d1117;
+        /* 加载动画 - 脉冲效果 */
+        .loading-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 24px;
         }
 
-        :root[theme='dark'] {
-            --color-bg-default: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
-            --color-font-default: #000;
-            --color-post-content-bg-default: #ffffff;
+        .loading-spinner {
+            position: relative;
+            width: 80px;
+            height: 80px;
         }
 
-
-        @keyframes disappear {
-            0% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-            }
+        .loading-spinner::before,
+        .loading-spinner::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            animation: spin 1.5s linear infinite;
         }
 
-        .ball {
-            height: 30px;
-            width: 30px;
-            border: 1px solid blue;
-            border-right: none;
-            border-radius: 100%;
-            animation: loading 1s linear infinite;
+        .loading-spinner::before {
+            border-top-color: var(--color-primary);
+            animation-delay: 0s;
         }
 
-        @keyframes loading {
+        .loading-spinner::after {
+            border-top-color: var(--color-secondary);
+            animation-delay: 0.3s;
+        }
+
+        @keyframes spin {
             0% {
                 transform: rotate(0deg);
             }
@@ -60,18 +97,63 @@
             }
         }
 
-
-        /*－－－－－－－－－－－－－－－－－－－－－－－－－
-        not necessary,It's only make the ball center
-        非必需，下面的样式，只是为了使ball元素居中显示
-        －－－－－－－－－－－－－－－－－－－－－－－－－－－*/
-        .ball {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translateX(-50%);
+        /* 加载文字 */
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-font-default);
+            animation: pulse 1.5s ease-in-out infinite;
         }
 
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.05);
+            }
+        }
+
+        /* 页面进入动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #root {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .loading-spinner {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .loading-text {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .loading-spinner {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .loading-text {
+                font-size: 14px;
+            }
+        }
     </style>
     <script>
         const theme = localStorage.getItem('theme-key');
@@ -96,7 +178,10 @@
 </head>
 <body>
 <div id="loading-div">
-    <div class="ball"></div>
+    <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">加载中...</div>
+    </div>
 </div>
 <div id="root"></div>
 <script type="module" src="./src/main.tsx"></script>

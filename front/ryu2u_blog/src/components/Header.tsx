@@ -21,31 +21,31 @@ export function Header() {
                     </div>
                     <div className={"header-menu"}>
                         <ul>
-                            <a href={"#"} onClick={homeClick}>
-                                <li>
+                            <li>
+                                <a href={"#"} onClick={homeClick}>
                                     <span className={"fa fa-home"}></span>主页
-                                </li>
-                            </a>
-                            <a href={"#"}>
-                                <li>
+                                </a>
+                            </li>
+                            <li>
+                                <a href={"#"}>
                                     <span className={"fa fa-align-justify"}></span>分类
-                                </li>
-                            </a>
-                            <a href={"#"}>
-                                <li>
+                                </a>
+                            </li>
+                            <li>
+                                <a href={"#"}>
                                     <span className={"fa fa-link"}></span>链接
-                                </li>
-                            </a>
+                                </a>
+                            </li>
                             <li>
                                 <a href={"#"}>
                                     <span className={"fa fa-info-circle"}></span>关于
                                 </a>
                             </li>
-                            <a href={"#"}>
-                                <li>
+                            <li>
+                                <a href={"#"}>
                                     <span className={"fa fa-search"}></span>搜索
-                                </li>
-                            </a>
+                                </a>
+                            </li>
                         </ul>
 
                     </div>

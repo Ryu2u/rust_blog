@@ -1,7 +1,5 @@
 import './home.scss'
-import {Button, FloatButton} from "antd";
-import {MoonOutlined, QuestionCircleOutlined, SearchOutlined, SettingOutlined, SyncOutlined} from '@ant-design/icons';
-import {useEffect, useState} from "react";
+import {useEffect, useState, useCallback} from "react";
 import {Header} from "../components/Header";
 import {Footer} from "../components/Footer";
 import {SideBar} from "../components/SideBar";
@@ -15,13 +13,8 @@ export function Home() {
     const [postList, setPostList] = useState<Post[]>([])
     const [pageInfo, setPageInfo] = useState(new PageInfo());
 
-    useEffect(() => {
-        getPageList(1, 10);
-
-    }, [])
-
-    function getPageList(pageNum: number, pageSize: number) {
-        let pageInfo = new PageInfo();
+    const getPageList = useCallback((pageNum: number, pageSize: number) => {
+        const pageInfo = new PageInfo();
         pageInfo.page_num = pageNum;
         pageInfo.page_size = pageSize;
         pageInfo.total = 0;
@@ -31,9 +24,14 @@ export function Home() {
             setPageInfo(pageInfo);
             setPostList(pageInfo.list);
             console.log("list => ");
-            console.log(postList);
+            console.log(pageInfo.list);
         });
-    }
+    }, []);
+
+    useEffect(() => {
+        getPageList(1, 10);
+
+    }, [getPageList])
 
 
 

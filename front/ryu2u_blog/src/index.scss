@@ -1,18 +1,24 @@
 :root[theme= 'dark'] {
-  --color-bg-default: linear-gradient(to right, #434343 0%, black 100%);;
-  --color-font-default: #ffff;
-  --color-post-content-bg-default: #0d1117;
+  --color-bg-default: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --color-font-default: #e0e0e0;
+  --color-post-content-bg-default: #2a2a40;
+  --color-primary: #6b9eff;
+  --color-secondary: #7dd3fc;
+  --color-accent: #ff8fab;
   --color-scrollbar-thumb: #8888;
-  --color-float-btn: #8888;
+  --color-float-btn: #6b9eff;
 }
 
 
 :root[theme= 'light'] {
-  --color-bg-default:  #cfd9df;
-  --color-font-default: #000;
+  --color-bg-default: linear-gradient(135deg, #f9f7f7 0%, #e3f2fd 100%);
+  --color-font-default: #3a3a3a;
   --color-post-content-bg-default: #ffffff;
+  --color-primary: #4a90e2;
+  --color-secondary: #50c878;
+  --color-accent: #ff6b6b;
   --color-scrollbar-thumb: #8888;
-  --color-float-btn: #f5f5f5;
+  --color-float-btn: #4a90e2;
 }
 
 

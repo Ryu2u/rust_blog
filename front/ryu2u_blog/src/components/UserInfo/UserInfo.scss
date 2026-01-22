@@ -64,17 +64,25 @@
     margin: 6px 0;
     width: 90%;
     height: 1px;
-    background-color: #8888;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+:root[theme='dark'] .divider {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .user-link {
     text-align: center;
     a{
-        //color: black;
+        color: var(--color-primary);
         text-decoration: none;
+        transition: color 0.3s ease;
+    }
+    a:hover {
+        color: var(--color-secondary);
     }
     a:visited{
-        //color: black;
+        color: var(--color-primary);
     }
 }
 
