@@ -1,0 +1,24 @@
+@import '../home/home.scss';
+
+.category-header {
+  margin: 0 0 var(--spacing-lg) 0;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.tag-cloud {
+  margin: 0 0 var(--spacing-lg) 0;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.empty-state {
+  margin: var(--spacing-lg) 0;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@media (max-width: 768px) {
+  .category-header,
+  .tag-cloud,
+  .empty-state {
+    margin: var(--spacing-md) 0;
+  }
+}
