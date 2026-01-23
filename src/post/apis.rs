@@ -4,11 +4,12 @@ use crate::{info, Exception, Post, R};
 use actix_easy_multipart::MultipartForm;
 use std::io::Read;
 
-use actix_web::{get, post, web, Responder};
-use rbatis::RBatis;
-
+use crate::config::Exception::BadRequest;
 use crate::post::tag_apis::get_tag_by_post_id;
 use crate::utils::md_to_html;
+use actix_web::{get, post, web, Responder};
+use rbatis::rbdc::Error;
+use rbatis::RBatis;
 use tracing::{instrument, span, Level};
 
 /// 文章 接口
@@ -30,6 +31,7 @@ pub fn post_scope() -> actix_web::Scope {
         .service(api_post_update)
         .service(api_post_del)
         .service(api_file_test)
+        .service(api_post_list_by_category)
 }
 
 #[instrument]
@@ -183,6 +185,24 @@ pub async fn api_file_test(form: MultipartForm<FileForm>) -> Result<impl Respond
             Ok(R::ok())
         }
         Err(_) => Ok(R::ok()),
+    }
+}
+
+#[instrument]
+#[post("/list_by_category/{name}")]
+async fn api_post_list_by_category(
+    name: web::Path<String>,
+    page_info: web::Json<PageInfo<Post>>,
+    db: web::Data<RBatis>,
+) -> Result<impl Responder, Exception> {
+    let page_num = page_info.page_num;
+    let page_size = page_info.page_size;
+    let limit = (page_num - 1) * page_size;
+    match Post::select_by_category(&**db, name.into_inner(), limit, page_size).await {
+        Ok(vec) => {
+            Ok(R::ok_obj(vec))
+        }
+        Err(e) => Err(BadRequest(e.to_string())),
     }
 }
 

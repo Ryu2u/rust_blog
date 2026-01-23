@@ -2,7 +2,8 @@ use crate::utils::time_utils::get_sys_time;
 use actix_easy_multipart::tempfile::Tempfile;
 use actix_easy_multipart::text::Text;
 use actix_easy_multipart::MultipartForm;
-use rbatis::{crud, impl_select, RBatis};
+use rbatis::{crud, impl_select, rbdc, RBatis};
+use rbs::Value;
 use serde::{Deserialize, Serialize};
 
 /// http form 传值测试
@@ -110,6 +111,18 @@ impl Post {
         )
         .await
         .unwrap()
+    }
+
+    pub async fn select_by_category(
+        db: &RBatis,
+        category_name: String,
+        limit: i32,
+        page_size: i32,
+    ) -> Result<Vec<Post>, rbdc::Error> {
+        db.query_decode(
+            "select b.* from PostCategory as a join post as b on a.post_id = b.id join category as c on a.category_id = c.id where c.name = ? limit ?,?",
+            vec![Value::String(category_name),Value::I32(limit),Value::I32(page_size)]
+        ).await
     }
 }
 crud!(Post {});

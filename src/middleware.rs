@@ -81,11 +81,30 @@ where
                 let white_list = &white_list.0;
                 info!("white_list : {:?}", white_list);
                 let mut valid: bool = false;
-                white_list.iter().for_each(|str| {
-                    if url.contains(str) {
-                        valid = true;
+                'outer: for str in white_list {
+                    let white_url_vec: Vec<&str> =
+                        str.split("/").filter(|v| !v.is_empty()).collect();
+                    let url_vec: Vec<&str> = url.split("/").filter(|v| !v.is_empty()).collect();
+                    if url_vec.len() < white_url_vec.len() {
+                        continue;
                     }
-                });
+                    for i in 0..white_url_vec.len() {
+                        let a = white_url_vec[i];
+                        let b = url_vec[i];
+                        if a == "**" {
+                            valid = true;
+                            break 'outer;
+                        }
+                        if a == b || a == "*" {
+                            continue;
+                        }
+                        if a != b {
+                            continue 'outer;
+                        }
+                    }
+                    valid = true;
+                    break;
+                }
 
                 if valid {
                     let fut = self.service.call(req);
@@ -118,4 +137,11 @@ fn test_contains() {
     let vec = &vec!["/post/get"];
     let _ = vec.iter().for_each(|str| println!("{str}"));
     assert!("/post/get/1".contains("/post/get"));
+}
+
+#[test]
+fn test_split() {
+    let url = "/post/get";
+    let vec: Vec<&str> = url.split("/").filter(|v| !v.is_empty()).collect();
+    println!("{:?}", vec);
 }
