@@ -1,6 +1,7 @@
 extern crate core;
 
 use crate::middleware::{AuthFilter, FilterWhiteList};
+use crate::post::category_apis::category_scope;
 use crate::post::structs::Post;
 use crate::post::tag_apis::tag_scope;
 use crate::user::structs::User;
@@ -8,7 +9,7 @@ use actix_cors::Cors;
 use actix_easy_multipart::MultipartFormConfig;
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
-use actix_web::cookie::{Key, SameSite};
+use actix_web::cookie::Key;
 use actix_web::{error, web, App, HttpServer};
 use config::*;
 use dotenv::dotenv;
@@ -16,7 +17,6 @@ use post::apis::*;
 use std::env;
 use tracing::log::{error, info};
 use user::apis::*;
-use crate::post::category_apis::category_scope;
 
 mod config;
 mod middleware;
@@ -39,7 +39,13 @@ async fn main() -> std::io::Result<()> {
             .supports_credentials()
             .allowed_methods(vec!["GET", "POST", "OPTIONS"])
             .allow_any_header();
-        let white_list = FilterWhiteList(vec!["/user/login", "/post/get", "/post/page","/post/list_by_category/*","/category/**"]);
+        let white_list = FilterWhiteList(vec![
+            "/user/login",
+            "/post/get",
+            "/post/page",
+            "/post/list_by_category/*",
+            "/category/**",
+        ]);
 
         App::new()
             // 配置全局对象

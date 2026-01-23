@@ -4,7 +4,6 @@ use crate::post::structs::Tag;
 use crate::utils::parse_slug;
 use crate::Exception::BadRequest;
 use crate::{Exception, R};
-use rbatis::rbdc::Error;
 use rbatis::RBatis;
 use rbs::to_value;
 use tracing::instrument;

@@ -8,7 +8,6 @@ use crate::config::Exception::BadRequest;
 use crate::post::tag_apis::get_tag_by_post_id;
 use crate::utils::md_to_html;
 use actix_web::{get, post, web, Responder};
-use rbatis::rbdc::Error;
 use rbatis::RBatis;
 use tracing::{instrument, span, Level};
 
@@ -21,6 +20,7 @@ use tracing::{instrument, span, Level};
 /// api_post_update -> 根据id更新文章
 /// api_post_del -> 根据id删除文章(逻辑删除)
 /// api_post_test -> 根据md文件添加文章
+/// api_post_list_by_category -> 根据类别获取文章列表
 pub fn post_scope() -> actix_web::Scope {
     actix_web::web::scope("/post")
         .service(api_post_add)
@@ -199,9 +199,7 @@ async fn api_post_list_by_category(
     let page_size = page_info.page_size;
     let limit = (page_num - 1) * page_size;
     match Post::select_by_category(&**db, name.into_inner(), limit, page_size).await {
-        Ok(vec) => {
-            Ok(R::ok_obj(vec))
-        }
+        Ok(vec) => Ok(R::ok_obj(vec)),
         Err(e) => Err(BadRequest(e.to_string())),
     }
 }
