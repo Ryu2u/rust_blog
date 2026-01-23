@@ -47,6 +47,15 @@ export class Post {
 
 }
 
+export class Category {
+    id!: number;
+    name!: string;
+    slug!: string;
+    description?: string;
+    priority?: number;
+    parent_id?: number;
+}
+
 export interface PoetryData {
     id: string
     content: string

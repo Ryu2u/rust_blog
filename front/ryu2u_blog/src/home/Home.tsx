@@ -1,7 +1,5 @@
 import './home.scss'
 import {useEffect, useState, useCallback} from "react";
-import {Header} from "../components/Header";
-import {Footer} from "../components/Footer";
 import {SideBar} from "../components/SideBar";
 import PostService from "../service/PostService";
 import {PageInfo, Post} from "../common/Structs";
@@ -38,7 +36,6 @@ export function Home() {
 
     return (
         <>
-            <Header/>
             <div className={"container flex"}>
                 <div className={"post-list"}>
                     {
@@ -67,8 +64,6 @@ export function Home() {
 
                 <SideBar catalogJson={""}/>
             </div>
-
-            <Footer/>
 
             <FloatList/>
 

@@ -16,6 +16,7 @@ use post::apis::*;
 use std::env;
 use tracing::log::{error, info};
 use user::apis::*;
+use crate::post::category_apis::category_scope;
 
 mod config;
 mod middleware;
@@ -38,7 +39,7 @@ async fn main() -> std::io::Result<()> {
             .supports_credentials()
             .allowed_methods(vec!["GET", "POST", "OPTIONS"])
             .allow_any_header();
-        let white_list = FilterWhiteList(vec!["/user/login", "/post/get/", "/post/page"]);
+        let white_list = FilterWhiteList(vec!["/user/login", "/post/get", "/post/page","/post/list_by_category/*","/category/**"]);
 
         App::new()
             // 配置全局对象
@@ -65,6 +66,7 @@ async fn main() -> std::io::Result<()> {
                     .service(user_scope())
                     .service(post_scope())
                     .service(tag_scope())
+                    .service(category_scope())
             })
     })
     .bind(server)?

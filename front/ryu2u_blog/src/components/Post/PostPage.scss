@@ -1,16 +1,40 @@
 
 :root {
   --post-content-width: 70%;
-  --sidebar-width: 30%;
-  --sidebar-min-width: 300px;
-  --post-spacing: 24px;
+  --sidebar-width: 15%;
+  --sidebar-min-width: 200px;
+  --post-spacing: 20px;
   --post-border-radius: 12px;
   --post-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.container {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--post-spacing);
+  width: 95%;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0;
+}
+
 .post-main {
   width: var(--post-content-width);
-  min-width: 300px;
+  min-width: 60%;
+  flex: 2;
+}
+
+.left-sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-min-width);
+  flex-shrink: 1;
+}
+
+.side-list {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-min-width);
+  flex-shrink: 1;
 }
 
 .post-info {
@@ -62,7 +86,7 @@
   z-index: 100;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1400px) {
   .container {
     flex-direction: column;
     gap: var(--post-spacing);
@@ -72,7 +96,8 @@
     width: 100%;
   }
   
-  .side-list {
+  .side-list,
+  .left-sidebar {
     width: 100%;
     min-width: unset;
     position: relative;

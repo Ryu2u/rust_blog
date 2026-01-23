@@ -3,9 +3,8 @@ import {useEffect, useRef, useState} from "react";
 import {useParams} from "react-router";
 import {Post} from "../../common/Structs";
 import PostService from "../../service/PostService";
-import {Header} from "../Header";
-import {Footer} from "../Footer";
 import {SideBar} from "../SideBar";
+import {CatalogCard} from "../Card/CatalogCard";
 import "../../home/md.scss"
 
 export interface CatalogItem {
@@ -91,7 +90,7 @@ export function PostPage() {
     function genToc() {
         let div = post_content_ref.current;
         let hLevel: CatalogItem[] = [];
-        
+
         div?.childNodes.forEach((e, index) => {
             const titleTag = ["H1", "H2", "H3", "H4", "H5", "H6"];
             if (titleTag.includes(e.nodeName)) {
@@ -120,36 +119,48 @@ export function PostPage() {
 
     return (
         <>
-            <Header/>
-            
-            <div className={"container flex"}>
-                <div className={"post-main"}>
-                    <div className={"post-info"}>
-                        <div className={"post-title"}>
-                            {postRef.current.title}
-                        </div>
-                        <div className={"post-meta"}>
-                            <span className={"fa fa-calendar"}> </span>
-                            发表于{loading ? '' : postRef.current.created_time.toLocaleString()}|
-                            <span className={"fa fa-history"}> </span>
-                            更新于{loading ? '' : postRef.current.update_time.toLocaleString()} |
-                            <span className={"fa fa-archive"}></span>
-                            {postRef.current.category ? postRef.current.category : '未知分类'}
+            <div className="container flex">
+                {!loading && (
+                    <div className="side-list left-sidebar">
+                        <div className="catalog">
+                            <CatalogCard catalogJson={catalogJson}/>
                         </div>
                     </div>
-                    
-                    <div className={"content"}>
-                        <div ref={post_content_ref} id={"post-content"} data-theme="light" className={"markdown-body"} dangerouslySetInnerHTML={{
-                            __html: postRef.current.format_content
-                        }}>
+                )}
+                <div className="post-main">
+                    {loading ? (
+                        <div className="loading-container flex justify-center items-center" style={{padding: '60px 0'}}>
+                            <div className="loading-spinner">加载中...</div>
                         </div>
-                    </div>
+                    ) : (
+                        <>
+                            <div className="post-info">
+                                <div className="post-title">
+                                    {postRef.current.title}
+                                </div>
+                                <div className="post-meta">
+                                    <span className="fa fa-calendar"> </span>
+                                    发表于{postRef.current.created_time.toLocaleString()}|
+                                    <span className="fa fa-history"> </span>
+                                    更新于{postRef.current.update_time.toLocaleString()} |
+                                    <span className="fa fa-archive"></span>
+                                    {postRef.current.category ? postRef.current.category : '未知分类'}
+                                </div>
+                            </div>
+
+                            <div className="content">
+                                <div ref={post_content_ref} id="post-content" className="markdown-body"
+                                     dangerouslySetInnerHTML={{
+                                         __html: postRef.current.format_content
+                                     }}>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
 
-                <SideBar catalogJson={catalogJson}/>
+                {!loading && <SideBar catalogJson={catalogJson}/>}
             </div>
-
-            <Footer/>
         </>
     )
 }

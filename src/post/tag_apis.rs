@@ -1,21 +1,31 @@
 use actix_web::{get, post, web, Responder};
 
-use rbatis::RBatis;
-
 use crate::post::structs::Tag;
 use crate::utils::parse_slug;
 use crate::Exception::BadRequest;
 use crate::{Exception, R};
+use rbatis::rbdc::Error;
+use rbatis::RBatis;
 use rbs::to_value;
 use tracing::instrument;
 use tracing::log::error;
 
 pub fn tag_scope() -> actix_web::Scope {
     actix_web::web::scope("/tag")
+        .service(api_tag_list)
         .service(api_tag_add)
         .service(api_tag_del)
         .service(api_tag_update)
         .service(api_get_tag_by_post_id)
+}
+
+#[instrument]
+#[post("/list")]
+async fn api_tag_list(db: web::Data<RBatis>) -> Result<impl Responder, Exception> {
+    match Tag::select_all(&**db).await {
+        Ok(res) => Ok(R::ok_obj(res)),
+        Err(e) => Err(Exception::BadRequest(e.to_string())),
+    }
 }
 
 #[instrument]
@@ -25,7 +35,7 @@ async fn api_tag_add(
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
     match tag_check(&tag, &**db).await {
-        Ok(_) => tag_add(tag, db).await,
+        Ok(_) => tag_add(tag.into_inner(), &**db).await,
         Err(e) => Err(e),
     }
 }
@@ -69,11 +79,11 @@ async fn tag_check(tag: &Tag, db: &RBatis) -> Result<impl Responder, Exception> 
     }
 }
 
-async fn tag_add(tag: web::Json<Tag>, db: web::Data<RBatis>) -> Result<impl Responder, Exception> {
+async fn tag_add(tag: Tag, db: &RBatis) -> Result<impl Responder, Exception> {
     let mut tag = tag;
     tag.slug = parse_slug(&tag.name);
 
-    match Tag::insert(&**db, &tag).await {
+    match Tag::insert(db, &tag).await {
         Ok(_) => Ok(R::ok_msg("添加成功!")),
         Err(_) => Err(Exception::BadRequest("添加失败!".to_string())),
     }
@@ -121,6 +131,44 @@ pub async fn get_tag_by_post_id(post_id: i32, db: &RBatis) -> Vec<Tag> {
         Ok(vec) => vec,
         Err(_) => {
             vec![]
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::before_start;
+    use crate::config::init_rbatis;
+    use crate::post::structs::Tag;
+    use crate::post::tag_apis::tag_add;
+
+    #[tokio::test]
+    async fn test_tag_add() {
+        let (_, _, _, db_path) = before_start();
+        let rbatis = init_rbatis(db_path).await;
+
+        let vec = vec![
+            "HTML",
+            "Rust",
+            "Python",
+            "Linux",
+            "笔记",
+            "C++",
+            "Git",
+            "Vim",
+            "计算机网络",
+            "计算机操作系统",
+        ];
+        for i in 0..vec.len() {
+            let language = vec[i];
+            let tag = Tag {
+                id: None,
+                name: language.to_string(),
+                slug: String::new(),
+                description: Some(language.to_string()),
+                priority: None,
+            };
+            tag_add(tag, &rbatis).await.unwrap();
         }
     }
 }

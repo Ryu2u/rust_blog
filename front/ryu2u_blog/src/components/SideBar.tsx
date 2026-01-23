@@ -7,24 +7,19 @@ import {CatalogCard} from "./Card/CatalogCard";
 // @ts-ignore
 export function SideBar({catalogJson}) {
 
-    const [viewToc,setViewToc] = useState(false);
+    const [viewToc, setViewToc] = useState(false);
 
     useEffect(() => {
-        if (catalogJson && catalogJson != ''){
+        if (catalogJson && catalogJson != '') {
             setViewToc(true);
         }
-    },[catalogJson]);
+    }, [catalogJson]);
 
     return (
         <>
             <div className={"side-list"}>
                 <UserInfo/>
-                <div className={"catalog"}>
-                    {
-                        viewToc &&
-                        <CatalogCard catalogJson={catalogJson}/>
-                    }
-                </div>
+                <Weather/>
             </div>
 
         </>
