@@ -1,12 +1,27 @@
+/**
+ * 天气组件
+ * 获取并显示南京的实时天气信息
+ */
 import { useState, useEffect } from 'react';
 
+/**
+ * 天气组件函数
+ * @returns {JSX.Element} 天气组件渲染结果
+ */
 export function Weather() {
     const [weatherData, setWeatherData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    /**
+     * 组件挂载时获取天气数据
+     */
     useEffect(() => {
-        // 使用免费的OpenWeatherMap Current Weather API获取南京天气
+        /**
+         * 获取天气数据的异步函数
+         * 使用OpenWeatherMap的免费Current Weather API
+         * @returns {Promise<void>} 无返回值
+         */
         const fetchWeather = async () => {
             try {
                 // 注意：在实际项目中，应该将API密钥存储在环境变量中
@@ -33,7 +48,11 @@ export function Weather() {
         fetchWeather();
     }, []);
 
-    // 根据天气状况返回对应的emoji
+    /**
+     * 根据天气ID返回对应的天气emoji
+     * @param {number} weatherId - 天气状况ID
+     * @returns {string} 对应的天气emoji
+     */
     const getWeatherEmoji = (weatherId: number) => {
         if (weatherId >= 200 && weatherId < 300) return '⛈️'; // 雷暴
         if (weatherId >= 300 && weatherId < 400) return '🌧️'; // 毛毛雨

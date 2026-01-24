@@ -1,3 +1,7 @@
+/**
+ * 用户信息组件
+ * 显示用户头像、名称、随机诗句和联系链接
+ */
 import "./UserInfo.scss"
 import {Tooltip} from "antd";
 import {useEffect, useRef} from "react";
@@ -5,10 +9,17 @@ import {useEffect, useRef} from "react";
 import * as randPoetry from "jinrishici";
 import {PoetryRequestData} from "../../common/Structs";
 
+/**
+ * 用户信息组件函数
+ * @returns {JSX.Element} 用户信息组件渲染结果
+ */
 export function UserInfo() {
 
     const loadingRef = useRef<boolean>(false);
 
+    /**
+     * 组件挂载时获取随机诗句并开始打字效果
+     */
     useEffect(() => {
         if (loadingRef.current) {
             return;
@@ -34,6 +45,14 @@ export function UserInfo() {
 
     }, []);
 
+    /**
+     * 打字效果函数
+     * @param {Element} dom - 要显示打字效果的DOM元素
+     * @param {string} data - 要显示的文本内容
+     * @param {number} index - 当前打字位置
+     * @param {number} flag - 打字方向标识 (1: 正向, -1: 反向)
+     * @returns {Promise<void>} 无返回值
+     */
     async function writing(dom: Element, data: string, index: number, flag: number) {
         if (index == data.length) {
             setTimeout(() => {
@@ -60,6 +79,10 @@ export function UserInfo() {
         }
     }
 
+    /**
+     * 渲染用户信息组件
+     * @returns {JSX.Element} 用户信息组件
+     */
     return (
         <>
             <div className={"card-widget"}>

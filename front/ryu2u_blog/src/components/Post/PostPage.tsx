@@ -1,3 +1,7 @@
+/**
+ * 文章详情页组件
+ * 显示文章内容、目录及相关信息
+ */
 import "./PostPage.scss"
 import {useEffect, useRef, useState} from "react";
 import {useParams} from "react-router";
@@ -7,6 +11,15 @@ import {SideBar} from "../SideBar";
 import {CatalogCard} from "../Card/CatalogCard";
 import "../../home/md.scss"
 
+/**
+ * 目录项接口
+ * @interface CatalogItem
+ * @property {number} hNum - 标题级别 (1-6)
+ * @property {number} id - 标题唯一标识
+ * @property {string} title - 标题内容
+ * @property {number} [level] - 目录层级
+ * @property {CatalogItem[]} [children] - 子目录项
+ */
 export interface CatalogItem {
     hNum: number;
     id: number;
@@ -15,6 +28,10 @@ export interface CatalogItem {
     children?: CatalogItem[];
 }
 
+/**
+ * 文章详情页组件函数
+ * @returns {JSX.Element} 文章详情页渲染结果
+ */
 export function PostPage() {
     const [loading, setLoading] = useState(true);
     const post_content_ref = useRef<HTMLDivElement | null>(null);
@@ -22,10 +39,22 @@ export function PostPage() {
     const param = useParams();
     const [catalogJson, setCatalogJson] = useState("");
 
+    /**
+     * 将扁平的目录数组转换为树形结构
+     * @param {CatalogItem[]} flatArr - 扁平的目录项数组
+     * @returns {CatalogItem[]} 转换后的树形目录结构
+     */
     function toTree(flatArr: CatalogItem[]): CatalogItem[] {
         let tree: CatalogItem[] = [];
         let copyArr: CatalogItem[] = flatArr.map((item: CatalogItem) => ({...item}));
 
+        /**
+         * 根据级别获取子目录项
+         * @param {CatalogItem | undefined} currentLevelItem - 当前级别项
+         * @param {CatalogItem[]} arr - 待处理的目录项数组
+         * @param {number} level - 当前层级
+         * @returns {CatalogItem[]} 子目录项数组
+         */
         const getChildrenByLevel = (currentLevelItem: CatalogItem | undefined, arr: CatalogItem[], level: number): CatalogItem[] => {
             if (!currentLevelItem) {
                 return [];
@@ -46,6 +75,13 @@ export function PostPage() {
             return children;
         };
 
+        /**
+         * 递归构建目录树
+         * @param {CatalogItem[]} result - 结果数组
+         * @param {CatalogItem[]} arr - 待处理的目录项数组
+         * @param {number} level - 当前层级
+         * @returns {void}
+         */
         const getTree = (result: CatalogItem[], arr: CatalogItem[], level: number): void => {
             let currentItem = arr.shift();
             if (!currentItem) return;
@@ -87,6 +123,11 @@ export function PostPage() {
 
     }, [param])
 
+    /**
+     * 生成文章目录
+     * 解析文章内容中的标题标签，生成目录结构并设置到状态中
+     * @returns {void}
+     */
     function genToc() {
         let div = post_content_ref.current;
         let hLevel: CatalogItem[] = [];
