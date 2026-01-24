@@ -40,7 +40,7 @@ async fn api_post_add(
     post: web::Json<Post>,
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
-    match check_post(&*db, &*post).await {
+    match check_post(&*db, &*post, false).await {
         Ok(md_html) => {
             let post_new = Post::new(
                 post.title.clone(),
@@ -103,7 +103,7 @@ async fn api_post_update(
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
     // todo: 更新操作时，如果标题未更改应该判断成功
-    match check_post(&**db, &post).await {
+    match check_post(&**db, &post, true).await {
         Err(e) => Err(e),
         Ok(format_str) => {
             if post.id.is_none() {
@@ -212,16 +212,16 @@ async fn api_post_list_by_category(
 /// db: 数据库对象
 /// post: 文章对象
 ///
-async fn check_post(db: &RBatis, post: &Post) -> Result<String, Exception> {
+async fn check_post(db: &RBatis, post: &Post, is_update: bool) -> Result<String, Exception> {
     let _ = span!(Level::DEBUG, "api_post_add");
     info!("{:?}", post);
     if post.author.len() > 100 {
-        return Err(Exception::BadRequest("author is too long!".to_string()));
+        return Err(BadRequest("author is too long!".to_string()));
     }
 
     if let Ok(vec) = Post::select_by_title(db, post.title.clone()).await {
-        if !vec.is_empty() {
-            return Err(Exception::BadRequest(format!(
+        if !is_update && !vec.is_empty() {
+            return Err(BadRequest(format!(
                 "title -> [{}] is exists",
                 post.title.clone()
             )));

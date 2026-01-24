@@ -7,6 +7,8 @@ import {CommentPage} from "./admin/comment/CommentPage";
 import {LoginPage} from "./login/LoginPage";
 import {ArticleListPage} from "./admin/article/ArticleListPage";
 import {ArticlePage} from "./admin/article/ArticlePage";
+import {UserListPage} from "./admin/user/UserListPage";
+import {UserEditPage} from "./admin/user/UserEditPage";
 import {HttpEffectFragment} from "./common/AxioConfig";
 
 function App() {
@@ -24,6 +26,9 @@ function App() {
                         </Route>
                         <Route path={"/article/new"} element={<ArticleEditPage/>}></Route>
                         <Route path={"/article/edit/:id"} element={<ArticleEditPage/>}></Route>
+                        <Route path={"/user/list"} element={<UserListPage/>}></Route>
+                        <Route path={"/user/edit"} element={<UserEditPage/>}></Route>
+                        <Route path={"/user/edit/:id"} element={<UserEditPage/>}></Route>
                         <Route path={"/comment"} element={<CommentPage/>}></Route>
                         <Route path={"/moments"} element={<CommentPage/>}></Route>
                     </Route>
