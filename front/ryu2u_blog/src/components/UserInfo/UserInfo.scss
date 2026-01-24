@@ -72,11 +72,16 @@
 }
 
 .user-link {
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     a{
         color: var(--color-primary);
         text-decoration: none;
         transition: color 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
     a:hover {
         color: var(--color-secondary);

@@ -20,12 +20,13 @@
   animation: slideDown 0.3s ease-in-out;
 
   &::-webkit-scrollbar {
+    display: none;
     background-color: transparent;
     width: 5px;
   }
 
   &::-webkit-scrollbar-thumb {
-    border-radius: 10px;
+    border-radius: 20px;
     background: var(--color-scrollbar-thumb);
   }
 }
