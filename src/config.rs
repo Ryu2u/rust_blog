@@ -1,4 +1,3 @@
-use crate::User;
 use actix_web::body::BoxBody;
 use actix_web::guard::{Guard, GuardContext};
 use actix_web::http::header::ContentType;
@@ -8,8 +7,6 @@ use rbatis::RBatis;
 use rbdc_mysql::MysqlDriver;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use std::fs::File;
-use std::io::Read;
 use tracing::log::{error, info};
 
 #[derive(Debug)]

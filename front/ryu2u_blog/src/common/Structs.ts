@@ -79,3 +79,12 @@ export interface PoetryRequestData {
     ipAddress: string
     warning: null | string
 }
+
+export class Comment {
+    id?: number;
+    post_id: number;
+    user_email: string;
+    user_name: string;
+    content: string;
+    created_time?: number;
+}

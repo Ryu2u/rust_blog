@@ -5,8 +5,9 @@
 import "./PostPage.scss"
 import {useEffect, useRef, useState} from "react";
 import {useParams} from "react-router";
-import {Post} from "../../common/Structs";
+import {Post, Comment} from "../../common/Structs";
 import PostService from "../../service/PostService";
+import CommentService from "../../service/CommentService";
 import {SideBar} from "../SideBar";
 import {CatalogCard} from "../Card/CatalogCard";
 import "../../home/md.scss"
@@ -38,6 +39,13 @@ export function PostPage() {
     const postRef = useRef(new Post());
     const param = useParams();
     const [catalogJson, setCatalogJson] = useState("");
+
+    // 评论相关状态
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [userEmail, setUserEmail] = useState("");
+    const [userName, setUserName] = useState("");
+    const [commentContent, setCommentContent] = useState("");
+    const [commentLoading, setCommentLoading] = useState(false);
 
     /**
      * 将扁平的目录数组转换为树形结构
@@ -123,6 +131,57 @@ export function PostPage() {
 
     }, [param])
 
+    // 加载评论列表
+    useEffect(() => {
+        const post_id = param['id'];
+        if (post_id) {
+            loadComments(Number(post_id));
+        }
+    }, [param]);
+
+    function loadComments(postId: number) {
+        CommentService.getCommentList(postId).then((result) => {
+            if (result.code === 200) {
+                setComments(result.obj || []);
+            }
+        });
+    }
+
+    // 邮箱变化时提取用户名
+    function handleEmailChange(email: string) {
+        setUserEmail(email);
+        const atIndex = email.indexOf('@');
+        if (atIndex > 0) {
+            setUserName(email.substring(0, atIndex));
+        }
+    }
+
+    // 提交评论
+    function handleSubmitComment() {
+        const post_id = param['id'];
+        if (!post_id || !userEmail || !userName || !commentContent) {
+            alert("请填写完整信息");
+            return;
+        }
+
+        setCommentLoading(true);
+        const comment = new Comment();
+        comment.post_id = Number(post_id);
+        comment.user_email = userEmail;
+        comment.user_name = userName;
+        comment.content = commentContent;
+
+        CommentService.addComment(comment).then((result) => {
+            setCommentLoading(false);
+            if (result.code === 200) {
+                setCommentContent("");
+                loadComments(Number(post_id));
+            } else {
+                alert(result.msg);
+            }
+        });
+    }
+
     /**
      * 生成文章目录
      * 解析文章内容中的标题标签，生成目录结构并设置到状态中
@@ -194,6 +253,70 @@ export function PostPage() {
                                      dangerouslySetInnerHTML={{
                                          __html: postRef.current.format_content
                                      }}>
+                                </div>
+                            </div>
+
+                            {/* 评论区域 */}
+                            <div className="comment-section">
+                                <h3>评论</h3>
+                                <div className="comment-form">
+                                    <div className="form-group">
+                                        <label>邮箱：</label>
+                                        <input
+                                            type="email"
+                                            value={userEmail}
+                                            onChange={(e) => handleEmailChange(e.target.value)}
+                                            placeholder="请输入邮箱"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>昵称：</label>
+                                        <input
+                                            type="text"
+                                            value={userName}
+                                            onChange={(e) => setUserName(e.target.value)}
+                                            placeholder="请输入昵称"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>评论内容：</label>
+                                        <textarea
+                                            value={commentContent}
+                                            onChange={(e) => setCommentContent(e.target.value)}
+                                            placeholder="请输入评论内容"
+                                            rows={4}
+                                        />
+                                    </div>
+                                    <button
+                                        className="comment-submit-btn"
+                                        onClick={handleSubmitComment}
+                                        disabled={commentLoading}
+                                    >
+                                        {commentLoading ? "提交中..." : "提交评论"}
+                                    </button>
+                                </div>
+
+                                {/* 评论列表 */}
+                                <div className="comment-list">
+                                    <h4>评论列表 ({comments.length})</h4>
+                                    {comments.length === 0 ? (
+                                        <p className="no-comment">暂无评论，快来抢沙发吧！</p>
+                                    ) : (
+                                        comments.map((comment) => (
+                                            <div key={comment.id} className="comment-item">
+                                                <div className="comment-header">
+                                                    <span className="comment-user">{comment.user_name}</span>
+                                                    <span className="comment-email">({comment.user_email})</span>
+                                                    <span className="comment-time">
+                                                        {comment.created_time ? new Date(comment.created_time).toLocaleString() : ''}
+                                                    </span>
+                                                </div>
+                                                <div className="comment-body">
+                                                    {comment.content}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         </>

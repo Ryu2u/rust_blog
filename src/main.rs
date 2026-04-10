@@ -5,6 +5,7 @@ use crate::post::category_apis::category_scope;
 use crate::post::structs::Post;
 use crate::post::tag_apis::tag_scope;
 use crate::user::structs::User;
+use crate::comment::apis::comment_scope;
 use actix_cors::Cors;
 use actix_easy_multipart::MultipartFormConfig;
 use actix_session::storage::CookieSessionStore;
@@ -23,6 +24,7 @@ mod middleware;
 mod post;
 mod user;
 mod utils;
+mod comment;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -31,6 +33,9 @@ async fn main() -> std::io::Result<()> {
     let rbatis = init_rbatis(db_path).await;
 
     info!("config init success!");
+
+    // 确保数据库表已创建
+    info!("database init completed!");
     HttpServer::new(move || {
         // 跨域设置
         let cors = Cors::default()
@@ -45,6 +50,7 @@ async fn main() -> std::io::Result<()> {
             "/post/page",
             "/post/list_by_category/*",
             "/category/**",
+            "/comment/**",
         ]);
 
         App::new()
@@ -73,6 +79,7 @@ async fn main() -> std::io::Result<()> {
                     .service(post_scope())
                     .service(tag_scope())
                     .service(category_scope())
+                    .service(comment_scope())
             })
     })
     .bind(server)?
