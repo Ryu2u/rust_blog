@@ -87,4 +87,6 @@ export class Comment {
     user_name: string;
     content: string;
     created_time?: number;
+    parent_id?: number;  // 父评论ID，undefined表示顶级评论
+    replies?: Comment[]; // 子评论列表
 }

@@ -30,6 +30,35 @@ export interface CatalogItem {
 }
 
 /**
+ * 评论项组件（支持递归渲染子评论）
+ */
+function CommentItem({ comment, onReply }: { comment: Comment; onReply: (comment: Comment) => void }) {
+    return (
+        <div className="comment-item">
+            <div className="comment-header">
+                <span className="comment-user">{comment.user_name}</span>
+                <span className="comment-email">({comment.user_email})</span>
+                <span className="comment-time">
+                    {comment.created_time ? new Date(comment.created_time).toLocaleString() : ''}
+                </span>
+                <button className="reply-btn" onClick={() => onReply(comment)}>回复</button>
+            </div>
+            <div className="comment-body">
+                {comment.content}
+            </div>
+            {/* 递归渲染子评论 */}
+            {comment.replies && comment.replies.length > 0 && (
+                <div className="comment-replies">
+                    {comment.replies.map((reply) => (
+                        <CommentItem key={reply.id} comment={reply} onReply={onReply} />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+/**
  * 文章详情页组件函数
  * @returns {JSX.Element} 文章详情页渲染结果
  */
@@ -46,6 +75,9 @@ export function PostPage() {
     const [userName, setUserName] = useState("");
     const [commentContent, setCommentContent] = useState("");
     const [commentLoading, setCommentLoading] = useState(false);
+    // 回复相关状态
+    const [replyTo, setReplyTo] = useState<Comment | null>(null);
+    const [replyContent, setReplyContent] = useState("");
 
     /**
      * 将扁平的目录数组转换为树形结构
@@ -142,7 +174,80 @@ export function PostPage() {
     function loadComments(postId: number) {
         CommentService.getCommentList(postId).then((result) => {
             if (result.code === 200) {
-                setComments(result.obj || []);
+                const flatComments: Comment[] = result.obj || [];
+                // 将扁平评论转换为树形结构
+                const tree = buildCommentTree(flatComments);
+                setComments(tree);
+            }
+        });
+    }
+
+    // 构建评论树形结构
+    function buildCommentTree(flatComments: Comment[]): Comment[] {
+        const topLevelComments: Comment[] = [];
+        const commentMap = new Map<number, Comment>();
+
+        // 先将所有评论存入 map
+        flatComments.forEach(comment => {
+            commentMap.set(comment.id!, {...comment, replies: []});
+        });
+
+        // 再遍历一次，构建树形结构
+        flatComments.forEach(comment => {
+            const c = commentMap.get(comment.id!)!;
+            if (comment.parent_id === undefined || comment.parent_id === null) {
+                topLevelComments.push(c);
+            } else {
+                const parent = commentMap.get(comment.parent_id);
+                if (parent) {
+                    if (!parent.replies) parent.replies = [];
+                    parent.replies.push(c);
+                } else {
+                    // 如果找不到父评论，当作顶级评论
+                    topLevelComments.push(c);
+                }
+            }
+        });
+
+        return topLevelComments;
+    }
+
+    // 点击回复按钮
+    function handleReply(comment: Comment) {
+        setReplyTo(comment);
+        setReplyContent("");
+    }
+
+    // 取消回复
+    function handleCancelReply() {
+        setReplyTo(null);
+        setReplyContent("");
+    }
+
+    // 提交回复
+    function handleSubmitReply() {
+        const post_id = param['id'];
+        if (!post_id || !userEmail || !userName || !replyContent) {
+            alert("请填写完整信息");
+            return;
+        }
+
+        setCommentLoading(true);
+        const comment = new Comment();
+        comment.post_id = Number(post_id);
+        comment.user_email = userEmail;
+        comment.user_name = userName;
+        comment.content = replyContent;
+        comment.parent_id = replyTo!.id;
+
+        CommentService.addComment(comment).then((result) => {
+            setCommentLoading(false);
+            if (result.code === 200) {
+                setReplyContent("");
+                setReplyTo(null);
+                loadComments(Number(post_id));
+            } else {
+                alert(result.msg);
             }
         });
     }
@@ -296,6 +401,29 @@ export function PostPage() {
                                     </button>
                                 </div>
 
+                                {/* 回复表单（回复模式下显示） */}
+                                {replyTo && (
+                                    <div className="reply-form">
+                                        <div className="reply-to-info">
+                                            <span>回复 @ {replyTo.user_name}：</span>
+                                            <button className="cancel-reply-btn" onClick={handleCancelReply}>取消</button>
+                                        </div>
+                                        <textarea
+                                            value={replyContent}
+                                            onChange={(e) => setReplyContent(e.target.value)}
+                                            placeholder={`回复 @${replyTo.user_name}...`}
+                                            rows={3}
+                                        />
+                                        <button
+                                            className="comment-submit-btn"
+                                            onClick={handleSubmitReply}
+                                            disabled={commentLoading}
+                                        >
+                                            {commentLoading ? "提交中..." : "提交回复"}
+                                        </button>
+                                    </div>
+                                )}
+
                                 {/* 评论列表 */}
                                 <div className="comment-list">
                                     <h4>评论列表 ({comments.length})</h4>
@@ -303,18 +431,7 @@ export function PostPage() {
                                         <p className="no-comment">暂无评论，快来抢沙发吧！</p>
                                     ) : (
                                         comments.map((comment) => (
-                                            <div key={comment.id} className="comment-item">
-                                                <div className="comment-header">
-                                                    <span className="comment-user">{comment.user_name}</span>
-                                                    <span className="comment-email">({comment.user_email})</span>
-                                                    <span className="comment-time">
-                                                        {comment.created_time ? new Date(comment.created_time).toLocaleString() : ''}
-                                                    </span>
-                                                </div>
-                                                <div className="comment-body">
-                                                    {comment.content}
-                                                </div>
-                                            </div>
+                                            <CommentItem key={comment.id} comment={comment} onReply={handleReply} />
                                         ))
                                     )}
                                 </div>

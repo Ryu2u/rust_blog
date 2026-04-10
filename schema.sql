@@ -82,7 +82,8 @@ CREATE TABLE `comment` (
     `user_email` VARCHAR(255) NOT NULL COMMENT '评论者邮箱',
     `user_name` VARCHAR(100) NOT NULL COMMENT '评论者昵称',
     `content` TEXT NOT NULL COMMENT '评论内容',
-    `created_time` BIGINT NOT NULL COMMENT '评论时间戳'
+    `created_time` BIGINT NOT NULL COMMENT '评论时间戳',
+    `parent_id` INT DEFAULT NULL COMMENT '父评论ID，NULL表示顶级评论'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章评论表';
 
 -- ----------------------------
