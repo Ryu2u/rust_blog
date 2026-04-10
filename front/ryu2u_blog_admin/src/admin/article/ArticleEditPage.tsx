@@ -8,7 +8,6 @@ import {useParams, useNavigate} from "react-router-dom";
 
 const {TextArea} = Input;
 
-
 export function ArticleEditPage() {
     const {confirm} = Modal;
     const [messageApi, contextHolder] = message.useMessage();
@@ -34,12 +33,11 @@ export function ArticleEditPage() {
                 messageApi.error('加载文章失败');
                 console.error('Error loading post:', error);
                 setLoading(false);
-            })
+            });
         } else {
             setLoading(false);
         }
-
-    }, [param])
+    }, [param]);
 
     function getContent(content: string) {
         setOriginContent(content);
@@ -62,7 +60,6 @@ export function ArticleEditPage() {
                 cover_img: postRef.current.cover_img
             });
         } else {
-            // 设置默认值
             form.setFieldsValue({
                 author: 'Admin',
                 is_view: 1,
@@ -117,7 +114,7 @@ export function ArticleEditPage() {
             cancelText: '取消',
             onOk() {
                 setLoading(true);
-                PostService.post_delete(postRef.current.id).then(res => {
+                PostService.post_delete(postRef.current.id!).then(res => {
                     messageApi.success(res.msg);
                     navigate('/article/list');
                 }).catch(error => {
@@ -128,7 +125,7 @@ export function ArticleEditPage() {
                 });
             },
         });
-    }
+    };
 
     return (
         <>
@@ -137,7 +134,14 @@ export function ArticleEditPage() {
                 title={postRef.current.id ? "编辑文章" : "新建文章"}
                 extra={
                     <Space>
-                        <Button 
+                        <Button
+                            type="default"
+                            icon={<UploadOutlined />}
+                            onClick={() => {}}
+                        >
+                            上传文件
+                        </Button>
+                        <Button
                             type="default" 
                             icon={<EyeOutlined />}
                             onClick={() => {
@@ -289,5 +293,5 @@ export function ArticleEditPage() {
                 </Form>
             </Modal>
         </>
-    )
+    );
 }

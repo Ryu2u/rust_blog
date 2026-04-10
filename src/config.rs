@@ -5,7 +5,7 @@ use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
 use actix_web::{error, HttpRequest, HttpResponse, Responder};
 use rbatis::RBatis;
-use rbdc_sqlite::SqliteDriver;
+use rbdc_mysql::MysqlDriver;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::fs::File;
@@ -127,30 +127,8 @@ impl<T: Serialize> Responder for R<T> {
     }
 }
 
-pub async fn init_rbatis(db_path: String) -> RBatis {
-    let sqlite_url = "sqlite://db/rust_blog.db".to_string();
-    info!("sqlite_url -> {}", sqlite_url);
-    let db_path = std::path::Path::new(&db_path);
+pub async fn init_rbatis(db_url: String) -> RBatis {
     let rbatis = RBatis::new();
-    if !db_path.exists() {
-        File::create(&db_path).expect("Unable to create file");
-        info!("{:?} is not exists,start to init!", db_path);
-        let mut file = File::open("schema.sql").expect("schema.sql is not exists!");
-        let mut init_sql = String::new();
-        file.read_to_string(&mut init_sql)
-            .expect("can't read file schema.sql");
-        rbatis.init(SqliteDriver {}, sqlite_url.as_str()).unwrap();
-        rbatis
-            .exec(init_sql.as_str(), vec![])
-            .await
-            .expect("execute init sql failed!");
-        let user = User::new("admin", "123", "admin");
-        User::insert(&rbatis, &user)
-            .await
-            .expect("insert user failed");
-    } else {
-        rbatis.init(SqliteDriver {}, sqlite_url.as_str()).unwrap();
-    }
-
+    rbatis.init(MysqlDriver {}, db_url.as_str()).unwrap();
     rbatis
 }

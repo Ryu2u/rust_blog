@@ -107,7 +107,7 @@ async fn api_post_update(
         Err(e) => Err(e),
         Ok(format_str) => {
             if post.id.is_none() {
-                return Err(Exception::BadRequest("该文章不存在!".to_string()));
+                return Err(BadRequest("该文章不存在!".to_string()));
             }
 
             post.format_content = format_str;
@@ -115,7 +115,7 @@ async fn api_post_update(
 
             match Post::update_by_column(&**db, &post, "id").await {
                 Ok(_) => Ok(R::ok_msg("更新成功!")),
-                Err(_) => Err(Exception::BadRequest("更新失败，请重试".to_string())),
+                Err(_) => Err(BadRequest("更新失败，请重试".to_string())),
             }
         }
     }
@@ -140,7 +140,7 @@ async fn api_post_del(
     post.is_deleted = Some(1);
 
     if Post::update_by_column(&**db, &post, "id").await.is_err() {
-        return Err(Exception::BadRequest("删除失败，请重试!".to_string()));
+        return Err(BadRequest("删除失败，请重试!".to_string()));
     }
 
     Ok(R::ok_msg("删除成功!"))
@@ -323,12 +323,13 @@ async fn post_get(
 mod test {
     use crate::Post;
     use rbatis::RBatis;
-    use rbdc_sqlite::SqliteDriver;
     use std::fs::{read_dir, File};
 
     use crate::utils::md_to_html;
     use std::io::Read;
     use std::path::Path;
+    use rbdc_mysql::MysqlDriver;
+    use rand::random;
 
     #[tokio::test]
     async fn test_post_add() {
@@ -362,7 +363,7 @@ mod test {
                             None,
                         );
                         let rbatis = RBatis::new();
-                        rbatis.init(SqliteDriver {}, "db/rust_blog.db").unwrap();
+                        rbatis.init(MysqlDriver{}, "jdbc:mysql://127.0.0.1:3306/rust_blog").unwrap();
                         Post::insert(&rbatis, &post)
                             .await
                             .expect("insert post failed!");

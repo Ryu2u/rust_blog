@@ -1,6 +1,7 @@
 import './Admin.scss'
 import {useEffect, useState} from "react";
 import {Outlet, useNavigate} from "react-router";
+import {DynamicBreadcrumb} from "../comonents/DynamicBreadcrumb";
 
 import {
     DashboardOutlined, InfoCircleOutlined, LoginOutlined,
@@ -222,6 +223,7 @@ export function Admin() {
                             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
                         }}
                     >
+                        <DynamicBreadcrumb/>
                         <Outlet/>
                     </div>
                 </Content>

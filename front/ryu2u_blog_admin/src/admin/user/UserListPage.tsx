@@ -25,11 +25,9 @@ export const UserListPage = () => {
     });
     const [messageApi, contextHolder] = message.useMessage();
 
-    // 模拟用户数据
     const [userList, setUserList] = useState<User[]>([]);
 
     useEffect(() => {
-        // 模拟数据加载
         setTimeout(() => {
             setUserList([
                 {
@@ -69,7 +67,6 @@ export const UserListPage = () => {
 
     const handleDelete = (id: number) => {
         setLoading(true);
-        // 模拟删除操作
         setTimeout(() => {
             setUserList(userList.filter(user => user.id !== id));
             messageApi.success('删除成功');
@@ -79,7 +76,6 @@ export const UserListPage = () => {
 
     const handleLock = (id: number, locked: number) => {
         setLoading(true);
-        // 模拟锁定/解锁操作
         setTimeout(() => {
             setUserList(userList.map(user => 
                 user.id === id ? { ...user, locked: locked === 1 ? 0 : 1 } : user
@@ -95,7 +91,6 @@ export const UserListPage = () => {
             return;
         }
         setLoading(true);
-        // 模拟批量删除
         setTimeout(() => {
             setUserList(userList.filter(user => !selectedRowKeys.includes(user.id)));
             setSelectedRowKeys([]);
@@ -201,13 +196,10 @@ export const UserListPage = () => {
     const paginationChange = (index: number, size: number) => {
         pageInfoRef.current.page_num = index;
         pageInfoRef.current.page_size = size;
-        // 实际项目中应该重新加载数据
     };
 
     const handleSearch = () => {
-        // 重置分页
         pageInfoRef.current.page_num = 1;
-        // 实际项目中应该根据搜索参数加载数据
     };
 
     const handleReset = () => {
@@ -216,7 +208,6 @@ export const UserListPage = () => {
             status: null
         });
         pageInfoRef.current.page_num = 1;
-        // 实际项目中应该重新加载数据
     };
 
     const rowSelection = {
@@ -229,108 +220,95 @@ export const UserListPage = () => {
     return (
         <>
             {contextHolder}
-            <Card>
-                {/* 操作栏 */}
-                <Card title="用户管理" extra={
-                    <Button 
-                        type="primary" 
-                        icon={<PlusOutlined />}
-                        onClick={() => navigate('/user/edit')}
-                    >
-                        新建用户
-                    </Button>
-                }>
-                    {/* 搜索和筛选 */}
-                    <Card size="small" style={{ marginBottom: 16 }}>
-                        <Row gutter={16} align="middle">
-                            <Col span={12}>
-                                <Search
-                                    placeholder="搜索用户名或昵称"
-                                    value={searchParams.keyword}
-                                    onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
-                                    onSearch={handleSearch}
-                                    style={{ width: '100%' }}
-                                    prefix={<SearchOutlined />}
-                                />
-                            </Col>
-                            <Col span={6}>
-                                <Select
-                                    placeholder="状态"
-                                    value={searchParams.status}
-                                    onChange={(value) => setSearchParams({ ...searchParams, status: value })}
-                                    style={{ width: '100%' }}
-                                    allowClear
-                                >
-                                    <Option value={0}>正常</Option>
-                                    <Option value={1}>锁定</Option>
-                                </Select>
-                            </Col>
-                            <Col span={6}>
-                                <Space>
-                                    <Button 
-                                        type="primary" 
-                                        icon={<SearchOutlined />}
-                                        onClick={handleSearch}
-                                    >
-                                        搜索
-                                    </Button>
-                                    <Button 
-                                        onClick={handleReset}
-                                    >
-                                        重置
-                                    </Button>
-                                </Space>
-                            </Col>
-                        </Row>
-                    </Card>
-
-                    {/* 批量操作 */}
-                    {selectedRowKeys.length > 0 && (
-                        <div style={{ marginBottom: 16 }}>
+            <Card title="用户管理" extra={
+                <Button 
+                    type="primary" 
+                    icon={<PlusOutlined />}
+                    onClick={() => navigate('/user/edit')}
+                >
+                    新建用户
+                </Button>
+            }>
+                <Card size="small" style={{ marginBottom: 16 }}>
+                    <Row gutter={16} align="middle">
+                        <Col span={12}>
+                            <Search
+                                placeholder="搜索用户名或昵称"
+                                value={searchParams.keyword}
+                                onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
+                                onSearch={handleSearch}
+                                style={{ width: '100%' }}
+                                prefix={<SearchOutlined />}
+                            />
+                        </Col>
+                        <Col span={6}>
+                            <Select
+                                placeholder="状态"
+                                value={searchParams.status}
+                                onChange={(value) => setSearchParams({ ...searchParams, status: value })}
+                                style={{ width: '100%' }}
+                                allowClear
+                            >
+                                <Option value={0}>正常</Option>
+                                <Option value={1}>锁定</Option>
+                            </Select>
+                        </Col>
+                        <Col span={6}>
                             <Space>
-                                <span>已选择 {selectedRowKeys.length} 项</span>
-                                <Popconfirm
-                                    title="确定要批量删除这些用户吗？"
-                                    description="删除后将无法恢复"
-                                    onConfirm={handleBatchDelete}
-                                    okText="确定"
-                                    cancelText="取消"
+                                <Button 
+                                    type="primary" 
+                                    icon={<SearchOutlined />}
+                                    onClick={handleSearch}
                                 >
-                                    <Button 
-                                        danger 
-                                        icon={<DeleteOutlined />}
-                                    >
-                                        批量删除
-                                    </Button>
-                                </Popconfirm>
+                                    搜索
+                                </Button>
+                                <Button 
+                                    onClick={handleReset}
+                                >
+                                    重置
+                                </Button>
                             </Space>
-                        </div>
-                    )}
-
-                    {/* 用户列表 */}
-                    <Table
-                        loading={loading}
-                        columns={columns}
-                        pagination={{
-                            showSizeChanger: true,
-                            onChange: paginationChange,
-                            total: userList.length,
-                            defaultPageSize: 10,
-                            showTotal: (total) => `共 ${total} 个用户`
-                        }}
-                        rowKey={(record) => record.id}
-                        dataSource={userList}
-                        rowSelection={rowSelection}
-                        style={{ tableLayout: 'fixed' }}
-                        onRow={(record) => ({
-                            style: {
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                            }
-                        })}
-                    />
+                        </Col>
+                    </Row>
                 </Card>
+
+                {selectedRowKeys.length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                        <Space>
+                            <span>已选择 {selectedRowKeys.length} 项</span>
+                            <Popconfirm
+                                title="确定要批量删除这些用户吗？"
+                                description="删除后将无法恢复"
+                                onConfirm={handleBatchDelete}
+                                okText="确定"
+                                cancelText="取消"
+                            >
+                                <Button 
+                                    danger 
+                                    icon={<DeleteOutlined />}
+                                >
+                                    批量删除
+                                </Button>
+                            </Popconfirm>
+                        </Space>
+                    </div>
+                )}
+
+                <Table
+                    loading={loading}
+                    columns={columns}
+                    pagination={{
+                        showSizeChanger: true,
+                        onChange: paginationChange,
+                        total: userList.length,
+                        defaultPageSize: 10,
+                        showTotal: (total) => `共 ${total} 个用户`
+                    }}
+                    rowKey={(record) => record.id!}
+                    dataSource={userList}
+                    rowSelection={rowSelection}
+                    style={{ tableLayout: 'fixed' }}
+                />
             </Card>
         </>
     );

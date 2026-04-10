@@ -28,7 +28,8 @@ futures-util = "0.3.26"
 #rbatis deps
 rbs = { version = "4.5"}
 rbatis = { version = "4.5"}
-rbdc-sqlite = { version = "4.5" }
+rbdc-mysql= "4.5"
 pulldown-cmark = "0.10.0"
+rand = "0.8.5"
 #markdown = "1.0.0-alpha.16"
 

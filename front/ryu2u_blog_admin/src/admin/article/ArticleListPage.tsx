@@ -1,4 +1,4 @@
-import { Table, TableProps, Tag, Input, Button, Space, Card, Row, Col, Select, Checkbox, Popconfirm, message } from "antd";
+import { Table, TableProps, Tag, Input, Button, Space, Card, Row, Col, Select, Popconfirm, message } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { PageInfo, Post, PostTag } from "../../common/Structs";
 import PostService from "../../service/PostService";
@@ -30,7 +30,7 @@ export const ArticleListPage = () => {
 
     const titleClick = (value: Post) => {
         navigate(`/article/edit/${value.id}`);
-    }
+    };
 
     const handleDelete = (id: number) => {
         setLoading(true);
@@ -48,7 +48,6 @@ export const ArticleListPage = () => {
             return;
         }
         setLoading(true);
-        // 模拟批量删除，实际项目中应该调用批量删除接口
         Promise.all(selectedRowKeys.map(key => PostService.post_delete(Number(key))))
             .then(() => {
                 messageApi.success('批量删除成功');
@@ -190,7 +189,7 @@ export const ArticleListPage = () => {
         pageInfoRef.current.page_num = index;
         pageInfoRef.current.page_size = size;
         getDataList();
-    }
+    };
 
     const [postList, setPostList] = useState<Post[]>([]);
 
@@ -209,7 +208,6 @@ export const ArticleListPage = () => {
     }
 
     const handleSearch = () => {
-        // 重置分页
         pageInfoRef.current.page_num = 1;
         getDataList();
     };
@@ -234,109 +232,105 @@ export const ArticleListPage = () => {
     return (
         <>
             {contextHolder}
-                {/* 操作栏 */}
-                <Card title="文章管理" extra={
-                    <Button 
-                        type="primary" 
-                        icon={<PlusOutlined />}
-                        onClick={() => navigate('/article/new')}
-                    >
-                        新建文章
-                    </Button>
-                }>
-                    {/* 搜索和筛选 */}
-                    <Card size="small" style={{ marginBottom: 16 }}>
-                        <Row gutter={16} align="middle">
-                            <Col span={8}>
-                                <Search
-                                    placeholder="搜索标题或摘要"
-                                    value={searchParams.keyword}
-                                    onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
-                                    onSearch={handleSearch}
-                                    style={{ width: '100%' }}
-                                    prefix={<SearchOutlined />}
-                                />
-                            </Col>
-                            <Col span={6}>
-                                <Input
-                                    placeholder="作者"
-                                    value={searchParams.author}
-                                    onChange={(e) => setSearchParams({ ...searchParams, author: e.target.value })}
-                                />
-                            </Col>
-                            <Col span={6}>
-                                <Select
-                                    placeholder="状态"
-                                    value={searchParams.status}
-                                    onChange={(value) => setSearchParams({ ...searchParams, status: value })}
-                                    style={{ width: '100%' }}
-                                    allowClear
-                                >
-                                    <Option value={1}>已发布</Option>
-                                    <Option value={0}>未发布</Option>
-                                </Select>
-                            </Col>
-                            <Col span={4}>
-                                <Space>
-                                    <Button 
-                                        type="primary" 
-                                        icon={<SearchOutlined />}
-                                        onClick={handleSearch}
-                                    >
-                                        搜索
-                                    </Button>
-                                    <Button 
-                                        icon={<FilterOutlined />}
-                                        onClick={handleReset}
-                                    >
-                                        重置
-                                    </Button>
-                                </Space>
-                            </Col>
-                        </Row>
-                    </Card>
-
-                    {/* 批量操作 */}
-                    {selectedRowKeys.length > 0 && (
-                        <div style={{ marginBottom: 16 }}>
+            <Card title="文章管理" extra={
+                <Button 
+                    type="primary" 
+                    icon={<PlusOutlined />}
+                    onClick={() => navigate('/article/new')}
+                >
+                    新建文章
+                </Button>
+            }>
+                <Card size="small" style={{ marginBottom: 16 }}>
+                    <Row gutter={16} align="middle">
+                        <Col span={8}>
+                            <Search
+                                placeholder="搜索标题或摘要"
+                                value={searchParams.keyword}
+                                onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
+                                onSearch={handleSearch}
+                                style={{ width: '100%' }}
+                                prefix={<SearchOutlined />}
+                            />
+                        </Col>
+                        <Col span={6}>
+                            <Input
+                                placeholder="作者"
+                                value={searchParams.author}
+                                onChange={(e) => setSearchParams({ ...searchParams, author: e.target.value })}
+                            />
+                        </Col>
+                        <Col span={6}>
+                            <Select
+                                placeholder="状态"
+                                value={searchParams.status}
+                                onChange={(value) => setSearchParams({ ...searchParams, status: value })}
+                                style={{ width: '100%' }}
+                                allowClear
+                            >
+                                <Option value={1}>已发布</Option>
+                                <Option value={0}>未发布</Option>
+                            </Select>
+                        </Col>
+                        <Col span={4}>
                             <Space>
-                                <span>已选择 {selectedRowKeys.length} 项</span>
-                                <Popconfirm
-                                    title="确定要批量删除这些文章吗？"
-                                    description="删除后将无法恢复"
-                                    onConfirm={handleBatchDelete}
-                                    okText="确定"
-                                    cancelText="取消"
+                                <Button 
+                                    type="primary" 
+                                    icon={<SearchOutlined />}
+                                    onClick={handleSearch}
                                 >
-                                    <Button 
-                                        danger 
-                                        icon={<DeleteOutlined />}
-                                    >
-                                        批量删除
-                                    </Button>
-                                </Popconfirm>
+                                    搜索
+                                </Button>
+                                <Button 
+                                    icon={<FilterOutlined />}
+                                    onClick={handleReset}
+                                >
+                                    重置
+                                </Button>
                             </Space>
-                        </div>
-                    )}
-
-                    {/* 文章列表 */}
-                    <Table
-                        loading={loading}
-                        columns={columns}
-                        pagination={{
-                            showSizeChanger: true,
-                            onChange: paginationChange,
-                            total: pageInfoRef.current.total,
-                            defaultPageSize: 10,
-                            showTotal: (total) => `共 ${total} 篇文章`
-                        }}
-                        rowKey={(record) => record.id}
-                        dataSource={postList}
-                        rowSelection={rowSelection}
-                        scroll={{ x: 2000 }}
-                        style={{ tableLayout: 'fixed' }}
-                    />
+                        </Col>
+                    </Row>
                 </Card>
+
+                {selectedRowKeys.length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                        <Space>
+                            <span>已选择 {selectedRowKeys.length} 项</span>
+                            <Popconfirm
+                                title="确定要批量删除这些文章吗？"
+                                description="删除后将无法恢复"
+                                onConfirm={handleBatchDelete}
+                                okText="确定"
+                                cancelText="取消"
+                            >
+                                <Button 
+                                    danger 
+                                    icon={<DeleteOutlined />}
+                                >
+                                    批量删除
+                                </Button>
+                            </Popconfirm>
+                        </Space>
+                    </div>
+                )}
+
+                <Table
+                    loading={loading}
+                    columns={columns}
+                    pagination={{
+                        showSizeChanger: true,
+                        onChange: paginationChange,
+                        total: pageInfoRef.current.total,
+                        defaultPageSize: 10,
+                        showTotal: (total) => `共 ${total} 篇文章`
+                    }}
+                    rowKey={(record) => record.id!}
+                    dataSource={postList}
+                    rowSelection={rowSelection}
+                    scroll={{ x: 2000 }}
+                    style={{ tableLayout: 'fixed' }}
+                />
+            </Card>
         </>
     );
 };

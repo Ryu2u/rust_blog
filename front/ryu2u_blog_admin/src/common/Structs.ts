@@ -60,3 +60,30 @@ export class PostTag {
     slug?: string;
     description?: string;
 }
+
+export class Comment {
+    id!: number;
+    post_id!: number;
+    post_title?: string;
+    user_id?: number;
+    user_name!: string;
+    user_email?: string;
+    content!: string;
+    parent_id?: number;
+    parent_user_name?: string;
+    status!: number; // 0: 待审核, 1: 已通过, 2: 已拒绝
+    ip_address?: string;
+    created_time!: number;
+}
+
+export class Moment {
+    id!: number;
+    content!: string;
+    images?: string[]; // 图片URL数组
+    is_public!: number; // 0: 私密, 1: 公开
+    location?: string; // 位置信息
+    likes!: number;
+    comments!: number;
+    created_time!: number;
+    update_time?: number;
+}
