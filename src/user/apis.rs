@@ -1,24 +1,21 @@
 use crate::user::structs::LoginDto;
 use crate::{error, Exception, User, R};
 use actix_web::{get, post, web, Responder};
-
 use rbatis::RBatis;
-
 use actix_session::Session;
 use tracing::log::info;
 use tracing::{instrument, span, Level};
 
 /// 用户 接口
-/// api_login -> 登录接口
-/// api_logout -> 退出登录接口
-/// api_user_get -> 获取用户对象接口
-/// api_file_test -> form表单请求测试接口
-///
 pub fn user_scope() -> actix_web::Scope {
     actix_web::web::scope("/user")
         .service(api_login)
         .service(api_logout)
         .service(api_user_get)
+}
+
+fn is_bcrypt_hash(s: &str) -> bool {
+    s.starts_with("$2b$") || s.starts_with("$2a$") || s.starts_with("$2y$")
 }
 
 #[post("/login")]
@@ -30,23 +27,46 @@ async fn api_login(
     let _ = span!(Level::DEBUG, "api_login");
     let username = login_dto.username.as_str();
     let password = login_dto.password.as_str();
-    info!("username -> {} password -> {}", username, password);
+    info!("username -> {}", username);
 
-    let user_res = User::select_by_username_pwd(&**db, username, password).await;
+    let user_res = User::select_by_username(&**db, username).await;
     match user_res {
         Ok(mut user_vec) => {
             if user_vec.is_empty() {
-                Err(Exception::BadRequest("账号或密码错误!".to_string()))
-            } else {
-                let user = user_vec.get_mut(0);
-                let user = user.unwrap();
-                user.filter_pwd();
-                info!("login success -> {:?}", user);
-                session
-                    .insert("user_id", user.id)
-                    .expect("can't insert session");
-                Ok(R::<User>::ok_msg_obj("登录成功!", user.clone()))
+                return Err(Exception::BadRequest("账号或密码错误!".to_string()));
             }
+            let user = user_vec.get_mut(0).unwrap();
+
+            let password_valid = if is_bcrypt_hash(&user.password) {
+                bcrypt::verify(password, &user.password).unwrap_or(false)
+            } else {
+                // 兼容旧明文密码
+                let matched = password == user.password;
+                if matched {
+                    // 自动升级为 bcrypt hash
+                    if let Ok(hashed) = bcrypt::hash(password, bcrypt::DEFAULT_COST) {
+                        let sql = format!(
+                            "UPDATE tb_user SET password = '{}' WHERE id = {}",
+                            hashed.replace('\'', "''"),
+                            user.id.unwrap_or(0)
+                        );
+                        let _ = db.exec(&sql, vec![]).await;
+                        info!("upgraded plaintext password to bcrypt for user: {}", username);
+                    }
+                }
+                matched
+            };
+
+            if !password_valid {
+                return Err(Exception::BadRequest("账号或密码错误!".to_string()));
+            }
+
+            user.filter_pwd();
+            info!("login success -> {:?}", user);
+            session
+                .insert("user_id", user.id)
+                .expect("can't insert session");
+            Ok(R::<User>::ok_msg_obj("登录成功!", user.clone()))
         }
         Err(e) => {
             error!("{}", e);

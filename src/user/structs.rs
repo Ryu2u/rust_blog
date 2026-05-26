@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 pub struct User {
     pub id: Option<i32>,
     pub username: String,
-    password: String,
+    pub(crate) password: String,
     pub nick_name: String,
-    salt: Option<String>,
+    pub(crate) salt: Option<String>,
     /// 0 -> female
     /// 1 -> male
     /// 2 -> other
@@ -19,6 +19,9 @@ pub struct User {
     /// 0 -> unlocked
     /// 1 -> locked
     pub locked: i32,
+    /// admin -> administrator
+    /// user -> normal user
+    pub role: String,
 }
 
 impl User {
@@ -35,7 +38,12 @@ impl User {
             signature: None,
             created_time,
             locked: 0,
+            role: "user".to_string(),
         }
+    }
+
+    pub fn is_admin(&self) -> bool {
+        self.role == "admin"
     }
 
     pub fn filter_pwd(&mut self) {
@@ -47,6 +55,11 @@ crud!(User {}, "tb_user");
 impl_select!(
     User{select_by_username_pwd(username:&str,password:&str)
         => "`where username =  #{username} and password = #{password}`"},"tb_user"
+);
+
+impl_select!(
+    User{select_by_username(username:&str)
+        => "`where username = #{username}`"},"tb_user"
 );
 
 impl_select!(

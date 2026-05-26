@@ -1,3 +1,4 @@
+use std::error::Error;
 use actix_web::body::BoxBody;
 use actix_web::guard::{Guard, GuardContext};
 use actix_web::http::header::ContentType;
@@ -12,6 +13,7 @@ use tracing::log::{error, info};
 #[derive(Debug)]
 pub struct AppState {
     pub app_name: String,
+    pub admin_route_prefixes: Vec<&'static str>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -110,6 +112,13 @@ impl error::ResponseError for Exception {
         HttpResponse::build(self.status_code())
             .insert_header(ContentType::html())
             .body(serde_json::to_string(&result).unwrap())
+    }
+}
+
+
+impl From<std::io::Error> for Exception {
+    fn from(value: std::io::Error) -> Self {
+        Exception::BadRequest(value.to_string())
     }
 }
 

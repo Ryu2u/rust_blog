@@ -1,6 +1,8 @@
 import { List, Avatar, Space, Typography } from 'antd';
 import { FileTextOutlined, MessageOutlined, EyeOutlined, UserOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
+import PostService from '../../service/PostService';
+import { PageInfo, Post, Result } from '../../common/Structs';
 
 const { Text } = Typography;
 
@@ -9,6 +11,13 @@ interface Article {
   title: string;
   author: string;
   created_time: string;
+}
+
+function formatDate(timestamp?: number | Date): string {
+  if (!timestamp) return '-';
+  const ts = typeof timestamp === 'number' ? timestamp : timestamp.getTime();
+  const d = new Date(ts > 1e12 ? ts : ts * 1000);
+  return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
 export function Dashboard() {
@@ -20,19 +29,32 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setTimeout(() => {
-      setArticleCount(42);
-      setCommentCount(156);
-      setVisitsCount(3245);
-      setRecentArticles([
-        { id: 1, title: 'React Hooks 最佳实践', author: 'Admin', created_time: '2024-01-20' },
-        { id: 2, title: 'TypeScript 高级类型技巧', author: 'Admin', created_time: '2024-01-18' },
-        { id: 3, title: 'Ant Design 组件库使用指南', author: 'Admin', created_time: '2024-01-15' },
-        { id: 4, title: '前端性能优化策略', author: 'Admin', created_time: '2024-01-10' },
-        { id: 5, title: 'Vue 3 Composition API 详解', author: 'Admin', created_time: '2024-01-05' },
-      ]);
-      setLoading(false);
-    }, 500);
+    setArticleCount(42);
+    setCommentCount(156);
+    setVisitsCount(3245);
+
+    const fetchRecentPosts = async () => {
+      try {
+        const pageInfo = new PageInfo();
+        pageInfo.page_num = 1;
+        pageInfo.page_size = 5;
+        const res: Result = await PostService.postListPage(pageInfo);
+        if (res.code === 200 && res.obj?.list) {
+          const articles: Article[] = res.obj.list.map((post: Post) => ({
+            id: post.id ?? 0,
+            title: post.title,
+            author: post.author,
+            created_time: formatDate(post.created_time),
+          }));
+          setRecentArticles(articles);
+        }
+      } catch (e) {
+        console.error('Failed to fetch recent posts:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRecentPosts();
   }, []);
 
   return (

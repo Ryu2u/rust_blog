@@ -31,5 +31,6 @@ rbatis = { version = "4.5"}
 rbdc-mysql= "4.5"
 pulldown-cmark = "0.10.0"
 rand = "0.8.5"
+bcrypt = "0.15"
 #markdown = "1.0.0-alpha.16"
 

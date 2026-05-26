@@ -164,28 +164,9 @@ pub async fn api_file_test(form: MultipartForm<FileForm>) -> Result<impl Respond
     let file = temp_file.file.as_file_mut();
     info!("file len : {:?}", file.metadata());
     let mut file_content = String::new();
-    match file.read_to_string(&mut file_content) {
-        Ok(_) => {
-            info!("{:?}", file_content);
-
-            // let post_new = Post::new(
-            //     post.title.clone(),
-            //     post.author.clone(),
-            //     post.original_content.clone(),
-            //     md_html,
-            //     post.format_content.len() as i32,
-            //     post.summary.clone(),
-            // );
-            //
-            // match Post::insert(&**db, &post_new).await {
-            //     Ok(_) => Ok(R::ok_msg("添加成功!")),
-            //     Err(_) => Err(Exception::BadRequest("add post failed!".to_string())),
-            // }
-
-            Ok(R::ok())
-        }
-        Err(_) => Ok(R::ok()),
-    }
+    file.read_to_string(&mut file_content)?;
+    info!("{:?}", file_content);
+    Ok(R::ok_obj(file_content))
 }
 
 #[instrument]

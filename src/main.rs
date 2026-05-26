@@ -46,18 +46,39 @@ async fn main() -> std::io::Result<()> {
             .allow_any_header();
         let white_list = FilterWhiteList(vec![
             "/user/login",
+            "/user/get",
             "/post/get",
             "/post/page",
             "/post/list_by_category/*",
             "/category/**",
-            "/comment/**",
+            "/comment/add",
+            "/comment/list",
+            "/tag/list",
+            "/tag/post",
         ]);
+
+        let session_key_str =
+            env::var("SESSION_KEY").expect("can't get env [SESSION_KEY], please check the .env file!");
+        let src = session_key_str.as_bytes();
+        let mut key_bytes = [0u8; 64];
+        let len = std::cmp::min(src.len(), 64);
+        key_bytes[..len].copy_from_slice(&src[..len]);
+        let session_key = Key::from(&key_bytes);
 
         App::new()
             // 配置全局对象
             .app_data(web::Data::new(rbatis.clone()))
             .app_data(web::Data::new(AppState {
                 app_name: "rust_blog".to_string(),
+                admin_route_prefixes: vec![
+                    "/post/admin",
+                    "/post/add",
+                    "/post/test/form",
+                    "/tag/add",
+                    "/tag/del",
+                    "/tag/update",
+                    "/comment/admin",
+                ],
             }))
             .app_data(white_list)
             // 文件上传大小限制
@@ -68,7 +89,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(AuthFilter)
             .wrap(
                 // create cookie based session middleware
-                SessionMiddleware::builder(CookieSessionStore::default(), Key::from(&[0; 64]))
+                SessionMiddleware::builder(CookieSessionStore::default(), session_key)
                     .cookie_secure(false)
                     .build(),
             )

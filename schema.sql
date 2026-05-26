@@ -83,7 +83,8 @@ CREATE TABLE `comment` (
     `user_name` VARCHAR(100) NOT NULL COMMENT '评论者昵称',
     `content` TEXT NOT NULL COMMENT '评论内容',
     `created_time` BIGINT NOT NULL COMMENT '评论时间戳',
-    `parent_id` INT DEFAULT NULL COMMENT '父评论ID，NULL表示顶级评论'
+    `parent_id` INT DEFAULT NULL COMMENT '父评论ID，NULL表示顶级评论',
+    `status` TINYINT NOT NULL DEFAULT 0 COMMENT '审核状态(0:待审核 1:已通过 2:已拒绝)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章评论表';
 
 -- ----------------------------
@@ -100,5 +101,6 @@ CREATE TABLE `tb_user` (
     `avatar_path` VARCHAR(500) COMMENT '头像路径',
     `signature` TEXT COMMENT '个性签名',
     `created_time` BIGINT NOT NULL COMMENT '创建时间戳',
-    `locked` TINYINT NOT NULL DEFAULT 0 COMMENT '是否锁定(0:否 1:是)'
+    `locked` TINYINT NOT NULL DEFAULT 0 COMMENT '是否锁定(0:否 1:是)',
+    `role` VARCHAR(20) NOT NULL DEFAULT 'user' COMMENT '角色(admin:管理员 user:普通用户)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';

@@ -2,12 +2,14 @@ use actix_session::SessionExt;
 use std::future::{ready, Ready};
 
 use crate::AppState;
+use crate::user::structs::User;
 use actix_web::http::Method;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     error, web, Error,
 };
 use futures_util::future::LocalBoxFuture;
+use rbatis::RBatis;
 use tracing::log::{error, info};
 
 // There are two steps in middleware processing.
@@ -111,22 +113,56 @@ where
                     return Box::pin(async move { fut.await });
                 }
 
-                // todo 验证身份
+                // 验证身份
+                let url_for_role = url.to_string();
                 let session = req.get_session();
+                let user_id = match session.get::<i32>("user_id") {
+                    Ok(Some(id)) => id,
+                    _ => {
+                        error!("unable to verify identity!");
+                        return Box::pin(async move { Err(error::ErrorUnauthorized("unauthorized")) });
+                    }
+                };
+                info!("session: id -> {user_id}");
 
-                if let Ok(Some(id)) = session.get::<i32>("user_id") {
-                    info!("session: id -> {id}");
-                    valid = true;
-                }
+                // 检查是否为管理员路由
+                let db = req.app_data::<web::Data<RBatis>>().cloned();
+                let app_state = req.app_data::<web::Data<AppState>>().cloned();
+                let is_admin_route = app_state.as_ref().map_or(false, |s| {
+                    s.admin_route_prefixes
+                        .iter()
+                        .any(|p| url_for_role.starts_with(p))
+                });
 
-                if valid {
+                if !is_admin_route {
+                    info!("non-admin route, authenticated user passes");
                     let fut = self.service.call(req);
-                    Box::pin(async move { fut.await })
-                } else {
-                    // Unable to verify identity
-                    error!("unable to verify identity!");
-                    Box::pin(async move { Err(error::ErrorUnauthorized("unauthorized")) })
+                    return Box::pin(async move { fut.await });
                 }
+
+                // 管理员路由：需要验证 role
+                info!("admin route check for user_id: {}", user_id);
+                let fut = self.service.call(req);
+                Box::pin(async move {
+                    if let Some(ref db) = db {
+                        match User::select_by_id(db.as_ref(), user_id).await {
+                            Ok(users) => {
+                                if !users.is_empty() && users[0].role == "admin" {
+                                    return fut.await;
+                                }
+                                error!("user {} is not admin, access denied", user_id);
+                                Err(error::ErrorForbidden("admin role required"))
+                            }
+                            Err(e) => {
+                                error!("db error checking role: {}", e);
+                                Err(error::ErrorInternalServerError("db error"))
+                            }
+                        }
+                    } else {
+                        error!("no db available for role check");
+                        Err(error::ErrorForbidden("admin role required"))
+                    }
+                })
             }
         }
     }

@@ -1,9 +1,9 @@
-import { PageInfo, Comment, Result } from "../common/Structs";
+import { Result } from "../common/Structs";
 import { http_client } from "../common/AxioConfig";
 
 export default {
-    commentListPage(pageInfo: PageInfo): Promise<Result> {
-        return http_client.post(`/comment/admin/list`, pageInfo);
+    commentListPage(query: { page_num: number, page_size: number, keyword?: string, status?: number | null, post_id?: number | null }): Promise<Result> {
+        return http_client.post(`/comment/admin/list`, query);
     },
     comment_get(id: number): Promise<Result> {
         return http_client.get(`/comment/admin/get/${id}`);
@@ -22,5 +22,8 @@ export default {
     },
     comment_batch_delete(ids: number[]): Promise<Result> {
         return http_client.post(`/comment/admin/batch/delete`, { ids });
+    },
+    comment_counts(): Promise<Result> {
+        return http_client.get(`/comment/admin/counts`);
     }
 }

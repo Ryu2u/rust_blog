@@ -25,115 +25,70 @@ export function CommentPage() {
     });
     const [messageApi, contextHolder] = message.useMessage();
     const [commentList, setCommentList] = useState<Comment[]>([]);
+    const [counts, setCounts] = useState({ pending: 0, approved: 0, rejected: 0 });
+
+    function fetchCounts() {
+        CommentService.comment_counts().then(res => {
+            if (res.obj) {
+                setCounts(res.obj);
+            }
+        });
+    }
 
     useEffect(() => {
         getDataList();
+        fetchCounts();
     }, []);
 
     function getDataList() {
         setLoading(true);
-        setTimeout(() => {
-            const mockData: Comment[] = [
-                {
-                    id: 1,
-                    post_id: 1,
-                    post_title: 'React 18 新特性详解',
-                    user_id: 1,
-                    user_name: '张三',
-                    user_email: 'zhangsan@example.com',
-                    content: '这篇文章写得很好，对React 18的新特性讲解得很清楚，特别是并发渲染的部分。',
-                    status: 1,
-                    ip_address: '192.168.1.100',
-                    created_time: Date.now() - 2 * 60 * 60 * 1000
-                },
-                {
-                    id: 2,
-                    post_id: 1,
-                    post_title: 'React 18 新特性详解',
-                    user_id: 2,
-                    user_name: '李四',
-                    user_email: 'lisi@example.com',
-                    content: '感谢分享！请问Suspense在实际项目中应该如何使用？',
-                    parent_id: 1,
-                    parent_user_name: '张三',
-                    status: 0,
-                    ip_address: '192.168.1.101',
-                    created_time: Date.now() - 1 * 60 * 60 * 1000
-                },
-                {
-                    id: 3,
-                    post_id: 2,
-                    post_title: 'TypeScript 高级类型技巧',
-                    user_id: 3,
-                    user_name: '王五',
-                    user_email: 'wangwu@example.com',
-                    content: '非常实用的技巧，收藏了！',
-                    status: 1,
-                    ip_address: '192.168.1.102',
-                    created_time: Date.now() - 3 * 60 * 60 * 1000
-                },
-                {
-                    id: 4,
-                    post_id: 3,
-                    post_title: 'Vite 构建优化实践',
-                    user_id: 4,
-                    user_name: '赵六',
-                    user_email: 'zhaoliu@example.com',
-                    content: '垃圾文章，浪费时间',
-                    status: 2,
-                    ip_address: '192.168.1.103',
-                    created_time: Date.now() - 5 * 60 * 60 * 1000
-                },
-                {
-                    id: 5,
-                    post_id: 2,
-                    post_title: 'TypeScript 高级类型技巧',
-                    user_id: 5,
-                    user_name: '孙七',
-                    user_email: 'sunqi@example.com',
-                    content: '能否详细讲解一下条件类型的使用场景？我在项目中遇到了一些问题。',
-                    status: 0,
-                    ip_address: '192.168.1.104',
-                    created_time: Date.now() - 30 * 60 * 1000
-                }
-            ];
-
-            pageInfoRef.current.total = mockData.length;
-            pageInfoRef.current.list = mockData;
-            setCommentList(mockData);
+        CommentService.commentListPage({
+            page_num: pageInfoRef.current.page_num,
+            page_size: pageInfoRef.current.page_size,
+            keyword: searchParams.keyword || undefined,
+            status: searchParams.status,
+            post_id: searchParams.post_id,
+        }).then(res => {
+            if (res.obj) {
+                pageInfoRef.current.total = res.obj.total;
+                setCommentList(res.obj.list || []);
+            }
+        }).finally(() => {
             setLoading(false);
-        }, 500);
+        });
     }
 
     const handleApprove = (id: number) => {
         setLoading(true);
-        setTimeout(() => {
-            setCommentList(commentList.map(comment =>
-                comment.id === id ? { ...comment, status: 1 } : comment
-            ));
-            messageApi.success('评论已通过');
+        CommentService.comment_approve(id).then(res => {
+            messageApi.success(res.msg || '评论已通过');
+            getDataList();
+            fetchCounts();
+        }).catch(() => {
             setLoading(false);
-        }, 300);
+        });
     };
 
     const handleReject = (id: number) => {
         setLoading(true);
-        setTimeout(() => {
-            setCommentList(commentList.map(comment =>
-                comment.id === id ? { ...comment, status: 2 } : comment
-            ));
-            messageApi.success('评论已拒绝');
+        CommentService.comment_reject(id).then(res => {
+            messageApi.success(res.msg || '评论已拒绝');
+            getDataList();
+            fetchCounts();
+        }).catch(() => {
             setLoading(false);
-        }, 300);
+        });
     };
 
     const handleDelete = (id: number) => {
         setLoading(true);
-        setTimeout(() => {
-            setCommentList(commentList.filter(comment => comment.id !== id));
-            messageApi.success('删除成功');
+        CommentService.comment_delete(id).then(res => {
+            messageApi.success(res.msg || '删除成功');
+            getDataList();
+            fetchCounts();
+        }).catch(() => {
             setLoading(false);
-        }, 300);
+        });
     };
 
     const handleBatchApprove = () => {
@@ -142,14 +97,14 @@ export function CommentPage() {
             return;
         }
         setLoading(true);
-        setTimeout(() => {
-            setCommentList(commentList.map(comment =>
-                selectedRowKeys.includes(comment.id) ? { ...comment, status: 1 } : comment
-            ));
+        CommentService.comment_batch_approve(selectedRowKeys as number[]).then(res => {
+            messageApi.success(res.msg || '批量审核成功');
             setSelectedRowKeys([]);
-            messageApi.success('批量通过成功');
+            getDataList();
+            fetchCounts();
+        }).catch(() => {
             setLoading(false);
-        }, 300);
+        });
     };
 
     const handleBatchDelete = () => {
@@ -158,12 +113,14 @@ export function CommentPage() {
             return;
         }
         setLoading(true);
-        setTimeout(() => {
-            setCommentList(commentList.filter(comment => !selectedRowKeys.includes(comment.id)));
+        CommentService.comment_batch_delete(selectedRowKeys as number[]).then(res => {
+            messageApi.success(res.msg || '批量删除成功');
             setSelectedRowKeys([]);
-            messageApi.success('批量删除成功');
+            getDataList();
+            fetchCounts();
+        }).catch(() => {
             setLoading(false);
-        }, 300);
+        });
     };
 
     const getStatusTag = (status: number) => {
@@ -205,7 +162,7 @@ export function CommentPage() {
                         <div style={{ marginTop: 8, padding: 8, background: '#0a0a0a', border: '1px solid #333333' }}>
                             <MessageOutlined style={{ marginRight: 4, color: '#555555' }} />
                             <span style={{ color: '#555555', fontSize: 12 }}>
-                                回复 @{record.parent_user_name}
+                                回复评论 #{record.parent_id}
                             </span>
                         </div>
                     )}
@@ -229,28 +186,21 @@ export function CommentPage() {
             dataIndex: 'status',
             key: 'status',
             width: 100,
-            render: (status) => getStatusTag(status),
+            render: (status) => getStatusTag(status ?? 0),
             filters: [
                 { text: '待审核', value: 0 },
                 { text: '已通过', value: 1 },
                 { text: '已拒绝', value: 2 },
             ],
-            onFilter: (value, record) => record.status === value,
-        },
-        {
-            title: 'IP地址',
-            dataIndex: 'ip_address',
-            key: 'ip_address',
-            width: 140,
-            render: (value) => <span style={{ color: '#555555', fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace" }}>{value}</span>,
+            onFilter: (value, record) => (record.status ?? 0) === value,
         },
         {
             title: '评论时间',
             dataIndex: 'created_time',
             key: 'created_time',
             width: 180,
-            render: (created_time) => <span style={{ color: '#808080' }}>{formatDate(new Date(created_time))}</span>,
-            sorter: (a, b) => a.created_time - b.created_time,
+            render: (created_time) => <span style={{ color: '#808080' }}>{created_time ? formatDate(new Date(created_time * 1000)) : '-'}</span>,
+            sorter: (a, b) => (a.created_time ?? 0) - (b.created_time ?? 0),
         },
         {
             title: '操作',
@@ -264,7 +214,7 @@ export function CommentPage() {
                             type="primary"
                             icon={<CheckOutlined />}
                             size="small"
-                            onClick={() => handleApprove(record.id)}
+                            onClick={() => handleApprove(record.id!)}
                             style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                         />
                     )}
@@ -272,14 +222,14 @@ export function CommentPage() {
                         <Button
                             icon={<CloseOutlined />}
                             size="small"
-                            onClick={() => handleReject(record.id)}
+                            onClick={() => handleReject(record.id!)}
                             style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                         />
                     )}
                     <Popconfirm
                         title="确定要删除这条评论吗？"
                         description="删除后将无法恢复"
-                        onConfirm={() => handleDelete(record.id)}
+                        onConfirm={() => handleDelete(record.id!)}
                         okText="确定"
                         cancelText="取消"
                     >
@@ -323,10 +273,7 @@ export function CommentPage() {
         },
     };
 
-    // 统计数据
-    const pendingCount = commentList.filter(c => c.status === 0).length;
-    const approvedCount = commentList.filter(c => c.status === 1).length;
-    const rejectedCount = commentList.filter(c => c.status === 2).length;
+    const { pending: pendingCount, approved: approvedCount, rejected: rejectedCount } = counts;
 
     return (
         <>
