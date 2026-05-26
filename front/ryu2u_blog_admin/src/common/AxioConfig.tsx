@@ -34,6 +34,14 @@ function useAjaxEffect1() {
             console.log(`request failed: ${error.message}`);
             writeRef.current(`请求失败：${error.message}`);
             if (error.response) {
+                if (error.response.status === 401) {
+                    navigate('/login');
+                    return Promise.reject(error);
+                }
+                if (error.response.status === 403) {
+                    message.error('权限不足，需要管理员权限');
+                    return Promise.reject(error);
+                }
                 let data:Result = error.response.data as any;
                 if (data){
                     message.error(data.msg);

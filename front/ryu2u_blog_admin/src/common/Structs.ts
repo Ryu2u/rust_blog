@@ -29,6 +29,7 @@ export class User {
     signature?: string;
     created_time!: number;
     locked!: number;
+    role!: string;
 }
 
 export class Post {
@@ -74,6 +75,7 @@ export class Comment {
     status!: number; // 0: 待审核, 1: 已通过, 2: 已拒绝
     ip_address?: string;
     created_time!: number;
+    children?: Comment[]; // 子评论列表
 }
 
 export class Moment {

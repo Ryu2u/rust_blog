@@ -17,33 +17,28 @@ export function Header() {
             <div className={"header"}>
                 <div className={"flex header-item"}>
                     <div className={"logo-div"} onClick={() => logoClick()}>
-                        🍑 の Blog
+                        <span style={{color: '#10a37f'}}>&gt;</span> blog
                     </div>
                     <div className={"header-menu"}>
                         <ul>
                             <li>
                                 <a href={"#"} onClick={homeClick}>
-                                    <span className={"fa fa-home"}></span>主页
+                                    home
                                 </a>
                             </li>
                             <li>
                                 <a href={"#"} onClick={() => navigate("/category")}>
-                                    <span className={"fa fa-align-justify"}></span>分类
+                                    category
                                 </a>
                             </li>
                             <li>
                                 <a href={"#"}>
-                                    <span className={"fa fa-link"}></span>链接
+                                    links
                                 </a>
                             </li>
                             <li>
                                 <a href={"#"}>
-                                    <span className={"fa fa-info-circle"}></span>关于
-                                </a>
-                            </li>
-                            <li>
-                                <a href={"#"}>
-                                    <span className={"fa fa-search"}></span>搜索
+                                    about
                                 </a>
                             </li>
                         </ul>

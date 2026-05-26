@@ -1,4 +1,4 @@
-import { Table, TableProps, Tag, Input, Button, Space, Card, Row, Col, Select, Popconfirm, message } from "antd";
+import { Table, TableProps, Tag, Input, Button, Space, Row, Col, Select, Popconfirm, message } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { PageInfo, Post, PostTag } from "../../common/Structs";
 import PostService from "../../service/PostService";
@@ -66,7 +66,7 @@ export const ArticleListPage = () => {
             width: 200,
             key: 'title',
             render: (value, data) => (
-                <a onClick={() => titleClick(data)} style={{ fontWeight: data.top_priority ? 'bold' : 'normal' }}>
+                <a onClick={() => titleClick(data)} style={{ fontWeight: data.top_priority ? 'bold' : 'normal', color: '#e0e0e0' }}>
                     {value}
                 </a>
             ),
@@ -75,6 +75,7 @@ export const ArticleListPage = () => {
             title: '作者',
             dataIndex: 'author',
             key: 'author',
+            render: (value) => <span style={{ color: '#808080' }}>{value}</span>,
         },
         {
             title: '展示',
@@ -84,9 +85,9 @@ export const ArticleListPage = () => {
             render: (is_view) => (
                 <span>
                     {is_view ?
-                        <EyeOutlined style={{ fontSize: '18px', color: '#52c41a' }} />
+                        <EyeOutlined style={{ fontSize: '18px', color: '#10a37f' }} />
                         :
-                        <EyeInvisibleOutlined style={{ fontSize: '18px', color: '#d9d9d9' }} />
+                        <EyeInvisibleOutlined style={{ fontSize: '18px', color: '#555555' }} />
                     }
                 </span>
             ),
@@ -96,6 +97,7 @@ export const ArticleListPage = () => {
             dataIndex: 'summary',
             ellipsis: true,
             key: 'summary',
+            render: (value) => <span style={{ color: '#808080' }}>{value}</span>,
         },
         {
             title: '标签',
@@ -104,7 +106,12 @@ export const ArticleListPage = () => {
             render: (tags) => (
                 <Space size="small">
                     {tags && tags.map((tag: PostTag) => (
-                        <Tag key={getUuid()} color={'volcano'}>
+                        <Tag key={getUuid()} style={{
+                            background: '#0a0a0a',
+                            border: '1px solid #333333',
+                            color: '#808080',
+                            borderRadius: 0,
+                        }}>
                             {tag['name']}
                         </Tag>
                     ))}
@@ -117,7 +124,12 @@ export const ArticleListPage = () => {
             width: 80,
             key: 'disallow_comment',
             render: (disallow_comment) => (
-                <Tag color={disallow_comment ? 'red' : 'green'}>
+                <Tag style={{
+                    background: disallow_comment ? '#1a1a1a' : '#10a37f',
+                    color: disallow_comment ? '#808080' : '#000000',
+                    border: 'none',
+                    borderRadius: 0,
+                }}>
                     {disallow_comment ? '否' : '是'}
                 </Tag>
             ),
@@ -128,7 +140,12 @@ export const ArticleListPage = () => {
             width: 80,
             key: 'password',
             render: (password) => (
-                <Tag color={password ? 'orange' : 'blue'}>
+                <Tag style={{
+                    background: password ? '#1a1a1a' : '#000000',
+                    color: password ? '#808080' : '#555555',
+                    border: '1px solid #333333',
+                    borderRadius: 0,
+                }}>
                     {password ? '是' : '否'}
                 </Tag>
             ),
@@ -139,7 +156,12 @@ export const ArticleListPage = () => {
             width: 80,
             key: 'top_priority',
             render: (top_priority) => (
-                <Tag color={top_priority ? 'purple' : 'default'}>
+                <Tag style={{
+                    background: top_priority ? '#10a37f' : '#000000',
+                    color: top_priority ? '#000000' : '#555555',
+                    border: 'none',
+                    borderRadius: 0,
+                }}>
                     {top_priority ? '是' : '否'}
                 </Tag>
             ),
@@ -148,7 +170,7 @@ export const ArticleListPage = () => {
             title: '创建时间',
             dataIndex: 'created_time',
             key: 'created_time',
-            render: (created_time) => formatDate(new Date(created_time)),
+            render: (created_time) => <span style={{ color: '#808080' }}>{formatDate(new Date(created_time))}</span>,
         },
         {
             title: '操作',
@@ -157,11 +179,12 @@ export const ArticleListPage = () => {
             fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
-                    <Button 
-                        type="primary" 
-                        icon={<EditOutlined />} 
+                    <Button
+                        type="primary"
+                        icon={<EditOutlined />}
                         size="small"
                         onClick={() => navigate(`/article/edit/${record.id}`)}
+                        style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                     >
                         编辑
                     </Button>
@@ -172,10 +195,11 @@ export const ArticleListPage = () => {
                         okText="确定"
                         cancelText="取消"
                     >
-                        <Button 
-                            danger 
-                            icon={<DeleteOutlined />} 
+                        <Button
+                            danger
+                            icon={<DeleteOutlined />}
                             size="small"
+                            style={{ borderRadius: 0 }}
                         >
                             删除
                         </Button>
@@ -232,16 +256,29 @@ export const ArticleListPage = () => {
     return (
         <>
             {contextHolder}
-            <Card title="文章管理" extra={
-                <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />}
-                    onClick={() => navigate('/article/new')}
-                >
-                    新建文章
-                </Button>
-            }>
-                <Card size="small" style={{ marginBottom: 16 }}>
+            <div>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '16px',
+                    paddingBottom: '12px',
+                    borderBottom: '1px solid #333333',
+                }}>
+                    <div style={{ color: '#e0e0e0', fontSize: '13px', fontWeight: 700 }}>
+                        <span style={{ color: '#10a37f' }}>&gt;</span> 文章管理
+                    </div>
+                    <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={() => navigate('/article/new')}
+                        style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
+                    >
+                        新建文章
+                    </Button>
+                </div>
+
+                <div style={{ border: '1px solid #333333', padding: '16px', marginBottom: '16px', background: '#0a0a0a' }}>
                     <Row gutter={16} align="middle">
                         <Col span={8}>
                             <Search
@@ -250,7 +287,7 @@ export const ArticleListPage = () => {
                                 onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
                                 onSearch={handleSearch}
                                 style={{ width: '100%' }}
-                                prefix={<SearchOutlined />}
+                                prefix={<SearchOutlined style={{ color: '#555555' }} />}
                             />
                         </Col>
                         <Col span={6}>
@@ -258,6 +295,7 @@ export const ArticleListPage = () => {
                                 placeholder="作者"
                                 value={searchParams.author}
                                 onChange={(e) => setSearchParams({ ...searchParams, author: e.target.value })}
+                                style={{ background: '#000000', border: '1px solid #333333', color: '#e0e0e0' }}
                             />
                         </Col>
                         <Col span={6}>
@@ -274,28 +312,30 @@ export const ArticleListPage = () => {
                         </Col>
                         <Col span={4}>
                             <Space>
-                                <Button 
-                                    type="primary" 
+                                <Button
+                                    type="primary"
                                     icon={<SearchOutlined />}
                                     onClick={handleSearch}
+                                    style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                                 >
                                     搜索
                                 </Button>
-                                <Button 
+                                <Button
                                     icon={<FilterOutlined />}
                                     onClick={handleReset}
+                                    style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                                 >
                                     重置
                                 </Button>
                             </Space>
                         </Col>
                     </Row>
-                </Card>
+                </div>
 
                 {selectedRowKeys.length > 0 && (
-                    <div style={{ marginBottom: 16 }}>
+                    <div style={{ marginBottom: 16, padding: '8px 12px', background: '#0a0a0a', border: '1px solid #333333' }}>
                         <Space>
-                            <span>已选择 {selectedRowKeys.length} 项</span>
+                            <span style={{ color: '#808080' }}>已选择 {selectedRowKeys.length} 项</span>
                             <Popconfirm
                                 title="确定要批量删除这些文章吗？"
                                 description="删除后将无法恢复"
@@ -303,9 +343,10 @@ export const ArticleListPage = () => {
                                 okText="确定"
                                 cancelText="取消"
                             >
-                                <Button 
-                                    danger 
+                                <Button
+                                    danger
                                     icon={<DeleteOutlined />}
+                                    style={{ borderRadius: 0 }}
                                 >
                                     批量删除
                                 </Button>
@@ -330,7 +371,7 @@ export const ArticleListPage = () => {
                     scroll={{ x: 2000 }}
                     style={{ tableLayout: 'fixed' }}
                 />
-            </Card>
+            </div>
         </>
     );
 };

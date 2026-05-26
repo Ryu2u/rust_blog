@@ -17,5 +17,10 @@ export default {
     },
     post_delete(id: number): Promise<Result> {
         return http_client.get(`/post/admin/del/${id}`);
+    },
+    post_upload(formData: FormData): Promise<Result> {
+        return http_client.post(`/post/test/form`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
     }
 }

@@ -5,8 +5,7 @@ import {DynamicBreadcrumb} from "../comonents/DynamicBreadcrumb";
 
 import {
     DashboardOutlined, InfoCircleOutlined, LoginOutlined,
-    MenuFoldOutlined,
-    MenuUnfoldOutlined, MessageOutlined, ReadOutlined, ReconciliationOutlined, UserOutlined,
+    MessageOutlined, ReadOutlined, ReconciliationOutlined, UserOutlined,
 } from '@ant-design/icons';
 import {MenuProps, Tag} from 'antd';
 import {Avatar, Button, Layout, Menu, theme} from 'antd';
@@ -17,75 +16,69 @@ const {Header, Content, Footer, Sider} = Layout;
 
 const items: MenuProps['items'] = [
     {
-        key: "/dashboard", // item 唯一标志
-        title: '仪表盘', // 设置收缩时展示的悬浮标题
-        label: "仪表盘", // 菜单显示在界面上的标题项
-        icon: createElement(DashboardOutlined), // 图标
-        disabled: false, // 是否禁用
-        danger: false // 展示错误状态样式
+        key: "/dashboard",
+        title: '仪表盘',
+        label: "仪表盘",
+        icon: createElement(DashboardOutlined),
+        disabled: false,
+        danger: false
     },
     {
-        key: "/article/list", // item 唯一标志
-        title: '文章', // 设置收缩时展示的悬浮标题
-        label: "文章", // 菜单显示在界面上的标题项
-        icon: createElement(ReadOutlined), // 图标
-        disabled: false, // 是否禁用
-        danger: false // 展示错误状态样式
+        key: "/article/list",
+        title: '文章',
+        label: "文章",
+        icon: createElement(ReadOutlined),
+        disabled: false,
+        danger: false
     },
     {
-        key: "/user/list", // item 唯一标志
-        title: '用户', // 设置收缩时展示的悬浮标题
-        label: "用户", // 菜单显示在界面上的标题项
-        icon: createElement(UserOutlined), // 图标
-        disabled: false, // 是否禁用
-        danger: false // 展示错误状态样式
+        key: "/user/list",
+        title: '用户',
+        label: "用户",
+        icon: createElement(UserOutlined),
+        disabled: false,
+        danger: false
     },
     {
-        key: "/comment", // item 唯一标志
-        title: '评论', // 设置收缩时展示的悬浮标题
-        label: "评论", // 菜单显示在界面上的标题项
-        icon: createElement(MessageOutlined), // 图标
-        disabled: false, // 是否禁用
-        danger: false // 展示错误状态样式
+        key: "/comment",
+        title: '评论',
+        label: "评论",
+        icon: createElement(MessageOutlined),
+        disabled: false,
+        danger: false
     },
     {
-        key: "/moments", // item 唯一标志
-        title: '说说', // 设置收缩时展示的悬浮标题
-        label: "说说", // 菜单显示在界面上的标题项
-        icon: createElement(ReconciliationOutlined), // 图标
-        disabled: false, // 是否禁用
-        danger: false // 展示错误状态样式
+        key: "/moments",
+        title: '说说',
+        label: "说说",
+        icon: createElement(ReconciliationOutlined),
+        disabled: false,
+        danger: false
     },
     {
-        key: "/about", // item 唯一标志
-        title: '关于', // 设置收缩时展示的悬浮标题
-        label: "关于", // 菜单显示在界面上的标题项
-        icon: createElement(InfoCircleOutlined), // 图标
-        disabled: false, // 是否禁用
-        danger: false // 展示错误状态样式
+        key: "/about",
+        title: '关于',
+        label: "关于",
+        icon: createElement(InfoCircleOutlined),
+        disabled: false,
+        danger: false
     },
-
 ]
 
 
 export function Admin() {
 
-    const colorTheme = "light";
+    const colorTheme = "dark";
 
-    const {token: {colorBgContainer, borderRadiusLG},} = theme.useToken();
+    const {token: {}} = theme.useToken();
 
     const [collapsed, setCollapsed] = useState(false);
 
     const navigate = useNavigate();
 
-    const toggleCollapsed = () => {
-        setCollapsed(!collapsed);
-    };
-
     useEffect(() => {
 
         window.onresize = () => {
-            // console.log(window.innerWidth);
             if (window.innerWidth < 1100) {
                 setCollapsed(true);
             } else {
@@ -120,7 +113,8 @@ export function Admin() {
                     left: 0,
                     top: 0,
                     bottom: 0,
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    background: '#000000',
                 }}
                 collapsed={collapsed}
                 collapsible
@@ -129,13 +123,15 @@ export function Admin() {
                 <div className="logo" style={{
                     textAlign: 'center',
                     padding: '16px 0',
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: '#1890ff',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: '#e0e0e0',
                     whiteSpace: 'nowrap',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
+                    borderBottom: '1px solid #333333',
                 }}>
-                    Ryu2u{!collapsed && " の 后台"}
+                    <span style={{ color: '#10a37f' }}>&gt;</span> admin{!collapsed && " ~"}
                 </div>
                 <Menu
                     theme={colorTheme}
@@ -148,7 +144,9 @@ export function Admin() {
                         marginTop: '16px',
                         height: 'calc(100vh - 80px)',
                         borderRight: 0,
-                        overflow: 'auto'
+                        overflow: 'auto',
+                        background: '#000000',
+                        fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
                     }}
                 />
             </Sider>
@@ -156,15 +154,16 @@ export function Admin() {
                     style={{
                         marginLeft: collapsed ? '80px' : '200px',
                         minHeight: '99vh',
-                        transition: 'all 0.3s ease'
+                        transition: 'all 0.3s ease',
+                        background: '#000000',
                     }}
             >
                 <Header
                     className={"layout-header"}
                     style={{
                         padding: '0 24px',
-                        background: colorBgContainer,
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.09)',
+                        background: '#000000',
+                        borderBottom: '1px solid #333333',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -173,11 +172,12 @@ export function Admin() {
                         left: collapsed ? '80px' : '200px',
                         right: 0,
                         zIndex: 100,
-                        transition: 'all 0.3s ease'
+                        transition: 'all 0.3s ease',
+                        fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
                     }}
                 >
-                    <div style={{fontSize: '16px', fontWeight: '500'}}>
-                        {items.find(item => item.key === window.location.pathname)?.label || '仪表盘'}
+                    <div style={{fontSize: '14px', fontWeight: 500, color: '#e0e0e0'}}>
+                        <span style={{ color: '#10a37f' }}>$</span> {(items as any)?.find((item: any) => item.key === window.location.pathname)?.label || '仪表盘'}
                     </div>
                     <div style={{display: 'flex', alignItems: 'center'}}>
                         <div style={{
@@ -190,45 +190,68 @@ export function Admin() {
                                 src={<img src="/react.svg" alt="avatar"/>}
                                 style={{
                                     cursor: 'pointer',
-                                    border: '1px solid #e8e8e8',
-                                    marginRight: '12px'
+                                    border: '1px solid #333333',
+                                    marginRight: '12px',
+                                    background: '#0a0a0a',
                                 }}
                             />
-                            <div style={{fontWeight: '500',marginRight: '5px'}}>
+                            <div style={{fontWeight: 500, marginRight: '5px', color: '#e0e0e0', fontSize: '13px'}}>
                                 Admin
                             </div>
-                            <Tag variant={'solid'}>
-                                系统管理员
+                            <Tag style={{
+                                background: '#10a37f',
+                                color: '#000000',
+                                border: 'none',
+                                borderRadius: 0,
+                                fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
+                                fontSize: '11px',
+                            }}>
+                                root
                             </Tag>
                         </div>
                         <Button
                             type="text"
                             icon={<LoginOutlined/>}
                             onClick={logout}
+                            style={{
+                                color: '#808080',
+                                fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
+                            }}
                         >
-                            退出登录
+                            exit
                         </Button>
                     </div>
                 </Header>
                 <Content className={"content-div"} style={{
                     padding: '32px 0',
-                    marginBottom: '0'
+                    marginBottom: '0',
+                    background: '#000000',
                 }}>
                     <div
                         className={"container"}
                         style={{
-                            background: colorBgContainer,
-                            borderRadius: borderRadiusLG,
+                            background: '#000000',
+                            borderRadius: 0,
                             padding: '24px',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
+                            border: '1px solid #333333',
+                            fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
                         }}
                     >
                         <DynamicBreadcrumb/>
                         <Outlet/>
                     </div>
                 </Content>
-                <Footer className={"footer"} style={{textAlign: 'center', padding: '16px', margin: '0'}}>
-                    Ant Design ©{new Date().getFullYear()} Created by Ant UED
+                <Footer className={"footer"} style={{
+                    textAlign: 'center',
+                    padding: '16px',
+                    margin: '0',
+                    background: '#000000',
+                    color: '#555555',
+                    borderTop: '1px solid #333333',
+                    fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
+                    fontSize: '12px',
+                }}>
+                    $ echo "{new Date().getFullYear()} hai_tao@admin"
                 </Footer>
             </Layout>
         </Layout>

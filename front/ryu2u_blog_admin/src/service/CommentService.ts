@@ -3,7 +3,7 @@ import { http_client } from "../common/AxioConfig";
 
 export default {
     commentListPage(pageInfo: PageInfo): Promise<Result> {
-        return http_client.post(`/comment/admin/list/page`, pageInfo);
+        return http_client.post(`/comment/admin/list`, pageInfo);
     },
     comment_get(id: number): Promise<Result> {
         return http_client.get(`/comment/admin/get/${id}`);

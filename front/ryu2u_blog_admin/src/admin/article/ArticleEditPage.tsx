@@ -1,10 +1,12 @@
 import {MdEditor} from "../../comonents/MdEditor";
-import {Button, Form, Input, message, Modal, Switch, Space, Card, Alert} from "antd";
+import {Button, Form, Input, message, Modal, Switch, Space, Card, Alert, Upload} from "antd";
+import type {UploadProps} from "antd";
 import {DeleteOutlined, SaveOutlined, ExclamationCircleFilled, UploadOutlined, EyeOutlined} from "@ant-design/icons";
 import {useEffect, useRef, useState} from "react";
 import PostService from "../../service/PostService";
 import {Post} from "../../common/Structs";
 import {useParams, useNavigate} from "react-router-dom";
+import {http_client} from "../../common/AxioConfig";
 
 const {TextArea} = Input;
 
@@ -77,6 +79,39 @@ export function ArticleEditPage() {
         setOpen(false);
     };
 
+    const uploadProps: UploadProps = {
+        name: 'file',
+        withCredentials: true,
+        customRequest({ file, onSuccess, onError }) {
+
+            setLoading(true);
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('num', '1');
+            formData.append('title', (file as File).name);
+            http_client.post('/post/test/form', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            })
+            .then((res: any) => {
+                onSuccess?.(res, file as any);
+                console.log(res.obj);
+                setInitValue(res.obj);
+                setLoading(false);
+            })
+            .catch(e => {
+                setLoading(false);
+                onError(e)
+            });
+        },
+        onChange(info) {
+            if (info.file.status === 'done') {
+                messageApi.success(`${info.file.name} 上传成功`);
+            } else if (info.file.status === 'error') {
+                messageApi.error(`${info.file.name} 上传失败`);
+            }
+        },
+    };
+
     const onFinish = (values: any) => {
         setSubmitting(true);
         postRef.current = values;
@@ -134,13 +169,14 @@ export function ArticleEditPage() {
                 title={postRef.current.id ? "编辑文章" : "新建文章"}
                 extra={
                     <Space>
-                        <Button
-                            type="default"
-                            icon={<UploadOutlined />}
-                            onClick={() => {}}
-                        >
-                            上传文件
-                        </Button>
+                        <Upload {...uploadProps}>
+                            <Button
+                                type="default"
+                                icon={<UploadOutlined />}
+                            >
+                                上传文件
+                            </Button>
+                        </Upload>
                         <Button
                             type="default" 
                             icon={<EyeOutlined />}

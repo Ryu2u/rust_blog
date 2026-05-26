@@ -30,7 +30,8 @@ export function UserEditPage() {
                     gender: 1,
                     signature: `这是用户${id}的个性签名`,
                     created_time: Date.now() - 30 * 24 * 60 * 60 * 1000,
-                    locked: 0
+                    locked: 0,
+                    role: 'user'
                 };
                 userRef.current = mockUser;
                 form.setFieldsValue(mockUser);

@@ -1,4 +1,4 @@
-import { Table, TableProps, Tag, Input, Button, Space, Card, Row, Col, Select, Popconfirm, message, Badge, Tooltip } from "antd";
+import { Table, TableProps, Tag, Input, Button, Space, Row, Col, Select, Popconfirm, message, Badge, Tooltip } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { PageInfo, Comment } from "../../common/Structs";
 import CommentService from "../../service/CommentService";
@@ -7,7 +7,6 @@ import { SearchOutlined, DeleteOutlined, CheckOutlined, CloseOutlined, FilterOut
 
 const { Option } = Select;
 const { Search } = Input;
-const { TextArea } = Input;
 
 interface SearchParams {
     keyword: string;
@@ -33,7 +32,6 @@ export function CommentPage() {
 
     function getDataList() {
         setLoading(true);
-        // 模拟数据加载
         setTimeout(() => {
             const mockData: Comment[] = [
                 {
@@ -99,7 +97,7 @@ export function CommentPage() {
                     created_time: Date.now() - 30 * 60 * 1000
                 }
             ];
-            
+
             pageInfoRef.current.total = mockData.length;
             pageInfoRef.current.list = mockData;
             setCommentList(mockData);
@@ -110,7 +108,7 @@ export function CommentPage() {
     const handleApprove = (id: number) => {
         setLoading(true);
         setTimeout(() => {
-            setCommentList(commentList.map(comment => 
+            setCommentList(commentList.map(comment =>
                 comment.id === id ? { ...comment, status: 1 } : comment
             ));
             messageApi.success('评论已通过');
@@ -121,7 +119,7 @@ export function CommentPage() {
     const handleReject = (id: number) => {
         setLoading(true);
         setTimeout(() => {
-            setCommentList(commentList.map(comment => 
+            setCommentList(commentList.map(comment =>
                 comment.id === id ? { ...comment, status: 2 } : comment
             ));
             messageApi.success('评论已拒绝');
@@ -145,7 +143,7 @@ export function CommentPage() {
         }
         setLoading(true);
         setTimeout(() => {
-            setCommentList(commentList.map(comment => 
+            setCommentList(commentList.map(comment =>
                 selectedRowKeys.includes(comment.id) ? { ...comment, status: 1 } : comment
             ));
             setSelectedRowKeys([]);
@@ -170,12 +168,12 @@ export function CommentPage() {
 
     const getStatusTag = (status: number) => {
         const statusMap = {
-            0: { color: 'orange', text: '待审核' },
-            1: { color: 'green', text: '已通过' },
-            2: { color: 'red', text: '已拒绝' }
+            0: { bg: '#1a1a1a', color: '#808080', text: '待审核' },
+            1: { bg: '#10a37f', color: '#000000', text: '已通过' },
+            2: { bg: '#1a1a1a', color: '#808080', text: '已拒绝' }
         };
         const statusInfo = statusMap[status as keyof typeof statusMap];
-        return <Tag color={statusInfo.color}>{statusInfo.text}</Tag>;
+        return <Tag style={{ background: statusInfo.bg, color: statusInfo.color, border: 'none', borderRadius: 0 }}>{statusInfo.text}</Tag>;
     };
 
     const columns: TableProps<Comment>['columns'] = [
@@ -184,6 +182,7 @@ export function CommentPage() {
             dataIndex: 'id',
             key: 'id',
             width: 60,
+            render: (value) => <span style={{ color: '#555555' }}>{value}</span>,
         },
         {
             title: '评论内容',
@@ -194,18 +193,18 @@ export function CommentPage() {
                 <div>
                     <div style={{ marginBottom: 8 }}>
                         <Space>
-                            <UserOutlined />
-                            <strong>{record.user_name}</strong>
+                            <UserOutlined style={{ color: '#555555' }} />
+                            <strong style={{ color: '#e0e0e0' }}>{record.user_name}</strong>
                             {record.user_email && (
-                                <span style={{ color: '#999', fontSize: 12 }}>({record.user_email})</span>
+                                <span style={{ color: '#555555', fontSize: 12 }}>({record.user_email})</span>
                             )}
                         </Space>
                     </div>
-                    <div style={{ color: '#333' }}>{content}</div>
+                    <div style={{ color: '#808080' }}>{content}</div>
                     {record.parent_id && (
-                        <div style={{ marginTop: 8, padding: 8, background: '#f5f5f5', borderRadius: 4 }}>
-                            <MessageOutlined style={{ marginRight: 4 }} />
-                            <span style={{ color: '#999', fontSize: 12 }}>
+                        <div style={{ marginTop: 8, padding: 8, background: '#0a0a0a', border: '1px solid #333333' }}>
+                            <MessageOutlined style={{ marginRight: 4, color: '#555555' }} />
+                            <span style={{ color: '#555555', fontSize: 12 }}>
                                 回复 @{record.parent_user_name}
                             </span>
                         </div>
@@ -221,7 +220,7 @@ export function CommentPage() {
             ellipsis: true,
             render: (title) => (
                 <Tooltip title={title}>
-                    <a>{title}</a>
+                    <a style={{ color: '#808080' }}>{title}</a>
                 </Tooltip>
             ),
         },
@@ -243,13 +242,14 @@ export function CommentPage() {
             dataIndex: 'ip_address',
             key: 'ip_address',
             width: 140,
+            render: (value) => <span style={{ color: '#555555', fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace" }}>{value}</span>,
         },
         {
             title: '评论时间',
             dataIndex: 'created_time',
             key: 'created_time',
             width: 180,
-            render: (created_time) => formatDate(new Date(created_time)),
+            render: (created_time) => <span style={{ color: '#808080' }}>{formatDate(new Date(created_time))}</span>,
             sorter: (a, b) => a.created_time - b.created_time,
         },
         {
@@ -260,18 +260,20 @@ export function CommentPage() {
             render: (_, record) => (
                 <Space size="small" wrap>
                     {record.status !== 1 && (
-                        <Button 
-                            type="primary" 
-                            icon={<CheckOutlined />} 
+                        <Button
+                            type="primary"
+                            icon={<CheckOutlined />}
                             size="small"
                             onClick={() => handleApprove(record.id)}
+                            style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                         />
                     )}
                     {record.status !== 2 && (
-                        <Button 
-                            icon={<CloseOutlined />} 
+                        <Button
+                            icon={<CloseOutlined />}
                             size="small"
                             onClick={() => handleReject(record.id)}
+                            style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                         />
                     )}
                     <Popconfirm
@@ -281,10 +283,11 @@ export function CommentPage() {
                         okText="确定"
                         cancelText="取消"
                     >
-                        <Button 
-                            danger 
-                            icon={<DeleteOutlined />} 
+                        <Button
+                            danger
+                            icon={<DeleteOutlined />}
                             size="small"
+                            style={{ borderRadius: 0 }}
                         />
                     </Popconfirm>
                 </Space>
@@ -328,114 +331,125 @@ export function CommentPage() {
     return (
         <>
             {contextHolder}
-            <Card>
-                <Card title="评论管理" extra={
+            <div>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '16px',
+                    paddingBottom: '12px',
+                    borderBottom: '1px solid #333333',
+                }}>
+                    <div style={{ color: '#e0e0e0', fontSize: '13px', fontWeight: 700 }}>
+                        <span style={{ color: '#10a37f' }}>&gt;</span> 评论管理
+                    </div>
                     <Space size="middle">
-                        <Badge count={pendingCount} showZero>
-                            <Tag color="orange">待审核</Tag>
+                        <Badge count={pendingCount} showZero style={{ background: '#1a1a1a', color: '#808080' }}>
+                            <Tag style={{ background: '#1a1a1a', color: '#808080', border: '1px solid #333333', borderRadius: 0 }}>待审核</Tag>
                         </Badge>
-                        <Badge count={approvedCount} showZero>
-                            <Tag color="green">已通过</Tag>
+                        <Badge count={approvedCount} showZero style={{ background: '#10a37f', color: '#000000' }}>
+                            <Tag style={{ background: '#0a0a0a', color: '#10a37f', border: '1px solid #10a37f', borderRadius: 0 }}>已通过</Tag>
                         </Badge>
-                        <Badge count={rejectedCount} showZero>
-                            <Tag color="red">已拒绝</Tag>
+                        <Badge count={rejectedCount} showZero style={{ background: '#1a1a1a', color: '#808080' }}>
+                            <Tag style={{ background: '#1a1a1a', color: '#808080', border: '1px solid #333333', borderRadius: 0 }}>已拒绝</Tag>
                         </Badge>
                     </Space>
-                }>
-                    {/* 搜索和筛选 */}
-                    <Card size="small" style={{ marginBottom: 16 }}>
-                        <Row gutter={16} align="middle">
-                            <Col span={10}>
-                                <Search
-                                    placeholder="搜索评论内容或用户名"
-                                    value={searchParams.keyword}
-                                    onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
-                                    onSearch={handleSearch}
-                                    style={{ width: '100%' }}
-                                    prefix={<SearchOutlined />}
-                                />
-                            </Col>
-                            <Col span={6}>
-                                <Select
-                                    placeholder="状态"
-                                    value={searchParams.status}
-                                    onChange={(value) => setSearchParams({ ...searchParams, status: value })}
-                                    style={{ width: '100%' }}
-                                    allowClear
-                                >
-                                    <Option value={0}>待审核</Option>
-                                    <Option value={1}>已通过</Option>
-                                    <Option value={2}>已拒绝</Option>
-                                </Select>
-                            </Col>
-                            <Col span={8}>
-                                <Space>
-                                    <Button 
-                                        type="primary" 
-                                        icon={<SearchOutlined />}
-                                        onClick={handleSearch}
-                                    >
-                                        搜索
-                                    </Button>
-                                    <Button 
-                                        icon={<FilterOutlined />}
-                                        onClick={handleReset}
-                                    >
-                                        重置
-                                    </Button>
-                                </Space>
-                            </Col>
-                        </Row>
-                    </Card>
+                </div>
 
-                    {/* 批量操作 */}
-                    {selectedRowKeys.length > 0 && (
-                        <div style={{ marginBottom: 16 }}>
+                <div style={{ border: '1px solid #333333', padding: '16px', marginBottom: '16px', background: '#0a0a0a' }}>
+                    <Row gutter={16} align="middle">
+                        <Col span={10}>
+                            <Search
+                                placeholder="搜索评论内容或用户名"
+                                value={searchParams.keyword}
+                                onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
+                                onSearch={handleSearch}
+                                style={{ width: '100%' }}
+                                prefix={<SearchOutlined style={{ color: '#555555' }} />}
+                            />
+                        </Col>
+                        <Col span={6}>
+                            <Select
+                                placeholder="状态"
+                                value={searchParams.status}
+                                onChange={(value) => setSearchParams({ ...searchParams, status: value })}
+                                style={{ width: '100%' }}
+                                allowClear
+                            >
+                                <Option value={0}>待审核</Option>
+                                <Option value={1}>已通过</Option>
+                                <Option value={2}>已拒绝</Option>
+                            </Select>
+                        </Col>
+                        <Col span={8}>
                             <Space>
-                                <span>已选择 {selectedRowKeys.length} 项</span>
-                                <Button 
+                                <Button
                                     type="primary"
-                                    icon={<CheckOutlined />}
-                                    onClick={handleBatchApprove}
+                                    icon={<SearchOutlined />}
+                                    onClick={handleSearch}
+                                    style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                                 >
-                                    批量通过
+                                    搜索
                                 </Button>
-                                <Popconfirm
-                                    title="确定要批量删除这些评论吗？"
-                                    description="删除后将无法恢复"
-                                    onConfirm={handleBatchDelete}
-                                    okText="确定"
-                                    cancelText="取消"
+                                <Button
+                                    icon={<FilterOutlined />}
+                                    onClick={handleReset}
+                                    style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                                 >
-                                    <Button 
-                                        danger 
-                                        icon={<DeleteOutlined />}
-                                    >
-                                        批量删除
-                                    </Button>
-                                </Popconfirm>
+                                    重置
+                                </Button>
                             </Space>
-                        </div>
-                    )}
+                        </Col>
+                    </Row>
+                </div>
 
-                    {/* 评论列表 */}
-                    <Table
-                        loading={loading}
-                        columns={columns}
-                        pagination={{
-                            showSizeChanger: true,
-                            onChange: paginationChange,
-                            total: pageInfoRef.current.total,
-                            defaultPageSize: 10,
-                            showTotal: (total) => `共 ${total} 条评论`
-                        }}
-                        rowKey={(record) => record.id}
-                        dataSource={commentList}
-                        rowSelection={rowSelection}
-                        scroll={{ x: 1200 }}
-                    />
-                </Card>
-            </Card>
+                {selectedRowKeys.length > 0 && (
+                    <div style={{ marginBottom: 16, padding: '8px 12px', background: '#0a0a0a', border: '1px solid #333333' }}>
+                        <Space>
+                            <span style={{ color: '#808080' }}>已选择 {selectedRowKeys.length} 项</span>
+                            <Button
+                                type="primary"
+                                icon={<CheckOutlined />}
+                                onClick={handleBatchApprove}
+                                style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
+                            >
+                                批量通过
+                            </Button>
+                            <Popconfirm
+                                title="确定要批量删除这些评论吗？"
+                                description="删除后将无法恢复"
+                                onConfirm={handleBatchDelete}
+                                okText="确定"
+                                cancelText="取消"
+                            >
+                                <Button
+                                    danger
+                                    icon={<DeleteOutlined />}
+                                    style={{ borderRadius: 0 }}
+                                >
+                                    批量删除
+                                </Button>
+                            </Popconfirm>
+                        </Space>
+                    </div>
+                )}
+
+                <Table
+                    loading={loading}
+                    columns={columns}
+                    pagination={{
+                        showSizeChanger: true,
+                        onChange: paginationChange,
+                        total: pageInfoRef.current.total,
+                        defaultPageSize: 10,
+                        showTotal: (total) => `共 ${total} 条评论`
+                    }}
+                    rowKey={(record) => record.id}
+                    dataSource={commentList}
+                    rowSelection={rowSelection}
+                    scroll={{ x: 1200 }}
+                />
+            </div>
         </>
     );
 }

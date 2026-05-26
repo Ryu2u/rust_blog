@@ -1,41 +1,23 @@
 :root {
   --post-item-spacing: 16px;
-  --post-item-border-radius: 12px;
-  --post-item-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --post-item-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  --post-item-transition: all 0.3s ease;
-  --post-title-font-size: 20px;
+  --post-title-font-size: 18px;
   --post-title-line-height: 1.4;
-  --post-meta-font-size: 14px;
-  --post-summary-font-size: 16px;
+  --post-meta-font-size: 12px;
+  --post-summary-font-size: 14px;
   --post-summary-line-height: 1.6;
-  --post-divider-color: rgba(0, 0, 0, 0.1);
-  --post-link-hover-color: var(--color-primary);
-}
-
-/* 深色模式样式 */
-:root[theme='dark'] {
-  --post-item-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
-  --post-item-hover-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
-  --post-divider-color: rgba(255, 255, 255, 0.1);
-  --post-link-hover-color: var(--color-primary);
 }
 
 .post-list-item {
   width: 100%;
-  min-height: 180px;
+  min-height: 160px;
   display: flex;
-  background-color: var(--color-post-content-bg-default);
-  border-radius: var(--post-item-border-radius);
-  margin: 0 0 24px 0;
-  box-shadow: var(--post-item-shadow);
-  transition: var(--post-item-transition);
-  overflow: hidden;
+  background-color: #0a0a0a;
+  border: 1px solid #333333;
+  margin: 0 0 20px 0;
 }
 
 .post-list-item:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--post-item-hover-shadow);
+  border-color: #444444;
 }
 
 .post-bg {
@@ -45,7 +27,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 180px;
+  min-height: 160px;
 }
 
 .post-bg a {
@@ -59,11 +41,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s ease;
-}
-
-.post-bg:hover img {
-  transform: scale(1.1);
 }
 
 .post-left {
@@ -76,20 +53,20 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow: hidden;
 }
 
 .recent-post-title {
   margin-bottom: var(--post-item-spacing);
-  text-align: center;
 
   .recent-post-title-a {
     display: block;
     font-size: var(--post-title-font-size);
     line-height: var(--post-title-line-height);
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
-    color: var(--color-font-default);
-    transition: color 0.3s ease;
+    color: #e0e0e0;
+    font-family: Monaco, 'Courier New', 'Fira Code', monospace;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
@@ -98,29 +75,28 @@
   }
 
   .recent-post-title-a:hover {
-    color: var(--post-link-hover-color);
+    color: #10a37f;
+    text-decoration: underline;
   }
 }
 
 .recent-post-time {
-  color: var(--color-font-default) !important;
+  color: #808080;
   font-size: var(--post-meta-font-size);
-  text-align: center;
+  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
   margin-bottom: var(--post-item-spacing);
-  opacity: 0.8;
-}
 
-.recent-post-time div {
-  color: var(--color-font-default) !important;
-  opacity: 0.8;
+  div {
+    color: #808080;
+    line-height: 1.6;
+  }
 }
 
 .recent-post-summary {
   display: block;
   font-size: var(--post-summary-font-size);
   line-height: var(--post-summary-line-height);
-  color: var(--color-font-default);
-  opacity: 0.9;
+  color: #808080;
   margin-top: var(--post-item-spacing);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -131,7 +107,7 @@
 
 .post-divider {
   width: 1px;
-  background-color: var(--post-divider-color);
+  background-color: #333333;
   margin: var(--post-item-spacing) 0;
 }
 
@@ -140,40 +116,40 @@
     flex-direction: column;
     min-height: unset;
   }
-  
+
   .post-bg {
     width: 100%;
     height: 200px;
   }
-  
+
   .recent-post-info {
     width: 100%;
     padding: var(--post-item-spacing);
   }
-  
+
   .recent-post-title {
     margin-bottom: 12px;
   }
-  
+
   .recent-post-title-a {
-    font-size: 18px !important;
+    font-size: 16px !important;
   }
 }
 
 @media (max-width: 480px) {
   :root {
-    --post-title-font-size: 18px;
-    --post-summary-font-size: 14px;
+    --post-title-font-size: 16px;
+    --post-summary-font-size: 13px;
   }
-  
+
   .post-list-item {
     margin: 0 0 16px 0;
   }
-  
+
   .post-bg {
     height: 160px;
   }
-  
+
   .recent-post-info {
     padding: 12px;
   }

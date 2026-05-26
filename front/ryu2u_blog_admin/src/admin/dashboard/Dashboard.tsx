@@ -1,8 +1,8 @@
-import { Card, Col, Row, Statistic, List, Avatar, Progress, Space, Typography } from 'antd';
+import { List, Avatar, Space, Typography } from 'antd';
 import { FileTextOutlined, MessageOutlined, EyeOutlined, UserOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface Article {
   id: number;
@@ -15,12 +15,11 @@ export function Dashboard() {
   const [articleCount, setArticleCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
   const [visitsCount, setVisitsCount] = useState(0);
-  const [userCount, setUserCount] = useState(1);
+  const [userCount] = useState(1);
   const [recentArticles, setRecentArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 模拟数据加载
     setTimeout(() => {
       setArticleCount(42);
       setCommentCount(156);
@@ -37,112 +36,137 @@ export function Dashboard() {
   }, []);
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Title level={2}>仪表盘</Title>
-      
-      {/* 统计卡片 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic 
-              title="文章总数" 
-              value={articleCount} 
-              prefix={<FileTextOutlined style={{ color: '#1890ff' }} />} 
-              loading={loading}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic 
-              title="评论总数" 
-              value={commentCount} 
-              prefix={<MessageOutlined style={{ color: '#52c41a' }} />} 
-              loading={loading}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic 
-              title="访问总量" 
-              value={visitsCount} 
-              prefix={<EyeOutlined style={{ color: '#fa8c16' }} />} 
-              loading={loading}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic 
-              title="用户数量" 
-              value={userCount} 
-              prefix={<UserOutlined style={{ color: '#722ed1' }} />} 
-              loading={loading}
-            />
-          </Card>
-        </Col>
-      </Row>
+    <div style={{ padding: '24px', fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace" }}>
+      <div style={{ marginBottom: '24px', color: '#e0e0e0', fontSize: '14px', fontWeight: 700 }}>
+        <span style={{ color: '#10a37f' }}>$</span> status
+      </div>
+
+      {/* 统计 */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '1px',
+        background: '#333333',
+        border: '1px solid #333333',
+        marginBottom: '24px',
+      }}>
+        {[
+          { label: 'articles', value: articleCount, icon: <FileTextOutlined /> },
+          { label: 'comments', value: commentCount, icon: <MessageOutlined /> },
+          { label: 'visits', value: visitsCount, icon: <EyeOutlined /> },
+          { label: 'users', value: userCount, icon: <UserOutlined /> },
+        ].map((stat) => (
+          <div key={stat.label} style={{
+            background: '#000000',
+            padding: '20px',
+            textAlign: 'center',
+          }}>
+            <div style={{ color: '#555555', fontSize: '12px', marginBottom: '8px', textTransform: 'uppercase' }}>
+              {stat.label}
+            </div>
+            <div style={{ color: '#10a37f', fontSize: '28px', fontWeight: 700, fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace" }}>
+              {stat.value}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* 内容区域 */}
-      <Row gutter={[16, 16]}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         {/* 最近文章 */}
-        <Col xs={24} md={12}>
-          <Card title="最近文章" style={{ height: '100%' }}>
-            <List
-              itemLayout="horizontal"
-              dataSource={recentArticles}
-              loading={loading}
-              renderItem={(item) => (
-                <List.Item
-                  actions={[
-                    <Text key="date" type="secondary">
-                      {item.created_time}
-                    </Text>
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={<Avatar icon={<FileTextOutlined />} />}
-                    title={
-                      <a href={`/article/edit/${item.id}`}>
-                        {item.title}
-                      </a>
-                    }
-                    description={`作者: ${item.author}`}
-                  />
-                </List.Item>
-              )}
-            />
-          </Card>
-        </Col>
+        <div style={{ border: '1px solid #333333', padding: '20px' }}>
+          <div style={{
+            borderBottom: '1px solid #333333',
+            paddingBottom: '12px',
+            marginBottom: '12px',
+            color: '#e0e0e0',
+            fontSize: '13px',
+            fontWeight: 700,
+          }}>
+            <span style={{ color: '#10a37f' }}>&gt;</span> recent_posts
+          </div>
+          <List
+            itemLayout="horizontal"
+            dataSource={recentArticles}
+            loading={loading}
+            renderItem={(item) => (
+              <List.Item
+                style={{ borderBottom: '1px solid #1a1a1a' }}
+                actions={[
+                  <Text key="date" style={{ color: '#555555', fontSize: '12px' }}>
+                    {item.created_time}
+                  </Text>
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={<Avatar icon={<FileTextOutlined />} style={{ background: '#0a0a0a', border: '1px solid #333333', borderRadius: 0 }} />}
+                  title={
+                    <a href={`/article/edit/${item.id}`} style={{ color: '#e0e0e0', fontSize: '13px' }}>
+                      {item.title}
+                    </a>
+                  }
+                  description={<span style={{ color: '#555555', fontSize: '12px' }}>by {item.author}</span>}
+                />
+              </List.Item>
+            )}
+          />
+        </div>
 
         {/* 系统信息 */}
-        <Col xs={24} md={12}>
-          <Card title="系统信息" style={{ height: '100%' }}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div>
-                <Text strong>磁盘使用率</Text>
-                <Progress percent={65} status="active" />
+        <div style={{ border: '1px solid #333333', padding: '20px' }}>
+          <div style={{
+            borderBottom: '1px solid #333333',
+            paddingBottom: '12px',
+            marginBottom: '12px',
+            color: '#e0e0e0',
+            fontSize: '13px',
+            fontWeight: 700,
+          }}>
+            <span style={{ color: '#10a37f' }}>&gt;</span> system_info
+          </div>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            {[
+              { label: 'disk_usage', percent: 65 },
+              { label: 'memory_usage', percent: 42 },
+              { label: 'cpu_usage', percent: 28 },
+            ].map((item) => (
+              <div key={item.label}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <Text style={{ color: '#808080', fontSize: '12px', textTransform: 'lowercase' }}>{item.label}</Text>
+                  <Text style={{ color: '#e0e0e0', fontSize: '12px' }}>{item.percent}%</Text>
+                </div>
+                <div style={{
+                  height: '4px',
+                  background: '#1a1a1a',
+                  width: '100%',
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${item.percent}%`,
+                    background: '#10a37f',
+                  }} />
+                </div>
               </div>
-              <div>
-                <Text strong>内存使用率</Text>
-                <Progress percent={42} status="active" />
+            ))}
+            <div style={{
+              border: '1px solid #333333',
+              padding: '12px',
+              marginTop: '8px',
+              background: '#0a0a0a',
+            }}>
+              <div style={{ color: '#808080', fontSize: '12px', marginBottom: '4px' }}>
+                server_status: <span style={{ color: '#10a37f' }}>running</span>
               </div>
-              <div>
-                <Text strong>CPU 使用率</Text>
-                <Progress percent={28} status="active" />
+              <div style={{ color: '#808080', fontSize: '12px', marginBottom: '4px' }}>
+                version: <span style={{ color: '#e0e0e0' }}>v1.0.0</span>
               </div>
-              <Card size="small" style={{ width: '100%' }}>
-                <Text>服务器状态: 运行正常</Text>
-                <br />
-                <Text>系统版本: v1.0.0</Text>
-                <br />
-                <Text>最后更新: 2024-01-24</Text>
-              </Card>
-            </Space>
-          </Card>
-        </Col>
-      </Row>
+              <div style={{ color: '#808080', fontSize: '12px' }}>
+                last_update: <span style={{ color: '#e0e0e0' }}>2024-01-24</span>
+              </div>
+            </div>
+          </Space>
+        </div>
+      </div>
     </div>
   )
 }

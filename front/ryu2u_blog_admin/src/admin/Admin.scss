@@ -1,26 +1,21 @@
-
 .content-div {
   margin: 20px 0;
 }
 
-.container {
-  //padding: 20px;
-}
-
-
 .layout-content {
+  background: #000000;
 }
 
 .collapsed-btn {
   width: 71px;
   float: left;
   margin: 5px 0 5px 5px;
-
 }
 
-.layout-header{
+.layout-header {
   height: 50px;
-
+  background: #000000 !important;
+  border-bottom: 1px solid #333333;
 }
 
 .dashboard-content {
@@ -30,47 +25,45 @@
 .footer {
   margin: 0;
   padding: 20px;
+  background: #000000;
+  border-top: 1px solid #333333;
 }
 
 .article-tool-div {
-  //display: flex;
-  //flex-direction: row-reverse;
   text-align: right;
   margin: 0 5px;
   padding: 5px 0;
 
   button {
     margin: 0 5px;
-
   }
-
 }
 
 .current-profile {
   width: 100%;
   padding: 20px 0 20px 20px;
-  border-top: 1px solid #8888;
-  box-shadow: 0 0 5px 1px rgba(105, 105, 105, 0.6);
+  border-top: 1px solid #333333;
   position: absolute;
   bottom: 0;
   flex-direction: row;
+  background: #000000;
 }
 
 .user-avatar {
   background-color: transparent;
-  border: 1px solid #8888;
-  border-radius: 50px;
+  border: 1px solid #333333;
+  border-radius: 0;
   width: 40px;
   height: 40px;
 }
 
-.user-avatar:hover{
+.user-avatar:hover {
   cursor: pointer;
 }
 
 .user-info {
   margin-left: 10px;
-  background-color: #1234;
+  background-color: transparent;
 }
 
 .profile-btn {
@@ -78,10 +71,39 @@
   align-items: center;
   justify-content: space-evenly;
   margin-left: 15px;
-
-  .profile-btn-item {
-
-  }
-
 }
 
+// Ant Design Menu dark theme overrides for terminal style
+.ant-menu-dark {
+  background: #000000 !important;
+}
+
+.ant-menu-dark .ant-menu-item {
+  color: #808080 !important;
+  border-radius: 0 !important;
+  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+}
+
+.ant-menu-dark .ant-menu-item:hover {
+  color: #e0e0e0 !important;
+  background: #1a1a1a !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected {
+  background: #10a37f !important;
+  color: #000000 !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected .anticon {
+  color: #000000 !important;
+}
+
+.ant-layout-sider-trigger {
+  background: #0a0a0a !important;
+  color: #808080 !important;
+  border-top: 1px solid #333333;
+}
+
+.ant-layout-sider-trigger:hover {
+  color: #e0e0e0 !important;
+}

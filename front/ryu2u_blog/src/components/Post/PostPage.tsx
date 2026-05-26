@@ -32,7 +32,35 @@ export interface CatalogItem {
 /**
  * 评论项组件（支持递归渲染子评论）
  */
-function CommentItem({ comment, onReply }: { comment: Comment; onReply: (comment: Comment) => void }) {
+function CommentItem({
+    comment,
+    onReply,
+    replyTo,
+    replyContent,
+    onCancelReply,
+    onSubmitReply,
+    onContentChange,
+    userEmail,
+    userName,
+    onEmailChange,
+    onNameChange,
+    commentLoading
+}: {
+    comment: Comment;
+    onReply: (comment: Comment) => void;
+    replyTo: Comment | null;
+    replyContent: string;
+    onCancelReply: () => void;
+    onSubmitReply: () => void;
+    onContentChange: (content: string) => void;
+    userEmail: string;
+    userName: string;
+    onEmailChange: (email: string) => void;
+    onNameChange: (name: string) => void;
+    commentLoading: boolean;
+}) {
+    const isReplyingToThis = replyTo?.id === comment.id;
+
     return (
         <div className="comment-item">
             <div className="comment-header">
@@ -46,11 +74,69 @@ function CommentItem({ comment, onReply }: { comment: Comment; onReply: (comment
             <div className="comment-body">
                 {comment.content}
             </div>
+
+            {/* 回复表单 - 直接显示在当前评论下方 */}
+            {isReplyingToThis && (
+                <div className="reply-form-inline">
+                    <div className="reply-form-header">
+                        <span>回复 @ {comment.user_name}</span>
+                    </div>
+                    <div className="form-group">
+                        <input
+                            type="email"
+                            value={userEmail}
+                            onChange={(e) => onEmailChange(e.target.value)}
+                            placeholder="邮箱"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <input
+                            type="text"
+                            value={userName}
+                            onChange={(e) => onNameChange(e.target.value)}
+                            placeholder="昵称"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <textarea
+                            value={replyContent}
+                            onChange={(e) => onContentChange(e.target.value)}
+                            placeholder={`回复 @${comment.user_name}...`}
+                            rows={3}
+                        />
+                    </div>
+                    <div className="reply-form-actions">
+                        <button
+                            className="comment-submit-btn"
+                            onClick={onSubmitReply}
+                            disabled={commentLoading}
+                        >
+                            {commentLoading ? "提交中..." : "提交"}
+                        </button>
+                        <button className="cancel-reply-btn" onClick={onCancelReply}>取消</button>
+                    </div>
+                </div>
+            )}
+
             {/* 递归渲染子评论 */}
             {comment.replies && comment.replies.length > 0 && (
                 <div className="comment-replies">
                     {comment.replies.map((reply) => (
-                        <CommentItem key={reply.id} comment={reply} onReply={onReply} />
+                        <CommentItem
+                            key={reply.id}
+                            comment={reply}
+                            onReply={onReply}
+                            replyTo={replyTo}
+                            replyContent={replyContent}
+                            onCancelReply={onCancelReply}
+                            onSubmitReply={onSubmitReply}
+                            onContentChange={onContentChange}
+                            userEmail={userEmail}
+                            userName={userName}
+                            onEmailChange={onEmailChange}
+                            onNameChange={onNameChange}
+                            commentLoading={commentLoading}
+                        />
                     ))}
                 </div>
             )}
@@ -401,29 +487,6 @@ export function PostPage() {
                                     </button>
                                 </div>
 
-                                {/* 回复表单（回复模式下显示） */}
-                                {replyTo && (
-                                    <div className="reply-form">
-                                        <div className="reply-to-info">
-                                            <span>回复 @ {replyTo.user_name}：</span>
-                                            <button className="cancel-reply-btn" onClick={handleCancelReply}>取消</button>
-                                        </div>
-                                        <textarea
-                                            value={replyContent}
-                                            onChange={(e) => setReplyContent(e.target.value)}
-                                            placeholder={`回复 @${replyTo.user_name}...`}
-                                            rows={3}
-                                        />
-                                        <button
-                                            className="comment-submit-btn"
-                                            onClick={handleSubmitReply}
-                                            disabled={commentLoading}
-                                        >
-                                            {commentLoading ? "提交中..." : "提交回复"}
-                                        </button>
-                                    </div>
-                                )}
-
                                 {/* 评论列表 */}
                                 <div className="comment-list">
                                     <h4>评论列表 ({comments.length})</h4>
@@ -431,7 +494,21 @@ export function PostPage() {
                                         <p className="no-comment">暂无评论，快来抢沙发吧！</p>
                                     ) : (
                                         comments.map((comment) => (
-                                            <CommentItem key={comment.id} comment={comment} onReply={handleReply} />
+                                            <CommentItem
+                                                key={comment.id}
+                                                comment={comment}
+                                                onReply={handleReply}
+                                                replyTo={replyTo}
+                                                replyContent={replyContent}
+                                                onCancelReply={handleCancelReply}
+                                                onSubmitReply={handleSubmitReply}
+                                                onContentChange={setReplyContent}
+                                                userEmail={userEmail}
+                                                userName={userName}
+                                                onEmailChange={setUserEmail}
+                                                onNameChange={setUserName}
+                                                commentLoading={commentLoading}
+                                            />
                                         ))
                                     )}
                                 </div>

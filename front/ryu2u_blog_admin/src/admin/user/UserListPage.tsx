@@ -1,4 +1,4 @@
-import { Table, TableProps, Tag, Input, Button, Space, Card, Row, Col, Select, Popconfirm, message } from "antd";
+import { Table, TableProps, Tag, Input, Button, Space, Row, Col, Select, Popconfirm, message } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { PageInfo, User } from "../../common/Structs";
 import { formatDate } from "../../common/utils";
@@ -37,6 +37,7 @@ export const UserListPage = () => {
                     gender: 1,
                     avatar_path: '',
                     signature: '系统管理员',
+                    role: 'admin',
                     created_time: Date.now() - 30 * 24 * 60 * 60 * 1000,
                     locked: 0
                 },
@@ -47,6 +48,7 @@ export const UserListPage = () => {
                     gender: 1,
                     avatar_path: '',
                     signature: '这是一个测试用户',
+                    role: 'user',
                     created_time: Date.now() - 15 * 24 * 60 * 60 * 1000,
                     locked: 0
                 },
@@ -57,6 +59,7 @@ export const UserListPage = () => {
                     gender: 0,
                     avatar_path: '',
                     signature: '这是另一个测试用户',
+                    role: 'user',
                     created_time: Date.now() - 5 * 24 * 60 * 60 * 1000,
                     locked: 1
                 }
@@ -77,7 +80,7 @@ export const UserListPage = () => {
     const handleLock = (id: number, locked: number) => {
         setLoading(true);
         setTimeout(() => {
-            setUserList(userList.map(user => 
+            setUserList(userList.map(user =>
                 user.id === id ? { ...user, locked: locked === 1 ? 0 : 1 } : user
             ));
             messageApi.success(locked === 1 ? '解锁成功' : '锁定成功');
@@ -104,6 +107,7 @@ export const UserListPage = () => {
             title: 'ID',
             dataIndex: 'id',
             key: 'id',
+            render: (value) => <span style={{ color: '#555555' }}>{value}</span>,
         },
         {
             title: '用户信息',
@@ -111,10 +115,10 @@ export const UserListPage = () => {
             key: 'username',
             render: (username, record) => (
                 <Space size="middle">
-                    <UserOutlined style={{ fontSize: 20 }} />
+                    <UserOutlined style={{ fontSize: 20, color: '#555555' }} />
                     <div>
-                        <div>{username}</div>
-                        <div style={{ fontSize: 12, color: '#999' }}>{record.nick_name}</div>
+                        <div style={{ color: '#e0e0e0' }}>{username}</div>
+                        <div style={{ fontSize: 12, color: '#555555' }}>{record.nick_name}</div>
                     </div>
                 </Space>
             ),
@@ -124,7 +128,12 @@ export const UserListPage = () => {
             dataIndex: 'gender',
             key: 'gender',
             render: (gender) => (
-                <Tag color={gender === 1 ? 'blue' : 'pink'}>
+                <Tag style={{
+                    background: '#0a0a0a',
+                    border: '1px solid #333333',
+                    color: '#808080',
+                    borderRadius: 0,
+                }}>
                     {gender === 1 ? '男' : '女'}
                 </Tag>
             ),
@@ -134,13 +143,19 @@ export const UserListPage = () => {
             dataIndex: 'signature',
             key: 'signature',
             ellipsis: true,
+            render: (value) => <span style={{ color: '#808080' }}>{value}</span>,
         },
         {
             title: '状态',
             dataIndex: 'locked',
             key: 'locked',
             render: (locked) => (
-                <Tag color={locked === 1 ? 'red' : 'green'}>
+                <Tag style={{
+                    background: locked === 1 ? '#1a1a1a' : '#10a37f',
+                    color: locked === 1 ? '#808080' : '#000000',
+                    border: 'none',
+                    borderRadius: 0,
+                }}>
                     {locked === 1 ? '锁定' : '正常'}
                 </Tag>
             ),
@@ -149,7 +164,7 @@ export const UserListPage = () => {
             title: '创建时间',
             dataIndex: 'created_time',
             key: 'created_time',
-            render: (created_time) => formatDate(new Date(created_time)),
+            render: (created_time) => <span style={{ color: '#808080' }}>{formatDate(new Date(created_time))}</span>,
         },
         {
             title: '操作',
@@ -158,18 +173,20 @@ export const UserListPage = () => {
             fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
-                    <Button 
-                        type="primary" 
-                        icon={<EditOutlined />} 
+                    <Button
+                        type="primary"
+                        icon={<EditOutlined />}
                         size="small"
                         onClick={() => navigate(`/user/edit/${record.id}`)}
+                        style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                     >
                         编辑
                     </Button>
-                    <Button 
-                        icon={record.locked === 1 ? <UnlockOutlined /> : <LockOutlined />} 
+                    <Button
+                        icon={record.locked === 1 ? <UnlockOutlined /> : <LockOutlined />}
                         size="small"
                         onClick={() => handleLock(record.id, record.locked)}
+                        style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                     >
                         {record.locked === 1 ? '解锁' : '锁定'}
                     </Button>
@@ -180,10 +197,11 @@ export const UserListPage = () => {
                         okText="确定"
                         cancelText="取消"
                     >
-                        <Button 
-                            danger 
-                            icon={<DeleteOutlined />} 
+                        <Button
+                            danger
+                            icon={<DeleteOutlined />}
                             size="small"
+                            style={{ borderRadius: 0 }}
                         >
                             删除
                         </Button>
@@ -220,16 +238,29 @@ export const UserListPage = () => {
     return (
         <>
             {contextHolder}
-            <Card title="用户管理" extra={
-                <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />}
-                    onClick={() => navigate('/user/edit')}
-                >
-                    新建用户
-                </Button>
-            }>
-                <Card size="small" style={{ marginBottom: 16 }}>
+            <div>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '16px',
+                    paddingBottom: '12px',
+                    borderBottom: '1px solid #333333',
+                }}>
+                    <div style={{ color: '#e0e0e0', fontSize: '13px', fontWeight: 700 }}>
+                        <span style={{ color: '#10a37f' }}>&gt;</span> 用户管理
+                    </div>
+                    <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={() => navigate('/user/edit')}
+                        style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
+                    >
+                        新建用户
+                    </Button>
+                </div>
+
+                <div style={{ border: '1px solid #333333', padding: '16px', marginBottom: '16px', background: '#0a0a0a' }}>
                     <Row gutter={16} align="middle">
                         <Col span={12}>
                             <Search
@@ -238,7 +269,7 @@ export const UserListPage = () => {
                                 onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
                                 onSearch={handleSearch}
                                 style={{ width: '100%' }}
-                                prefix={<SearchOutlined />}
+                                prefix={<SearchOutlined style={{ color: '#555555' }} />}
                             />
                         </Col>
                         <Col span={6}>
@@ -255,27 +286,29 @@ export const UserListPage = () => {
                         </Col>
                         <Col span={6}>
                             <Space>
-                                <Button 
-                                    type="primary" 
+                                <Button
+                                    type="primary"
                                     icon={<SearchOutlined />}
                                     onClick={handleSearch}
+                                    style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                                 >
                                     搜索
                                 </Button>
-                                <Button 
+                                <Button
                                     onClick={handleReset}
+                                    style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                                 >
                                     重置
                                 </Button>
                             </Space>
                         </Col>
                     </Row>
-                </Card>
+                </div>
 
                 {selectedRowKeys.length > 0 && (
-                    <div style={{ marginBottom: 16 }}>
+                    <div style={{ marginBottom: 16, padding: '8px 12px', background: '#0a0a0a', border: '1px solid #333333' }}>
                         <Space>
-                            <span>已选择 {selectedRowKeys.length} 项</span>
+                            <span style={{ color: '#808080' }}>已选择 {selectedRowKeys.length} 项</span>
                             <Popconfirm
                                 title="确定要批量删除这些用户吗？"
                                 description="删除后将无法恢复"
@@ -283,9 +316,10 @@ export const UserListPage = () => {
                                 okText="确定"
                                 cancelText="取消"
                             >
-                                <Button 
-                                    danger 
+                                <Button
+                                    danger
                                     icon={<DeleteOutlined />}
+                                    style={{ borderRadius: 0 }}
                                 >
                                     批量删除
                                 </Button>
@@ -309,7 +343,7 @@ export const UserListPage = () => {
                     rowSelection={rowSelection}
                     style={{ tableLayout: 'fixed' }}
                 />
-            </Card>
+            </div>
         </>
     );
 };

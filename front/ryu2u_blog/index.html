@@ -1,41 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8"/>
-    <!--a 标签统一使用新窗口打开-->
-    <!--    <base target="_blank"/>-->
     <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
     <link href="https://cdn.jsdelivr.net/npm/qweather-icons@1.6.0/font/qweather-icons.css" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>🍑HaiTao's Blog</title>
+    <meta name="theme-color" content="#000000"/>
+    <title>hai_tao@blog:~$</title>
     <style>
-        /* 基础变量定义 */
         :root {
-            --transition: all 0.5s ease;
-            --border-radius: 8px;
-        }
-
-        /* 主题定义 */
-        :root[theme='light'] {
-            --color-bg-default: linear-gradient(135deg, #f9f7f7 0%, #e3f2fd 100%);
-            --color-font-default: #3a3a3a;
-            --color-post-content-bg-default: #ffffff;
-            --color-primary: #4a90e2;
-            --color-secondary: #50c878;
-            --color-accent: #ff6b6b;
-        }
-
-        :root[theme='dark'] {
-            --color-bg-default: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --color-bg-default: #000000;
             --color-font-default: #e0e0e0;
-            --color-post-content-bg-default: #2a2a40;
-            --color-primary: #6b9eff;
-            --color-secondary: #7dd3fc;
-            --color-accent: #ff8fab;
+            --color-primary: #10a37f;
         }
 
-        /* 加载动画容器 */
         #loading-div {
             position: fixed;
             width: 100%;
@@ -43,163 +22,60 @@
             z-index: 99999;
             background: var(--color-bg-default);
             opacity: 1;
-            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 0.5s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
+            font-family: Monaco, 'Courier New', 'Fira Code', monospace;
         }
 
-        /* 加载动画 - 脉冲效果 */
-        .loading-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .loading-spinner {
-            position: relative;
-            width: 80px;
-            height: 80px;
-        }
-
-        .loading-spinner::before,
-        .loading-spinner::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 50%;
-            border: 4px solid transparent;
-            animation: spin 1.5s linear infinite;
-        }
-
-        .loading-spinner::before {
-            border-top-color: var(--color-primary);
-            animation-delay: 0s;
-        }
-
-        .loading-spinner::after {
-            border-top-color: var(--color-secondary);
-            animation-delay: 0.3s;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* 加载文字 */
         .loading-text {
-            font-size: 18px;
-            font-weight: 600;
             color: var(--color-font-default);
-            animation: pulse 1.5s ease-in-out infinite;
+            font-size: 14px;
         }
 
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.7;
-                transform: scale(1.05);
-            }
+        .loading-text::before {
+            content: '>';
+            color: var(--color-primary);
+            margin-right: 8px;
         }
 
-        /* 页面进入动画 */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: var(--color-primary);
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 4px;
         }
 
-        #root {
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .loading-spinner {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .loading-text {
-                font-size: 16px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .loading-spinner {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .loading-text {
-                font-size: 14px;
-            }
+        @keyframes blink {
+            50% { opacity: 0; }
         }
     </style>
     <script>
         const theme = localStorage.getItem('theme-key');
         if (!theme) {
-            localStorage.setItem('theme-key', 'light');
-            document.documentElement.setAttribute('theme', 'light');
+            localStorage.setItem('theme-key', 'dark');
+            document.documentElement.setAttribute('theme', 'dark');
         } else {
-            if (theme === 'light') {
-                document.documentElement.setAttribute('theme', 'light');
-            } else {
-                document.documentElement.setAttribute('theme', 'dark');
-            }
+            document.documentElement.setAttribute('theme', theme);
         }
         window.onload = () => {
             let div = document.getElementById("loading-div");
             div.style.opacity = "0";
             setTimeout(() => {
                 div.remove();
-            }, 1000);
+            }, 500);
         }
     </script>
 </head>
 <body>
 <div id="loading-div">
-    <div class="loading-container">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">加载中...</div>
-    </div>
+    <div class="loading-text">init<span class="cursor"></span></div>
 </div>
 <div id="root"></div>
 <script type="module" src="./src/main.tsx"></script>
-<script>
-
-    document.addEventListener('visibilitychange', function () {
-        let isLeaved = document.hidden;
-        if (isLeaved) {
-            document.title = '快回来！°(°ˊДˋ°) °';
-        } else {
-            document.title = '٩(^ᴗ^)۶ 欢迎回来!';
-            setTimeout(() => {
-                document.title = '🍑HaiTao\'s Blog'
-            }, 1000);
-        }
-    });
-
-</script>
 </body>
 </html>
-

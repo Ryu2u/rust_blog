@@ -30,19 +30,39 @@ export function LoginPage() {
     return (
         <>
             {contextHolder}
-            <div style={{ 
-                minHeight: '100vh', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            <div style={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#000000',
+                fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
             }}>
-                <Card 
-                    title="博客管理后台登录" 
-                    style={{ 
-                        width: 400, 
-                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-                        borderRadius: 12
+                <Card
+                    title={
+                        <div style={{
+                            textAlign: 'left',
+                            fontSize: '14px',
+                            fontWeight: 700,
+                            color: '#e0e0e0',
+                            fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
+                        }}>
+                            <span style={{ color: '#10a37f' }}>&gt;</span> login
+                        </div>
+                    }
+                    style={{
+                        width: 400,
+                        background: '#0a0a0a',
+                        border: '1px solid #333333',
+                        borderRadius: 0,
+                        boxShadow: 'none',
+                    }}
+                    headStyle={{
+                        borderBottom: '1px solid #333333',
+                        background: '#0a0a0a',
+                    }}
+                    bodyStyle={{
+                        padding: '24px',
                     }}
                 >
                     <Form
@@ -54,10 +74,17 @@ export function LoginPage() {
                             name="username"
                             rules={[{required: true, message: '请输入用户名!'}]}
                         >
-                            <Input 
-                                prefix={<UserOutlined className="site-form-item-icon"/>} 
-                                size="large" 
-                                placeholder="用户名"
+                            <Input
+                                prefix={<UserOutlined style={{ color: '#555555' }} />}
+                                size="large"
+                                placeholder="username"
+                                style={{
+                                    background: '#000000',
+                                    border: '1px solid #333333',
+                                    borderRadius: 0,
+                                    color: '#e0e0e0',
+                                    fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
+                                }}
                             />
                         </Form.Item>
                         <Form.Item
@@ -66,29 +93,43 @@ export function LoginPage() {
                         >
                             <Input
                                 size="large"
-                                prefix={<LockOutlined className="site-form-item-icon"/>}
+                                prefix={<LockOutlined style={{ color: '#555555' }} />}
                                 type="password"
-                                placeholder="密码"
+                                placeholder="password"
+                                style={{
+                                    background: '#000000',
+                                    border: '1px solid #333333',
+                                    borderRadius: 0,
+                                    color: '#e0e0e0',
+                                    fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
+                                }}
                             />
                         </Form.Item>
                         <Form.Item>
                             <Space direction="vertical" style={{ width: '100%' }}>
                                 <Space style={{ width: '100%', justifyContent: 'space-between' }}>
                                     <Form.Item name="remember" valuePropName="checked" noStyle>
-                                        <Checkbox>记住我</Checkbox>
+                                        <Checkbox style={{ color: '#808080', fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace" }}>remember me</Checkbox>
                                     </Form.Item>
-                                    <a href="#" style={{ color: '#1890ff' }}>
-                                        忘记密码
+                                    <a href="#" style={{ color: '#10a37f', fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace" }}>
+                                        forgot password
                                     </a>
                                 </Space>
-                                <Button 
-                                    size="large" 
-                                    type="primary" 
-                                    htmlType="submit" 
-                                    style={{ width: '100%' }}
+                                <Button
+                                    size="large"
+                                    type="primary"
+                                    htmlType="submit"
+                                    style={{
+                                        width: '100%',
+                                        height: 40,
+                                        borderRadius: 0,
+                                        fontWeight: 700,
+                                        fontSize: 14,
+                                        fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
+                                    }}
                                     loading={loading}
                                 >
-                                    登录
+                                    $ enter
                                 </Button>
                             </Space>
                         </Form.Item>

@@ -28,7 +28,7 @@ export function PostListItem({dir, postItemJson}) {
             <div className={dir ? 'post-list-item' : 'post-list-item post-left'}>
                 <div className={"post-bg"}>
                     <a onClick={postClick} href={""}>
-                        <img alt={"post-alt"} src={post.cover_img ? post.cover_img : "https://api.kdcc.cn"}/>
+                        <img alt={"post-alt"} src={post.cover_img ? post.cover_img : "https://ryu2u-1305537946.cos.ap-nanjing.myqcloud.com//5.jpg"}/>
                     </a>
                 </div>
                 <div className={"post-divider"}>
@@ -39,13 +39,11 @@ export function PostListItem({dir, postItemJson}) {
                             {post.title}
                         </a>
                     </div>
-                    <Divider style={{margin: '5px 0'}} className={"recent-post-time"}>
-                        <div className={""}>
-                            发表于{post.created_time ? formatDate(post.created_time as Date) : ''} |
-                            更新于{post.update_time ? formatDate(post.update_time as Date) : ''} |
-                            类型
-                        </div>
-                    </Divider>
+                    <div className="recent-post-time">
+                        <div>发表于{post.created_time ? formatDate(post.created_time as Date) : ''}</div>
+                        <div>更新于{post.update_time ? formatDate(post.update_time as Date) : ''}</div>
+                        <div>类型</div>
+                    </div>
                     {/*<div className={"recent-post-summary"}>*/}
                     {/*    {post.summary}*/}
                     {/*</div>*/}
