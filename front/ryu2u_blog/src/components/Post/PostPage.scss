@@ -1,11 +1,11 @@
 :root {
-  --post-content-width: 70%;
-  --sidebar-width: 15%;
-  --sidebar-min-width: 200px;
-  --post-spacing: 20px;
+  --post-content-width: 60%;
+  --sidebar-width: 16%;
+  --sidebar-min-width: 150px;
+  --post-spacing: 24px;
 }
 
-.container {
+.post-page {
   display: flex;
   justify-content: space-between;
   gap: var(--post-spacing);
@@ -13,25 +13,28 @@
   max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
-  padding: 0;
+  padding-top: 72px;
+  padding-bottom: var(--post-spacing);
+  padding-left: 0;
+  padding-right: 0;
 }
 
-.post-main {
-  width: var(--post-content-width);
-  min-width: 60%;
-  flex: 2;
+.post-page .post-main {
+  width: 62%;
+  flex: none;
 }
 
-.left-sidebar {
-  width: var(--sidebar-width);
-  min-width: var(--sidebar-min-width);
-  flex-shrink: 1;
+.post-page .left-sidebar {
+  width: 14%;
+  min-width: 120px;
+  flex-shrink: 0;
 }
 
-.side-list {
-  width: var(--sidebar-width);
-  min-width: var(--sidebar-min-width);
-  flex-shrink: 1;
+.post-page .side-list {
+  width: 18%;
+  min-width: 140px;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .post-info {
@@ -86,18 +89,18 @@
   z-index: 100;
 }
 
-@media (max-width: 1400px) {
-  .container {
+@media (max-width: 1000px) {
+  .post-page {
     flex-direction: column;
     gap: var(--post-spacing);
   }
 
-  .post-main {
+  .post-page .post-main {
     width: 100%;
   }
 
-  .side-list,
-  .left-sidebar {
+  .post-page .side-list,
+  .post-page .left-sidebar {
     width: 100%;
     min-width: unset;
     position: relative;

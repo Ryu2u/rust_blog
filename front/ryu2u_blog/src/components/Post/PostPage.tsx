@@ -410,7 +410,7 @@ export function PostPage() {
 
     return (
         <>
-            <div className="container flex">
+            <div className="post-page flex">
                 {!loading && (
                     <div className="side-list left-sidebar">
                         <div className="catalog">

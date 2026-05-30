@@ -8,7 +8,7 @@ import {useLog} from "./log";
 export const http_client = axios.create();
 
 http_client.defaults.withCredentials = true;
-http_client.defaults.baseURL = "http://localhost:8002";
+http_client.defaults.baseURL = "http://localhost:9002";
 
 message.config({
     top: 50,

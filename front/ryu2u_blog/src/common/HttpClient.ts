@@ -4,7 +4,7 @@ import axios from "axios";
 const http_client = axios.create({
 });
 
-http_client.defaults.baseURL = "http://localhost:8002";
+http_client.defaults.baseURL = "http://localhost:9002";
 
 //一些配置，发起请求和响应可以打印出来查看
 http_client.interceptors.request.use((config)=>{
