@@ -6,6 +6,7 @@ import {ArticleListPage} from "../admin/article/ArticleListPage";
 import {ArticlePage} from "../admin/article/ArticlePage";
 import {UserListPage} from "../admin/user/UserListPage";
 import {UserEditPage} from "../admin/user/UserEditPage";
+import {AboutPage} from "../admin/about/AboutPage";
 
 interface RouteConfig {
     path: string;
@@ -98,6 +99,14 @@ export const routeConfig: RouteConfig[] = [
         breadcrumb: [
             { title: '首页', path: '/dashboard' },
             { title: '说说管理' }
+        ]
+    },
+    {
+        path: '/about',
+        element: AboutPage,
+        breadcrumb: [
+            { title: '首页', path: '/dashboard' },
+            { title: '关于后台' }
         ]
     }
 ];

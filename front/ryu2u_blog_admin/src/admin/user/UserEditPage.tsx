@@ -1,229 +1,227 @@
-import { Button, Form, Input, message, Modal, Switch, Space, Card, Alert, Select } from "antd";
-import { DeleteOutlined, SaveOutlined, ExclamationCircleFilled, UserOutlined } from "@ant-design/icons";
-import { useEffect, useRef, useState } from "react";
-import { User } from "../../common/Structs";
-import { useParams, useNavigate } from "react-router-dom";
-
-const { Option } = Select;
-
+import {Alert, Button, Card, Form, Input, Modal, Select, Space, Switch, message} from "antd";
+import {DeleteOutlined, ExclamationCircleFilled, SaveOutlined} from "@ant-design/icons";
+import {useEffect, useState} from "react";
+import {User} from "../../common/Structs";
+import {useNavigate, useParams} from "react-router-dom";
+import UserService from "../../service/UserService";
 
 export function UserEditPage() {
-    const { confirm } = Modal;
-    const [messageApi, contextHolder] = message.useMessage();
-
+    const {confirm} = Modal;
+    const {id} = useParams();
     const navigate = useNavigate();
     const [form] = Form.useForm();
-    const [loading, setLoading] = useState(true);
+    const [messageApi, contextHolder] = message.useMessage();
+    const [loading, setLoading] = useState(Boolean(id));
     const [submitting, setSubmitting] = useState(false);
-    const param = useParams();
-    const userRef = useRef(new User());
+    const isEdit = Boolean(id);
 
     useEffect(() => {
-        const id = param['id'];
-        if (id) {
-            // 模拟加载用户数据
-            setTimeout(() => {
-                const mockUser: User = {
-                    id: parseInt(id),
-                    username: `user${id}`,
-                    nick_name: `测试用户${id}`,
-                    gender: 1,
-                    signature: `这是用户${id}的个性签名`,
-                    created_time: Date.now() - 30 * 24 * 60 * 60 * 1000,
-                    locked: 0,
-                    role: 'user'
-                };
-                userRef.current = mockUser;
-                form.setFieldsValue(mockUser);
-                setLoading(false);
-            }, 500);
-        } else {
-            setLoading(false);
-        }
-
-    }, [param])
-
-    const [open, setOpen] = useState(false);
-
-    const showModal = () => {
-        setOpen(true);
-        if (!userRef.current.id) {
-            // 设置默认值
+        if (!id) {
             form.setFieldsValue({
                 gender: 1,
-                locked: 0
+                role: 'user',
+                locked: false,
             });
+            return;
         }
-    };
 
-    const handleOk = () => {
-        form.submit();
-    };
+        setLoading(true);
+        UserService.userGet(parseInt(id, 10)).then((res) => {
+            const user: User = res.obj;
+            form.setFieldsValue({
+                id: user.id,
+                username: user.username,
+                nick_name: user.nick_name,
+                gender: user.gender,
+                signature: user.signature || '',
+                locked: user.locked === 1,
+                role: user.role || 'user',
+            });
+        }).catch(() => {
+            messageApi.error("获取用户信息失败");
+        }).finally(() => {
+            setLoading(false);
+        });
+    }, [form, id, messageApi]);
 
-    const handleCancel = () => {
-        setOpen(false);
-    };
-
-    const onFinish = (values: any) => {
+    const onFinish = (values: {
+        username: string;
+        password?: string;
+        nick_name: string;
+        gender: number;
+        signature?: string;
+        locked: boolean;
+        role: string;
+    }) => {
         setSubmitting(true);
-        userRef.current = values;
-        
-        // 模拟保存操作
-        setTimeout(() => {
-            messageApi.success(userRef.current.id ? "更新成功" : "创建成功");
-            setOpen(false);
-            navigate('/user/list');
+        const payload: User = {
+            id: id ? parseInt(id, 10) : 0,
+            username: values.username,
+            password: values.password || "",
+            nick_name: values.nick_name,
+            gender: values.gender,
+            signature: values.signature || "",
+            locked: values.locked ? 1 : 0,
+            created_time: 0,
+            role: values.role,
+        };
+
+        const request = isEdit
+            ? UserService.userUpdate(payload)
+            : UserService.userAdd(payload);
+
+        request.then((res) => {
+            messageApi.success(res.msg || (isEdit ? "更新成功" : "创建成功"));
+            navigate("/user/list");
+        }).catch(() => {
+            messageApi.error(isEdit ? "更新失败" : "创建失败");
+        }).finally(() => {
             setSubmitting(false);
-        }, 500);
+        });
     };
 
     const deleteClick = () => {
-        if (!userRef.current.id) {
-            messageApi.warning('该用户不存在!');
+        if (!id) {
             return;
         }
-        
         confirm({
-            title: '是否需要删除这个用户?',
+            title: '是否删除这个用户?',
             icon: <ExclamationCircleFilled/>,
-            content: '请确认，该操作可能无法恢复!',
+            content: '删除后无法恢复，请再次确认。',
             okText: '删除',
             okType: 'danger',
             cancelText: '取消',
             onOk() {
-                setLoading(true);
-                // 模拟删除操作
-                setTimeout(() => {
-                    messageApi.success('删除成功');
+                return UserService.userDelete(parseInt(id, 10)).then((res) => {
+                    messageApi.success(res.msg || '删除成功');
                     navigate('/user/list');
-                    setLoading(false);
-                }, 500);
+                }).catch(() => {
+                    messageApi.error('删除失败');
+                });
             },
         });
-    }
+    };
 
     return (
         <>
             {contextHolder}
             <Card
-                title={userRef.current.id ? "编辑用户" : "新建用户"}
+                title={isEdit ? "编辑用户" : "新建用户"}
                 extra={
                     <Space>
-                        <Button 
-                            danger 
-                            icon={<DeleteOutlined />}
-                            onClick={deleteClick}
-                            disabled={!userRef.current.id}
-                        >
-                            删除
-                        </Button>
-                        <Button 
-                            type="primary" 
+                        {isEdit && (
+                            <Button
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={deleteClick}
+                            >
+                                删除
+                            </Button>
+                        )}
+                        <Button
+                            type="primary"
                             icon={<SaveOutlined />}
-                            onClick={showModal}
+                            onClick={() => form.submit()}
+                            loading={submitting}
                         >
-                            {userRef.current.id ? "更新" : "创建"}
+                            {isEdit ? "保存" : "创建"}
                         </Button>
                     </Space>
                 }
             >
-                <Alert 
-                    message="提示" 
-                    description="请填写用户信息，完成后点击保存按钮" 
-                    type="info" 
-                    showIcon 
-                    style={{ marginBottom: 20 }} 
+                <Alert
+                    message="提示"
+                    description="这里已经接入真实用户接口，可以直接新增、编辑、锁定和删除用户。"
+                    type="info"
+                    showIcon
+                    style={{marginBottom: 20}}
                 />
-                
-                {!loading ? (
-                    <div style={{ padding: '20px 0' }}>
-                        <p>用户信息表单将在点击保存按钮后显示</p>
-                    </div>
-                ) : (
-                    <div style={{ padding: '40px 0', textAlign: 'center' }}>加载中...</div>
-                )}
-            </Card>
-            
-            <Modal
-                title={userRef.current.id ? "编辑用户" : "新建用户"}
-                open={open}
-                onOk={handleOk}
-                onCancel={handleCancel}
-                okText={userRef.current.id ? "更新" : "创建"}
-                cancelText="取消"
-                width={600}
-                confirmLoading={submitting}
-            >
-                <Form 
-                    form={form} 
-                    onFinish={onFinish}
+
+                <Form
+                    form={form}
                     layout="vertical"
+                    onFinish={onFinish}
+                    disabled={loading}
                 >
-                    <Form.Item 
-                        name="id" 
-                        hidden 
+                    <Form.Item
+                        label="用户名"
+                        name="username"
+                        rules={[
+                            {required: true, message: "请输入用户名"},
+                            {max: 30, message: "用户名不能超过 30 个字符"},
+                        ]}
                     >
-                        <Input />
+                        <Input placeholder="请输入用户名"/>
                     </Form.Item>
-                    
-                    <Form.Item 
-                        name="username" 
-                        label="用户名" 
-                        rules={[{ required: true, message: '请输入用户名!', max: 30 }]}
+
+                    <Form.Item
+                        label="密码"
+                        name="password"
+                        rules={isEdit ? [] : [{required: true, message: "请输入密码"}]}
+                        extra={isEdit ? "留空表示不修改密码" : undefined}
                     >
-                        <Input placeholder="请输入用户名" />
+                        <Input.Password placeholder={isEdit ? "留空表示不修改密码" : "请输入密码"}/>
                     </Form.Item>
-                    
-                    <Form.Item 
-                        name="password" 
-                        label="密码" 
-                        rules={[!userRef.current.id ? { required: true, message: '请输入密码!' } : {}]}
+
+                    <Form.Item
+                        label="昵称"
+                        name="nick_name"
+                        rules={[
+                            {required: true, message: "请输入昵称"},
+                            {max: 30, message: "昵称不能超过 30 个字符"},
+                        ]}
                     >
-                        <Input type="password" placeholder={userRef.current.id ? "留空表示不修改密码" : "请输入密码"} />
+                        <Input placeholder="请输入昵称"/>
                     </Form.Item>
-                    
-                    <Form.Item 
-                        name="nick_name" 
-                        label="昵称" 
-                        rules={[{ required: true, message: '请输入昵称!', max: 30 }]}
+
+                    <Form.Item
+                        label="性别"
+                        name="gender"
+                        rules={[{required: true, message: "请选择性别"}]}
                     >
-                        <Input placeholder="请输入昵称" />
-                    </Form.Item>
-                    
-                    <Form.Item 
-                        name="gender" 
-                        label="性别" 
-                        rules={[{ required: true, message: '请选择性别!' }]}
-                    >
-                        <Select placeholder="请选择性别">
-                            <Option value={1}>男</Option>
-                            <Option value={0}>女</Option>
-                        </Select>
-                    </Form.Item>
-                    
-                    <Form.Item 
-                        name="signature" 
-                        label="个性签名"
-                    >
-                        <Input.TextArea 
-                            placeholder="请输入个性签名" 
-                            allowClear 
-                            autoSize={{ minRows: 3, maxRows: 6 }} 
-                            maxLength={100}
+                        <Select
+                            options={[
+                                {label: '男', value: 1},
+                                {label: '女', value: 0},
+                                {label: '其他', value: 2},
+                            ]}
                         />
                     </Form.Item>
-                    
-                    <Form.Item 
-                        name="locked" 
-                        label="锁定" 
-                        valuePropName="checked"
-                        normalize={(value) => value ? 1 : 0}
-                        initialValue={false}
+
+                    <Form.Item
+                        label="角色"
+                        name="role"
+                        rules={[{required: true, message: "请选择角色"}]}
                     >
-                        <Switch checkedChildren="是" unCheckedChildren="否" />
+                        <Select
+                            options={[
+                                {label: '普通用户', value: 'user'},
+                                {label: '管理员', value: 'admin'},
+                            ]}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="个性签名"
+                        name="signature"
+                    >
+                        <Input.TextArea
+                            rows={4}
+                            maxLength={120}
+                            showCount
+                            placeholder="请输入个性签名"
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="锁定账号"
+                        name="locked"
+                        valuePropName="checked"
+                    >
+                        <Switch checkedChildren="锁定" unCheckedChildren="正常"/>
                     </Form.Item>
                 </Form>
-            </Modal>
+            </Card>
         </>
     )
 }

@@ -4,6 +4,7 @@ import { PageInfo, User } from "../../common/Structs";
 import { formatDate } from "../../common/utils";
 import { UserOutlined, SearchOutlined, DeleteOutlined, EditOutlined, PlusOutlined, LockOutlined, UnlockOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router";
+import UserService from "../../service/UserService";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -28,64 +29,27 @@ export const UserListPage = () => {
     const [userList, setUserList] = useState<User[]>([]);
 
     useEffect(() => {
-        setTimeout(() => {
-            setUserList([
-                {
-                    id: 1,
-                    username: 'admin',
-                    nick_name: '管理员',
-                    gender: 1,
-                    avatar_path: '',
-                    signature: '系统管理员',
-                    role: 'admin',
-                    created_time: Date.now() - 30 * 24 * 60 * 60 * 1000,
-                    locked: 0
-                },
-                {
-                    id: 2,
-                    username: 'user1',
-                    nick_name: '测试用户1',
-                    gender: 1,
-                    avatar_path: '',
-                    signature: '这是一个测试用户',
-                    role: 'user',
-                    created_time: Date.now() - 15 * 24 * 60 * 60 * 1000,
-                    locked: 0
-                },
-                {
-                    id: 3,
-                    username: 'user2',
-                    nick_name: '测试用户2',
-                    gender: 0,
-                    avatar_path: '',
-                    signature: '这是另一个测试用户',
-                    role: 'user',
-                    created_time: Date.now() - 5 * 24 * 60 * 60 * 1000,
-                    locked: 1
-                }
-            ]);
-            setLoading(false);
-        }, 500);
+        getDataList();
     }, []);
 
     const handleDelete = (id: number) => {
         setLoading(true);
-        setTimeout(() => {
-            setUserList(userList.filter(user => user.id !== id));
-            messageApi.success('删除成功');
+        UserService.userDelete(id).then((res) => {
+            messageApi.success(res.msg || '删除成功');
+            getDataList();
+        }).catch(() => {
             setLoading(false);
-        }, 500);
+        });
     };
 
     const handleLock = (id: number, locked: number) => {
         setLoading(true);
-        setTimeout(() => {
-            setUserList(userList.map(user =>
-                user.id === id ? { ...user, locked: locked === 1 ? 0 : 1 } : user
-            ));
-            messageApi.success(locked === 1 ? '解锁成功' : '锁定成功');
+        UserService.userLock(id).then((res) => {
+            messageApi.success(res.msg || (locked === 1 ? '解锁成功' : '锁定成功'));
+            getDataList();
+        }).catch(() => {
             setLoading(false);
-        }, 500);
+        });
     };
 
     const handleBatchDelete = () => {
@@ -94,12 +58,14 @@ export const UserListPage = () => {
             return;
         }
         setLoading(true);
-        setTimeout(() => {
-            setUserList(userList.filter(user => !selectedRowKeys.includes(user.id)));
+        Promise.all(selectedRowKeys.map((key) => UserService.userDelete(Number(key))))
+            .then(() => {
+            getDataList();
             setSelectedRowKeys([]);
             messageApi.success('批量删除成功');
+        }).catch(() => {
             setLoading(false);
-        }, 500);
+        });
     };
 
     const columns: TableProps<User>['columns'] = [
@@ -134,7 +100,22 @@ export const UserListPage = () => {
                     color: '#808080',
                     borderRadius: 0,
                 }}>
-                    {gender === 1 ? '男' : '女'}
+                    {gender === 1 ? '男' : gender === 2 ? '其他' : '女'}
+                </Tag>
+            ),
+        },
+        {
+            title: '角色',
+            dataIndex: 'role',
+            key: 'role',
+            render: (role) => (
+                <Tag style={{
+                    background: role === 'admin' ? '#10a37f' : '#0a0a0a',
+                    color: role === 'admin' ? '#000000' : '#808080',
+                    border: role === 'admin' ? 'none' : '1px solid #333333',
+                    borderRadius: 0,
+                }}>
+                    {role === 'admin' ? '管理员' : '普通用户'}
                 </Tag>
             ),
         },
@@ -143,7 +124,7 @@ export const UserListPage = () => {
             dataIndex: 'signature',
             key: 'signature',
             ellipsis: true,
-            render: (value) => <span style={{ color: '#808080' }}>{value}</span>,
+            render: (value) => <span style={{ color: '#808080' }}>{value || '-'}</span>,
         },
         {
             title: '状态',
@@ -214,10 +195,12 @@ export const UserListPage = () => {
     const paginationChange = (index: number, size: number) => {
         pageInfoRef.current.page_num = index;
         pageInfoRef.current.page_size = size;
+        getDataList();
     };
 
     const handleSearch = () => {
         pageInfoRef.current.page_num = 1;
+        getDataList();
     };
 
     const handleReset = () => {
@@ -226,6 +209,7 @@ export const UserListPage = () => {
             status: null
         });
         pageInfoRef.current.page_num = 1;
+        getDataList('', null);
     };
 
     const rowSelection = {
@@ -234,6 +218,24 @@ export const UserListPage = () => {
             setSelectedRowKeys(keys);
         },
     };
+
+    function getDataList(keyword = searchParams.keyword, status = searchParams.status) {
+        setLoading(true);
+        UserService.userListPage({
+            page_num: pageInfoRef.current.page_num,
+            page_size: pageInfoRef.current.page_size,
+            keyword: keyword || undefined,
+            status,
+        }).then((result) => {
+            const pageInfo: PageInfo = result.obj;
+            pageInfoRef.current = pageInfo;
+            setUserList(pageInfo.list || []);
+        }).catch(() => {
+            messageApi.error('获取用户列表失败');
+        }).finally(() => {
+            setLoading(false);
+        });
+    }
 
     return (
         <>
@@ -333,9 +335,10 @@ export const UserListPage = () => {
                     columns={columns}
                     pagination={{
                         showSizeChanger: true,
+                        current: pageInfoRef.current.page_num,
                         onChange: paginationChange,
-                        total: userList.length,
-                        defaultPageSize: 10,
+                        total: pageInfoRef.current.total,
+                        pageSize: pageInfoRef.current.page_size,
                         showTotal: (total) => `共 ${total} 个用户`
                     }}
                     rowKey={(record) => record.id!}

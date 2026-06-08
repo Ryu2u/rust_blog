@@ -1,6 +1,7 @@
 extern crate core;
 
 use crate::middleware::{AuthFilter, FilterWhiteList};
+use crate::moment::apis::moment_scope;
 use crate::post::category_apis::category_scope;
 use crate::post::structs::Post;
 use crate::post::tag_apis::tag_scope;
@@ -8,9 +9,6 @@ use crate::user::structs::User;
 use crate::comment::apis::comment_scope;
 use actix_cors::Cors;
 use actix_easy_multipart::MultipartFormConfig;
-use actix_session::storage::CookieSessionStore;
-use actix_session::SessionMiddleware;
-use actix_web::cookie::Key;
 use actix_web::{error, web, App, HttpServer};
 use config::*;
 use dotenv::dotenv;
@@ -25,6 +23,7 @@ mod post;
 mod user;
 mod utils;
 mod comment;
+mod moment;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -57,14 +56,6 @@ async fn main() -> std::io::Result<()> {
             "/tag/post",
         ]);
 
-        let session_key_str =
-            env::var("SESSION_KEY").expect("can't get env [SESSION_KEY], please check the .env file!");
-        let src = session_key_str.as_bytes();
-        let mut key_bytes = [0u8; 64];
-        let len = std::cmp::min(src.len(), 64);
-        key_bytes[..len].copy_from_slice(&src[..len]);
-        let session_key = Key::from(&key_bytes);
-
         App::new()
             // 配置全局对象
             .app_data(web::Data::new(rbatis.clone()))
@@ -78,6 +69,8 @@ async fn main() -> std::io::Result<()> {
                     "/tag/del",
                     "/tag/update",
                     "/comment/admin",
+                    "/user/admin",
+                    "/moment/admin",
                 ],
             }))
             .app_data(white_list)
@@ -87,12 +80,6 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             // 添加拦截器配置
             .wrap(AuthFilter)
-            .wrap(
-                // create cookie based session middleware
-                SessionMiddleware::builder(CookieSessionStore::default(), session_key)
-                    .cookie_secure(false)
-                    .build(),
-            )
             .service({
                 web::scope("")
                     .guard(ContentTypeGuard)
@@ -101,6 +88,7 @@ async fn main() -> std::io::Result<()> {
                     .service(tag_scope())
                     .service(category_scope())
                     .service(comment_scope())
+                    .service(moment_scope())
             })
     })
     .bind(server)?

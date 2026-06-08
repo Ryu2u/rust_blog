@@ -30,6 +30,7 @@ export function ArticleEditPage() {
                 let post: Post = res.obj;
                 postRef.current = post;
                 setInitValue(post.original_content);
+                setOriginContent(post.original_content);
                 setLoading(false);
             }).catch(error => {
                 messageApi.error('加载文章失败');
@@ -93,14 +94,19 @@ export function ArticleEditPage() {
                 headers: { 'Content-Type': 'multipart/form-data' },
             })
             .then((res: any) => {
-                onSuccess?.(res, file as any);
+                if (onSuccess) {
+                    onSuccess(res, file as any);
+                }
                 console.log(res.obj);
                 setInitValue(res.obj);
+                setOriginContent(res.obj);
                 setLoading(false);
             })
             .catch(e => {
                 setLoading(false);
-                onError(e)
+                if (onError) {
+                    onError(e);
+                }
             });
         },
         onChange(info) {

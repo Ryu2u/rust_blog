@@ -1,5 +1,6 @@
 use crate::utils::time_utils::get_sys_time;
 use rbatis::{crud, impl_select};
+use rbatis::{rbdc, RBatis};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -49,6 +50,56 @@ impl User {
     pub fn filter_pwd(&mut self) {
         self.password = "".to_string();
     }
+
+    pub async fn count_all(db: &RBatis) -> i32 {
+        db.query_decode("select count(*) as count from tb_user", vec![])
+            .await
+            .unwrap_or(0)
+    }
+
+    pub async fn count_filtered(db: &RBatis, keyword: Option<&str>, locked: Option<i32>) -> i32 {
+        let mut sql = "select count(*) as count from tb_user where 1=1".to_string();
+        if let Some(keyword) = keyword.filter(|v| !v.trim().is_empty()) {
+            let keyword = escape_sql(keyword);
+            sql.push_str(&format!(
+                " and (username like '%{}%' or nick_name like '%{}%')",
+                keyword, keyword
+            ));
+        }
+        if let Some(locked) = locked {
+            sql.push_str(&format!(" and locked = {}", locked));
+        }
+        db.query_decode(sql.as_str(), vec![]).await.unwrap_or(0)
+    }
+
+    pub async fn select_page_filtered(
+        db: &RBatis,
+        offset: i32,
+        size: i32,
+        keyword: Option<&str>,
+        locked: Option<i32>,
+    ) -> Result<Vec<User>, rbdc::Error> {
+        let mut sql = "select * from tb_user where 1=1".to_string();
+        if let Some(keyword) = keyword.filter(|v| !v.trim().is_empty()) {
+            let keyword = escape_sql(keyword);
+            sql.push_str(&format!(
+                " and (username like '%{}%' or nick_name like '%{}%')",
+                keyword, keyword
+            ));
+        }
+        if let Some(locked) = locked {
+            sql.push_str(&format!(" and locked = {}", locked));
+        }
+        sql.push_str(&format!(
+            " order by created_time desc limit {}, {}",
+            offset, size
+        ));
+        db.query_decode(sql.as_str(), vec![]).await
+    }
+}
+
+fn escape_sql(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('\'', "''")
 }
 
 crud!(User {}, "tb_user");

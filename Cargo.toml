@@ -21,7 +21,6 @@ chrono = "0.4.38"
 actix-web = "4"
 actix-easy-multipart = "3.0.0"
 actix-cors = "0.6.4"
-actix-session = {version = "0.7.2" ,features = ['cookie-session']}
 futures-util = "0.3.26"
 
 # ORM
@@ -32,5 +31,6 @@ rbdc-mysql= "4.5"
 pulldown-cmark = "0.10.0"
 rand = "0.8.5"
 bcrypt = "0.15"
+jsonwebtoken = "9"
 #markdown = "1.0.0-alpha.16"
 

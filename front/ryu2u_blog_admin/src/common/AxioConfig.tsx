@@ -1,5 +1,5 @@
 import {Fragment, useEffect} from "react";
-import axios, {AxiosError} from "axios";
+import axios, {AxiosError, AxiosResponse, InternalAxiosRequestConfig} from "axios";
 import {useNavigate} from "react-router";
 import {message} from "antd";
 import {Result} from "./Structs";
@@ -24,7 +24,7 @@ function useAjaxEffect1() {
 
     useEffect(() => {
 
-        function request(config) {
+        function request(config: InternalAxiosRequestConfig) {
             console.log(`new request: ${config.url}`);
             writeRef.current(`新请求：${config.url}`);
             return config;
@@ -52,7 +52,7 @@ function useAjaxEffect1() {
             return Promise.reject(error);
         }
 
-        function success(response) {
+        function success(response: AxiosResponse<Result>) {
             console.log(`request success: `);
             console.log(response.data);
             writeRef.current(`响应成功：${response.config.url}`);

@@ -1,4 +1,4 @@
-import {PageInfo, Result} from "../common/Structs";
+import {Result} from "../common/Structs";
 import {http_client} from "../common/AxioConfig";
 
 namespace LoginService {

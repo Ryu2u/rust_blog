@@ -1,8 +1,8 @@
-use actix_session::SessionExt;
 use std::future::{ready, Ready};
 
 use crate::AppState;
 use crate::user::structs::User;
+use crate::utils::jwt_utils::{verify_jwt, AUTH_COOKIE_NAME};
 use actix_web::http::Method;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
@@ -115,14 +115,21 @@ where
 
                 // 验证身份
                 let url_for_role = url.to_string();
-                let session = req.get_session();
-                let user_id = match session.get::<i32>("user_id") {
-                    Ok(Some(id)) => id,
-                    _ => {
+                let token = req.cookie(AUTH_COOKIE_NAME).map(|cookie| cookie.value().to_string());
+                let claims = match token {
+                    Some(token) => match verify_jwt(&token) {
+                        Ok(claims) => claims,
+                        Err(_) => {
+                            error!("jwt verify failed");
+                            return Box::pin(async move { Err(error::ErrorUnauthorized("unauthorized")) });
+                        }
+                    },
+                    None => {
                         error!("unable to verify identity!");
                         return Box::pin(async move { Err(error::ErrorUnauthorized("unauthorized")) });
                     }
                 };
+                let user_id = claims.sub;
                 info!("session: id -> {user_id}");
 
                 // 检查是否为管理员路由
@@ -147,7 +154,7 @@ where
                     if let Some(ref db) = db {
                         match User::select_by_id(db.as_ref(), user_id).await {
                             Ok(users) => {
-                                if !users.is_empty() && users[0].role == "admin" {
+                                if !users.is_empty() && users[0].role == "admin" && users[0].locked == 0 {
                                     return fut.await;
                                 }
                                 error!("user {} is not admin, access denied", user_id);

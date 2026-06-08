@@ -3,7 +3,7 @@ import {Admin} from "./admin/Admin";
 import {BrowserRouter, Route, Routes, Navigate,} from "react-router-dom";
 import {LoginPage} from "./login/LoginPage";
 import {HttpEffectFragment} from "./common/AxioConfig";
-import {routeConfig, getFlattenRoutes} from "./common/routerConfig";
+import {getFlattenRoutes} from "./common/routerConfig";
 import {createContext, useState} from "react";
 import {User} from "./common/Structs";
 

@@ -191,7 +191,7 @@ export const ArticleListPage = () => {
                     <Popconfirm
                         title="确定要删除这篇文章吗？"
                         description="删除后将无法恢复"
-                        onConfirm={() => handleDelete(record.id)}
+                        onConfirm={() => handleDelete(record.id!)}
                         okText="确定"
                         cancelText="取消"
                     >

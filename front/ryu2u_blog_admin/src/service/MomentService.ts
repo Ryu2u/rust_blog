@@ -1,9 +1,15 @@
-import { PageInfo, Moment, Result } from "../common/Structs";
+import { Moment, Result } from "../common/Structs";
 import { http_client } from "../common/AxioConfig";
 
+export type MomentQuery = {
+    page_num: number;
+    page_size: number;
+    keyword?: string;
+};
+
 export default {
-    momentListPage(pageInfo: PageInfo): Promise<Result> {
-        return http_client.post(`/moment/admin/list/page`, pageInfo);
+    momentListPage(query: MomentQuery): Promise<Result> {
+        return http_client.post(`/moment/admin/list/page`, query);
     },
     moment_get(id: number): Promise<Result> {
         return http_client.get(`/moment/admin/get/${id}`);

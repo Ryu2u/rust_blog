@@ -88,7 +88,24 @@ CREATE TABLE `comment` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章评论表';
 
 -- ----------------------------
--- 7. tb_user 表 - 用户表
+-- 7. moment 表 - 说说/动态表
+-- ----------------------------
+DROP TABLE IF EXISTS `moment`;
+CREATE TABLE `moment` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    `content` TEXT NOT NULL COMMENT '说说内容',
+    `images` TEXT COMMENT '图片JSON数组',
+    `is_public` TINYINT NOT NULL DEFAULT 1 COMMENT '是否公开(0:私密 1:公开)',
+    `location` VARCHAR(255) COMMENT '位置',
+    `likes` INT NOT NULL DEFAULT 0 COMMENT '点赞数',
+    `comments` INT NOT NULL DEFAULT 0 COMMENT '评论数',
+    `created_time` BIGINT NOT NULL COMMENT '创建时间戳',
+    `update_time` BIGINT COMMENT '更新时间戳',
+    `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除(0:未删除 1:已删除)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='说说动态表';
+
+-- ----------------------------
+-- 8. tb_user 表 - 用户表
 -- ----------------------------
 DROP TABLE IF EXISTS `tb_user`;
 CREATE TABLE `tb_user` (

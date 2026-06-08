@@ -1,114 +1,93 @@
-import { Table, TableProps, Tag, Input, Button, Space, Row, Col, Popconfirm, message, Image, Modal, Form, Switch, Badge } from "antd";
-import { useEffect, useRef, useState } from "react";
-import { PageInfo, Moment } from "../../common/Structs";
-import { formatDate } from "../../common/utils";
-import { SearchOutlined, DeleteOutlined, EditOutlined, PlusOutlined, EyeOutlined, EyeInvisibleOutlined, EnvironmentOutlined, HeartOutlined, MessageOutlined } from "@ant-design/icons";
+import {Badge, Button, Col, Form, Image, Input, Modal, Popconfirm, Row, Space, Switch, Table, TableProps, Tag, message} from "antd";
+import {useEffect, useRef, useState} from "react";
+import {Moment, PageInfo} from "../../common/Structs";
+import {formatDate} from "../../common/utils";
+import {
+    DeleteOutlined,
+    EditOutlined,
+    EnvironmentOutlined,
+    EyeInvisibleOutlined,
+    EyeOutlined,
+    HeartOutlined,
+    MessageOutlined,
+    PlusOutlined,
+    SearchOutlined
+} from "@ant-design/icons";
+import MomentService from "../../service/MomentService";
 
-const { Search } = Input;
-const { TextArea } = Input;
+const {Search, TextArea} = Input;
 
 interface SearchParams {
     keyword: string;
+}
+
+type MomentFormValues = {
+    content: string;
+    location?: string;
+    images?: string;
+    is_public: boolean;
+};
+
+function parseImageLines(value?: string): string[] {
+    if (!value) {
+        return [];
+    }
+    return value
+        .split(/\r?\n/)
+        .map((item) => item.trim())
+        .filter(Boolean);
 }
 
 export function MomentsPage() {
     const pageInfoRef = useRef(new PageInfo());
     const [loading, setLoading] = useState(false);
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-    const [searchParams, setSearchParams] = useState<SearchParams>({
-        keyword: ''
-    });
+    const [searchParams, setSearchParams] = useState<SearchParams>({ keyword: '' });
     const [messageApi, contextHolder] = message.useMessage();
     const [momentList, setMomentList] = useState<Moment[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMoment, setEditingMoment] = useState<Moment | null>(null);
-    const [form] = Form.useForm();
+    const [form] = Form.useForm<MomentFormValues>();
 
     useEffect(() => {
         getDataList();
     }, []);
 
-    function getDataList() {
+    function getDataList(keyword = searchParams.keyword) {
         setLoading(true);
-        setTimeout(() => {
-            const mockData: Moment[] = [
-                {
-                    id: 1,
-                    content: '今天天气真好，出去散步心情愉悦',
-                    images: ['https://via.placeholder.com/300', 'https://via.placeholder.com/300/0000FF'],
-                    is_public: 1,
-                    location: '北京·朝阳公园',
-                    likes: 128,
-                    comments: 23,
-                    created_time: Date.now() - 2 * 60 * 60 * 1000,
-                },
-                {
-                    id: 2,
-                    content: '分享一段代码，希望对大家有帮助。记录学习的每一天，坚持就是胜利！',
-                    images: [],
-                    is_public: 1,
-                    location: '',
-                    likes: 89,
-                    comments: 15,
-                    created_time: Date.now() - 5 * 60 * 60 * 1000,
-                },
-                {
-                    id: 3,
-                    content: '私密说说，只有自己可见',
-                    images: ['https://via.placeholder.com/300/FF0000'],
-                    is_public: 0,
-                    location: '上海',
-                    likes: 0,
-                    comments: 0,
-                    created_time: Date.now() - 24 * 60 * 60 * 1000,
-                },
-                {
-                    id: 4,
-                    content: '周末愉快！享受美好时光',
-                    images: ['https://via.placeholder.com/300/00FF00', 'https://via.placeholder.com/300/FFFF00', 'https://via.placeholder.com/300/FF00FF'],
-                    is_public: 1,
-                    location: '深圳·欢乐谷',
-                    likes: 256,
-                    comments: 47,
-                    created_time: Date.now() - 48 * 60 * 60 * 1000,
-                },
-                {
-                    id: 5,
-                    content: '夜深人静，适合思考人生',
-                    images: [],
-                    is_public: 1,
-                    location: '',
-                    likes: 45,
-                    comments: 8,
-                    created_time: Date.now() - 72 * 60 * 60 * 1000,
-                }
-            ];
-
-            pageInfoRef.current.total = mockData.length;
-            pageInfoRef.current.list = mockData;
-            setMomentList(mockData);
+        MomentService.momentListPage({
+            page_num: pageInfoRef.current.page_num,
+            page_size: pageInfoRef.current.page_size,
+            keyword: keyword || undefined,
+        }).then((res) => {
+            const pageInfo: PageInfo = res.obj;
+            pageInfoRef.current = pageInfo;
+            setMomentList(pageInfo.list || []);
+        }).catch(() => {
+            messageApi.error('获取说说列表失败');
+        }).finally(() => {
             setLoading(false);
-        }, 500);
+        });
     }
 
     const handleDelete = (id: number) => {
         setLoading(true);
-        setTimeout(() => {
-            setMomentList(momentList.filter(moment => moment.id !== id));
-            messageApi.success('删除成功');
+        MomentService.moment_delete(id).then((res) => {
+            messageApi.success(res.msg || '删除成功');
+            getDataList();
+        }).catch(() => {
             setLoading(false);
-        }, 300);
+        });
     };
 
     const handleTogglePublic = (id: number) => {
         setLoading(true);
-        setTimeout(() => {
-            setMomentList(momentList.map(moment =>
-                moment.id === id ? { ...moment, is_public: moment.is_public === 1 ? 0 : 1 } : moment
-            ));
-            messageApi.success('状态已更新');
+        MomentService.moment_toggle_public(id).then((res) => {
+            messageApi.success(res.msg || '状态已更新');
+            getDataList();
+        }).catch(() => {
             setLoading(false);
-        }, 300);
+        });
     };
 
     const handleBatchDelete = () => {
@@ -117,12 +96,15 @@ export function MomentsPage() {
             return;
         }
         setLoading(true);
-        setTimeout(() => {
-            setMomentList(momentList.filter(moment => !selectedRowKeys.includes(moment.id)));
-            setSelectedRowKeys([]);
-            messageApi.success('批量删除成功');
-            setLoading(false);
-        }, 300);
+        Promise.all(selectedRowKeys.map((key) => MomentService.moment_delete(Number(key))))
+            .then(() => {
+                setSelectedRowKeys([]);
+                messageApi.success('批量删除成功');
+                getDataList();
+            })
+            .catch(() => {
+                setLoading(false);
+            });
     };
 
     const showModal = (moment?: Moment) => {
@@ -130,49 +112,45 @@ export function MomentsPage() {
             setEditingMoment(moment);
             form.setFieldsValue({
                 content: moment.content,
-                location: moment.location,
-                is_public: moment.is_public === 1
+                location: moment.location || '',
+                images: (moment.images || []).join('\n'),
+                is_public: moment.is_public === 1,
             });
         } else {
             setEditingMoment(null);
             form.resetFields();
+            form.setFieldsValue({ is_public: true });
         }
         setIsModalOpen(true);
     };
 
     const handleModalOk = () => {
-        form.validateFields().then(values => {
+        form.validateFields().then((values) => {
             setLoading(true);
-            setTimeout(() => {
-                if (editingMoment) {
-                    setMomentList(momentList.map(moment =>
-                        moment.id === editingMoment.id
-                            ? { ...moment, ...values, is_public: values.is_public ? 1 : 0, update_time: Date.now() }
-                            : moment
-                    ));
-                    messageApi.success('更新成功');
-                } else {
-                    const newMoment: Moment = {
-                        id: Date.now(),
-                        content: values.content,
-                        location: values.location || '',
-                        is_public: values.is_public ? 1 : 0,
-                        images: [],
-                        likes: 0,
-                        comments: 0,
-                        created_time: Date.now()
-                    };
-                    setMomentList([newMoment, ...momentList]);
-                    messageApi.success('发布成功');
-                }
-                setIsModalOpen(false);
-                setLoading(false);
-            }, 300);
-        });
-    };
+            const payload: Moment = {
+                id: editingMoment?.id || 0,
+                content: values.content,
+                location: values.location || '',
+                images: parseImageLines(values.images),
+                is_public: values.is_public ? 1 : 0,
+                likes: editingMoment?.likes || 0,
+                comments: editingMoment?.comments || 0,
+                created_time: editingMoment?.created_time || 0,
+                update_time: editingMoment?.update_time,
+            };
 
-    const handleModalCancel = () => {
-        setIsModalOpen(false);
+            const request = editingMoment
+                ? MomentService.moment_update(payload)
+                : MomentService.moment_add(payload);
+
+            request.then((res) => {
+                messageApi.success(res.msg || (editingMoment ? '更新成功' : '发布成功'));
+                setIsModalOpen(false);
+                getDataList();
+            }).catch(() => {
+                setLoading(false);
+            });
+        });
     };
 
     const columns: TableProps<Moment>['columns'] = [
@@ -187,14 +165,14 @@ export function MomentsPage() {
             title: '说说内容',
             dataIndex: 'content',
             key: 'content',
-            width: 350,
+            width: 380,
             render: (content, record) => (
                 <div>
                     <div style={{ marginBottom: 8, whiteSpace: 'pre-wrap', color: '#e0e0e0' }}>{content}</div>
                     {record.images && record.images.length > 0 && (
                         <div style={{ marginTop: 8 }}>
                             <Image.PreviewGroup>
-                                <Space size="small">
+                                <Space size="small" wrap>
                                     {record.images.slice(0, 3).map((img, index) => (
                                         <Image
                                             key={index}
@@ -204,28 +182,14 @@ export function MomentsPage() {
                                             style={{ objectFit: 'cover', borderRadius: 0, border: '1px solid #333333' }}
                                         />
                                     ))}
-                                    {record.images.length > 3 && (
-                                        <div style={{
-                                            width: 60,
-                                            height: 60,
-                                            background: '#0a0a0a',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            border: '1px solid #333333',
-                                            color: '#808080',
-                                            fontSize: 12,
-                                        }}>
-                                            +{record.images.length - 3}
-                                        </div>
-                                    )}
                                 </Space>
                             </Image.PreviewGroup>
                         </div>
                     )}
                     {record.location && (
                         <div style={{ marginTop: 8, color: '#555555', fontSize: 12 }}>
-                            <EnvironmentOutlined style={{ marginRight: 4 }} /> {record.location}
+                            <EnvironmentOutlined style={{ marginRight: 4 }} />
+                            {record.location}
                         </div>
                     )}
                 </div>
@@ -246,11 +210,6 @@ export function MomentsPage() {
                     {is_public === 1 ? '公开' : '私密'}
                 </Tag>
             ),
-            filters: [
-                { text: '公开', value: 1 },
-                { text: '私密', value: 0 },
-            ],
-            onFilter: (value, record) => record.is_public === value,
         },
         {
             title: '互动数据',
@@ -274,8 +233,11 @@ export function MomentsPage() {
             dataIndex: 'created_time',
             key: 'created_time',
             width: 180,
-            render: (created_time) => <span style={{ color: '#808080' }}>{formatDate(new Date(created_time))}</span>,
-            sorter: (a, b) => a.created_time - b.created_time,
+            render: (created_time) => (
+                <span style={{ color: '#808080' }}>
+                    {created_time ? formatDate(new Date(created_time * 1000)) : '-'}
+                </span>
+            ),
         },
         {
             title: '操作',
@@ -308,12 +270,7 @@ export function MomentsPage() {
                         okText="确定"
                         cancelText="取消"
                     >
-                        <Button
-                            danger
-                            icon={<DeleteOutlined />}
-                            size="small"
-                            style={{ borderRadius: 0 }}
-                        >
+                        <Button danger icon={<DeleteOutlined />} size="small" style={{ borderRadius: 0 }}>
                             删除
                         </Button>
                     </Popconfirm>
@@ -334,11 +291,9 @@ export function MomentsPage() {
     };
 
     const handleReset = () => {
-        setSearchParams({
-            keyword: ''
-        });
+        setSearchParams({ keyword: '' });
         pageInfoRef.current.page_num = 1;
-        getDataList();
+        getDataList('');
     };
 
     const rowSelection = {
@@ -348,8 +303,8 @@ export function MomentsPage() {
         },
     };
 
-    const publicCount = momentList.filter(m => m.is_public === 1).length;
-    const privateCount = momentList.filter(m => m.is_public === 0).length;
+    const publicCount = momentList.filter((m) => m.is_public === 1).length;
+    const privateCount = momentList.filter((m) => m.is_public === 0).length;
     const totalLikes = momentList.reduce((sum, m) => sum + m.likes, 0);
     const totalComments = momentList.reduce((sum, m) => sum + m.comments, 0);
 
@@ -388,7 +343,6 @@ export function MomentsPage() {
                     </Space>
                 </div>
 
-                {/* 统计信息 */}
                 <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(4, 1fr)',
@@ -398,16 +352,12 @@ export function MomentsPage() {
                     marginBottom: '16px',
                 }}>
                     {[
-                        { label: '总说说', value: momentList.length },
+                        { label: '总说说', value: pageInfoRef.current.total },
                         { label: '公开', value: publicCount },
                         { label: '点赞', value: totalLikes },
                         { label: '评论', value: totalComments },
                     ].map((stat) => (
-                        <div key={stat.label} style={{
-                            background: '#000000',
-                            padding: '16px',
-                            textAlign: 'center',
-                        }}>
+                        <div key={stat.label} style={{ background: '#000000', padding: '16px', textAlign: 'center' }}>
                             <div style={{ color: '#555555', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase' }}>
                                 {stat.label}
                             </div>
@@ -418,14 +368,13 @@ export function MomentsPage() {
                     ))}
                 </div>
 
-                {/* 搜索 */}
                 <div style={{ border: '1px solid #333333', padding: '16px', marginBottom: '16px', background: '#0a0a0a' }}>
                     <Row gutter={16} align="middle">
                         <Col span={18}>
                             <Search
                                 placeholder="搜索说说内容"
                                 value={searchParams.keyword}
-                                onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
+                                onChange={(e) => setSearchParams({ keyword: e.target.value })}
                                 onSearch={handleSearch}
                                 style={{ width: '100%' }}
                                 prefix={<SearchOutlined style={{ color: '#555555' }} />}
@@ -452,7 +401,6 @@ export function MomentsPage() {
                     </Row>
                 </div>
 
-                {/* 批量操作 */}
                 {selectedRowKeys.length > 0 && (
                     <div style={{ marginBottom: 16, padding: '8px 12px', background: '#0a0a0a', border: '1px solid #333333' }}>
                         <Space>
@@ -464,11 +412,7 @@ export function MomentsPage() {
                                 okText="确定"
                                 cancelText="取消"
                             >
-                                <Button
-                                    danger
-                                    icon={<DeleteOutlined />}
-                                    style={{ borderRadius: 0 }}
-                                >
+                                <Button danger icon={<DeleteOutlined />} style={{ borderRadius: 0 }}>
                                     批量删除
                                 </Button>
                             </Popconfirm>
@@ -476,15 +420,15 @@ export function MomentsPage() {
                     </div>
                 )}
 
-                {/* 说说列表 */}
                 <Table
                     loading={loading}
                     columns={columns}
                     pagination={{
                         showSizeChanger: true,
+                        current: pageInfoRef.current.page_num,
+                        pageSize: pageInfoRef.current.page_size,
                         onChange: paginationChange,
                         total: pageInfoRef.current.total,
-                        defaultPageSize: 10,
                         showTotal: (total) => `共 ${total} 条说说`
                     }}
                     rowKey={(record) => record.id}
@@ -494,22 +438,18 @@ export function MomentsPage() {
                 />
             </div>
 
-            {/* 新增/编辑弹窗 */}
             <Modal
                 title={editingMoment ? '编辑说说' : '发布说说'}
                 open={isModalOpen}
                 onOk={handleModalOk}
-                onCancel={handleModalCancel}
-                width={600}
+                onCancel={() => setIsModalOpen(false)}
+                width={640}
                 okText="确定"
                 cancelText="取消"
+                confirmLoading={loading}
                 style={{ top: 20 }}
             >
-                <Form
-                    form={form}
-                    layout="vertical"
-                    initialValues={{ is_public: true }}
-                >
+                <Form form={form} layout="vertical" initialValues={{ is_public: true }}>
                     <Form.Item
                         label="说说内容"
                         name="content"
@@ -523,10 +463,7 @@ export function MomentsPage() {
                             style={{ background: '#000000', border: '1px solid #333333', color: '#e0e0e0', borderRadius: 0 }}
                         />
                     </Form.Item>
-                    <Form.Item
-                        label="位置"
-                        name="location"
-                    >
+                    <Form.Item label="位置" name="location">
                         <Input
                             prefix={<EnvironmentOutlined style={{ color: '#555555' }} />}
                             placeholder="你在哪里？（可选）"
@@ -534,14 +471,18 @@ export function MomentsPage() {
                         />
                     </Form.Item>
                     <Form.Item
-                        label="公开设置"
-                        name="is_public"
-                        valuePropName="checked"
+                        label="图片地址"
+                        name="images"
+                        extra="每行填写一个图片 URL，可为空"
                     >
-                        <Switch
-                            checkedChildren="公开"
-                            unCheckedChildren="私密"
+                        <TextArea
+                            rows={4}
+                            placeholder={"https://example.com/1.jpg\nhttps://example.com/2.jpg"}
+                            style={{ background: '#000000', border: '1px solid #333333', color: '#e0e0e0', borderRadius: 0 }}
                         />
+                    </Form.Item>
+                    <Form.Item label="公开设置" name="is_public" valuePropName="checked">
+                        <Switch checkedChildren="公开" unCheckedChildren="私密" />
                     </Form.Item>
                 </Form>
             </Modal>
