@@ -2,10 +2,14 @@ import "./PostListItem.scss"
 import {useNavigate} from "react-router";
 import {useEffect, useState} from "react";
 import {Post} from "../../common/Structs";
-import {Divider} from "antd";
 import {formatDate} from "../../common/utils";
 
-export function PostListItem({dir, postItemJson}) {
+interface PostListItemProps {
+    dir: boolean;
+    postItemJson: string;
+}
+
+export function PostListItem({dir, postItemJson}: PostListItemProps) {
     const navigate = useNavigate();
     const [post, setPost] = useState(new Post());
 
@@ -31,22 +35,24 @@ export function PostListItem({dir, postItemJson}) {
                         <img alt={"post-alt"} src={post.cover_img ? post.cover_img : "https://ryu2u-1305537946.cos.ap-nanjing.myqcloud.com//5.jpg"}/>
                     </a>
                 </div>
-                <div className={"post-divider"}>
-                </div>
                 <div className={"recent-post-info"}>
+                    <div className="recent-post-kicker">dispatch #{post.id}</div>
                     <div className={"recent-post-title"}>
-                        <a onClick={postClick} href={""} className={"recent-post-title-a"}>
+                        <button type="button" onClick={postClick} className={"recent-post-title-a"}>
                             {post.title}
-                        </a>
+                        </button>
                     </div>
                     <div className="recent-post-time">
-                        <div>发表于{post.created_time ? formatDate(post.created_time as Date) : ''}</div>
-                        <div>更新于{post.update_time ? formatDate(post.update_time as Date) : ''}</div>
-                        <div>类型</div>
+                        <span>发表于 {post.created_time ? formatDate(post.created_time as Date) : ''}</span>
+                        <span>更新于 {post.update_time ? formatDate(post.update_time as Date) : ''}</span>
+                        <span>{post.category || '未分类'}</span>
                     </div>
-                    {/*<div className={"recent-post-summary"}>*/}
-                    {/*    {post.summary}*/}
-                    {/*</div>*/}
+                    <div className={"recent-post-summary"}>
+                        {post.summary || '这篇文章暂时没有摘要，可以点进去继续阅读全文。'}
+                    </div>
+                    <button type="button" className="recent-post-readmore" onClick={postClick}>
+                        read article
+                    </button>
                 </div>
 
             </div>

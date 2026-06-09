@@ -153,6 +153,7 @@ export function PostPage() {
     const post_content_ref = useRef<HTMLDivElement | null>(null);
     const postRef = useRef(new Post());
     const param = useParams();
+    const postId = param['id'];
     const [catalogJson, setCatalogJson] = useState("");
 
     // 评论相关状态
@@ -181,7 +182,7 @@ export function PostPage() {
          * @param {number} level - 当前层级
          * @returns {CatalogItem[]} 子目录项数组
          */
-        const getChildrenByLevel = (currentLevelItem: CatalogItem | undefined, arr: CatalogItem[], level: number): CatalogItem[] => {
+        const getChildrenByLevel = (currentLevelItem: CatalogItem | undefined, arr: CatalogItem[]): CatalogItem[] => {
             if (!currentLevelItem) {
                 return [];
             }
@@ -215,7 +216,7 @@ export function PostPage() {
             currentItem.level = level;
             result.push(currentItem);
             while (arr.length > 0) {
-                let children = getChildrenByLevel(currentItem, arr, level);
+                let children = getChildrenByLevel(currentItem, arr);
                 if (children.length == 0) {
                     // @ts-ignore
                     currentItem = arr.shift();
@@ -235,27 +236,35 @@ export function PostPage() {
     }
 
     useEffect(() => {
-        const post_id = param['id'];
-        console.log(`post_id : ${post_id}`);
+        console.log(`post_id : ${postId}`);
+        setLoading(true);
+        setCatalogJson("");
 
-        PostService.getPostById(Number(post_id)).then((result) => {
+        PostService.getPostById(Number(postId)).then((result) => {
             console.log(result.obj);
             let data: Post = result.obj;
             data.created_time = new Date(data.created_time);
             data.update_time = new Date(data.update_time);
             postRef.current = data;
-            genToc();
+            setLoading(false);
+        }).catch(() => {
+            setLoading(false);
         })
 
-    }, [param])
+    }, [postId])
+
+    useEffect(() => {
+        if (!loading) {
+            genToc();
+        }
+    }, [loading]);
 
     // 加载评论列表
     useEffect(() => {
-        const post_id = param['id'];
-        if (post_id) {
-            loadComments(Number(post_id));
+        if (postId) {
+            loadComments(Number(postId));
         }
-    }, [param]);
+    }, [postId]);
 
     function loadComments(postId: number) {
         CommentService.getCommentList(postId).then((result) => {
@@ -312,15 +321,14 @@ export function PostPage() {
 
     // 提交回复
     function handleSubmitReply() {
-        const post_id = param['id'];
-        if (!post_id || !userEmail || !userName || !replyContent) {
+        if (!postId || !userEmail || !userName || !replyContent) {
             alert("请填写完整信息");
             return;
         }
 
         setCommentLoading(true);
         const comment = new Comment();
-        comment.post_id = Number(post_id);
+        comment.post_id = Number(postId);
         comment.user_email = userEmail;
         comment.user_name = userName;
         comment.content = replyContent;
@@ -331,7 +339,7 @@ export function PostPage() {
             if (result.code === 200) {
                 setReplyContent("");
                 setReplyTo(null);
-                loadComments(Number(post_id));
+                loadComments(Number(postId));
             } else {
                 alert(result.msg);
             }
@@ -349,15 +357,14 @@ export function PostPage() {
 
     // 提交评论
     function handleSubmitComment() {
-        const post_id = param['id'];
-        if (!post_id || !userEmail || !userName || !commentContent) {
+        if (!postId || !userEmail || !userName || !commentContent) {
             alert("请填写完整信息");
             return;
         }
 
         setCommentLoading(true);
         const comment = new Comment();
-        comment.post_id = Number(post_id);
+        comment.post_id = Number(postId);
         comment.user_email = userEmail;
         comment.user_name = userName;
         comment.content = commentContent;
@@ -366,7 +373,7 @@ export function PostPage() {
             setCommentLoading(false);
             if (result.code === 200) {
                 setCommentContent("");
-                loadComments(Number(post_id));
+                loadComments(Number(postId));
             } else {
                 alert(result.msg);
             }
@@ -380,6 +387,10 @@ export function PostPage() {
      */
     function genToc() {
         let div = post_content_ref.current;
+        if (!div) {
+            setCatalogJson("[]");
+            return;
+        }
         let hLevel: CatalogItem[] = [];
 
         div?.childNodes.forEach((e, index) => {
@@ -405,7 +416,6 @@ export function PostPage() {
         });
         let tree = toTree(hLevel);
         setCatalogJson(JSON.stringify(tree));
-        setLoading(false);
     }
 
     return (
@@ -420,8 +430,46 @@ export function PostPage() {
                 )}
                 <div className="post-main">
                     {loading ? (
-                        <div className="loading-container flex justify-center items-center" style={{padding: '60px 0'}}>
-                            <div className="loading-spinner">加载中...</div>
+                        <div className="post-loading-shell">
+                            <section className="post-loading-card post-loading-card--hero">
+                                <div className="post-loading-card__terminal">
+                                    <span className="post-loading-card__prompt">$</span> preparing article
+                                </div>
+                                <div className="post-loading-line post-loading-line--title"/>
+                                <div className="post-loading-meta">
+                                    <span className="post-loading-chip"/>
+                                    <span className="post-loading-chip"/>
+                                    <span className="post-loading-chip post-loading-chip--short"/>
+                                </div>
+                            </section>
+
+                            <section className="post-loading-card">
+                                <div className="post-loading-line post-loading-line--heading"/>
+                                <div className="post-loading-paragraph">
+                                    <span className="post-loading-line"/>
+                                    <span className="post-loading-line post-loading-line--wide"/>
+                                    <span className="post-loading-line post-loading-line--medium"/>
+                                </div>
+                                <div className="post-loading-block"/>
+                                <div className="post-loading-paragraph">
+                                    <span className="post-loading-line post-loading-line--wide"/>
+                                    <span className="post-loading-line"/>
+                                    <span className="post-loading-line post-loading-line--short"/>
+                                </div>
+                            </section>
+
+                            <section className="post-loading-card">
+                                <div className="post-loading-card__terminal">
+                                    <span className="post-loading-card__prompt">&gt;</span> loading comments
+                                </div>
+                                <div className="post-loading-comment">
+                                    <span className="post-loading-avatar"/>
+                                    <div className="post-loading-comment__body">
+                                        <span className="post-loading-line post-loading-line--medium"/>
+                                        <span className="post-loading-line post-loading-line--wide"/>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
                     ) : (
                         <>

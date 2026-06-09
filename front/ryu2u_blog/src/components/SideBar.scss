@@ -1,0 +1,89 @@
+.side-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.side-widget {
+  padding: 16px;
+  border: 1px solid #333333;
+  background: #0a0a0a;
+}
+
+.side-widget__title {
+  margin-bottom: 14px;
+  color: #e0e0e0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.side-widget__prompt {
+  color: #10a37f;
+}
+
+.side-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.side-metric {
+  padding: 12px;
+  border: 1px solid #2e2e2e;
+  background: #050505;
+}
+
+.side-metric span {
+  display: block;
+  margin-bottom: 8px;
+  color: #bcc5d1;
+  font-size: 11px;
+}
+
+.side-metric strong {
+  color: #f0f3f8;
+  font-size: 16px;
+}
+
+.side-widget__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.side-widget__copy {
+  margin: 0;
+  color: #cfd6df;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.side-widget__current {
+  padding: 10px 12px;
+  border-left: 2px solid #10a37f;
+  background: #050505;
+  color: #bcc5d1;
+  font-size: 12px;
+}
+
+.side-widget__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.side-widget__actions button {
+  padding: 10px 12px;
+  border: 1px solid #333333;
+  background: transparent;
+  color: #cfd6df;
+  text-align: left;
+  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+  cursor: pointer;
+}
+
+.side-widget__actions button:hover {
+  border-color: #10a37f;
+  color: #10a37f;
+}

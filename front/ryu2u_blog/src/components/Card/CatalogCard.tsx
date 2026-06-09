@@ -12,7 +12,11 @@ import './Card.scss'
  * @param {string} props.catalogJson - 目录JSON字符串
  * @returns {JSX.Element} 目录卡片组件渲染结果
  */
-export function CatalogCard({catalogJson}) {
+interface CatalogCardProps {
+    catalogJson: string;
+}
+
+export function CatalogCard({catalogJson}: CatalogCardProps) {
 
     const [catalog, setCatalog] = useState("");
 
@@ -20,13 +24,23 @@ export function CatalogCard({catalogJson}) {
      * 监听目录JSON变化，生成目录DOM结构
      */
     useEffect(() => {
-        let tree = JSON.parse(catalogJson);
-        console.log("catalog => ");
-        console.log(tree);
-        let domTree = getChapterDomTree(tree);
-        console.log("dom Tree => ");
-        console.log(domTree);
-        setCatalog(domTree.innerHTML);
+        if (!catalogJson || catalogJson.trim() === '') {
+            setCatalog('');
+            return;
+        }
+
+        try {
+            const tree = JSON.parse(catalogJson);
+            if (!Array.isArray(tree) || tree.length === 0) {
+                setCatalog('');
+                return;
+            }
+
+            const domTree = getChapterDomTree(tree);
+            setCatalog(domTree.innerHTML);
+        } catch (_error) {
+            setCatalog('');
+        }
     }, [catalogJson]);
 
     /**

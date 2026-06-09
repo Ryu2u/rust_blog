@@ -122,7 +122,6 @@ export function Admin() {
             >
                 <div className="logo" style={{
                     textAlign: 'center',
-                    padding: '16px 0',
                     fontSize: '14px',
                     fontWeight: 700,
                     color: '#e0e0e0',
@@ -153,7 +152,7 @@ export function Admin() {
             <Layout className={"layout-content"}
                     style={{
                         marginLeft: collapsed ? '80px' : '200px',
-                        minHeight: '99vh',
+                        minHeight: '100vh',
                         transition: 'all 0.3s ease',
                         background: '#000000',
                     }}
@@ -179,51 +178,35 @@ export function Admin() {
                     <div style={{fontSize: '14px', fontWeight: 500, color: '#e0e0e0'}}>
                         <span style={{ color: '#10a37f' }}>$</span> {(items as any)?.find((item: any) => item.key === window.location.pathname)?.label || '仪表盘'}
                     </div>
-                    <div style={{display: 'flex', alignItems: 'center'}}>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            marginRight: '16px'
-                        }}>
+                    <div className="admin-header-actions">
+                        <div className="admin-session-card">
                             <Avatar
                                 size={32}
                                 src={<img src="/react.svg" alt="avatar"/>}
-                                style={{
-                                    cursor: 'pointer',
-                                    border: '1px solid #333333',
-                                    marginRight: '12px',
-                                    background: '#0a0a0a',
-                                }}
+                                className="admin-session-card__avatar"
                             />
-                            <div style={{fontWeight: 500, marginRight: '5px', color: '#e0e0e0', fontSize: '13px'}}>
-                                Admin
+                            <div className="admin-session-card__meta">
+                                <div className="admin-session-card__label">active session</div>
+                                <div className="admin-session-card__name-row">
+                                    <span className="admin-session-card__name">Admin</span>
+                                    <Tag className="admin-session-card__tag">
+                                        root
+                                    </Tag>
+                                </div>
                             </div>
-                            <Tag style={{
-                                background: '#10a37f',
-                                color: '#000000',
-                                border: 'none',
-                                borderRadius: 0,
-                                fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                                fontSize: '11px',
-                            }}>
-                                root
-                            </Tag>
                         </div>
                         <Button
                             type="text"
                             icon={<LoginOutlined/>}
                             onClick={logout}
-                            style={{
-                                color: '#808080',
-                                fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                            }}
+                            className="admin-header-exit-btn"
                         >
                             exit
                         </Button>
                     </div>
                 </Header>
                 <Content className={"content-div"} style={{
-                    padding: '32px 0',
+                    padding: '24px 0 0',
                     marginBottom: '0',
                     background: '#000000',
                 }}>
@@ -243,10 +226,10 @@ export function Admin() {
                 </Content>
                 <Footer className={"footer"} style={{
                     textAlign: 'center',
-                    padding: '16px',
+                    padding: '0 16px',
                     margin: '0',
                     background: '#000000',
-                    color: '#555555',
+                    color: '#bcc5d1',
                     borderTop: '1px solid #333333',
                     fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
                     fontSize: '12px',

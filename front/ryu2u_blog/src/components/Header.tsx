@@ -22,24 +22,24 @@ export function Header() {
                     <div className={"header-menu"}>
                         <ul>
                             <li>
-                                <a href={"#"} onClick={homeClick}>
+                                <button type="button" onClick={homeClick}>
                                     home
-                                </a>
+                                </button>
                             </li>
                             <li>
-                                <a href={"#"} onClick={() => navigate("/category")}>
+                                <button type="button" onClick={() => navigate("/category")}>
                                     category
-                                </a>
+                                </button>
                             </li>
                             <li>
-                                <a href={"#"}>
+                                <button type="button">
                                     links
-                                </a>
+                                </button>
                             </li>
                             <li>
-                                <a href={"#"}>
+                                <button type="button">
                                     about
-                                </a>
+                                </button>
                             </li>
                         </ul>
 

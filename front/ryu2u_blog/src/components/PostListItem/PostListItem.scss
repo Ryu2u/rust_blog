@@ -9,15 +9,16 @@
 
 .post-list-item {
   width: 100%;
-  min-height: 160px;
+  min-height: 220px;
   display: flex;
   background-color: #0a0a0a;
   border: 1px solid #333333;
-  margin: 0 0 20px 0;
+  margin: 0 0 22px 0;
+  overflow: hidden;
 }
 
 .post-list-item:hover {
-  border-color: #444444;
+  border-color: #10a37f;
 }
 
 .post-bg {
@@ -27,7 +28,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 160px;
+  min-height: 220px;
 }
 
 .post-bg a {
@@ -49,11 +50,19 @@
 
 .recent-post-info {
   width: 60%;
-  padding: var(--post-item-spacing);
+  padding: 24px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
+}
+
+.recent-post-kicker {
+  margin-bottom: 10px;
+  color: #10a37f;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .recent-post-title {
@@ -61,12 +70,18 @@
 
   .recent-post-title-a {
     display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
     font-size: var(--post-title-font-size);
     line-height: var(--post-title-line-height);
     font-weight: 700;
     text-decoration: none;
     color: #e0e0e0;
     font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+    text-align: left;
+    cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
@@ -81,13 +96,16 @@
 }
 
 .recent-post-time {
-  color: #808080;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: #bcc5d1;
   font-size: var(--post-meta-font-size);
   font-family: Monaco, 'Courier New', 'Fira Code', monospace;
   margin-bottom: var(--post-item-spacing);
 
-  div {
-    color: #808080;
+  span {
+    color: #bcc5d1;
     line-height: 1.6;
   }
 }
@@ -105,10 +123,21 @@
   -webkit-box-orient: vertical;
 }
 
-.post-divider {
-  width: 1px;
-  background-color: #333333;
-  margin: var(--post-item-spacing) 0;
+.recent-post-readmore {
+  width: fit-content;
+  margin-top: 18px;
+  padding: 8px 12px;
+  border: 1px solid #333333;
+  background: transparent;
+  color: #cfd6df;
+  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.recent-post-readmore:hover {
+  border-color: #10a37f;
+  color: #10a37f;
 }
 
 @media (max-width: 768px) {
