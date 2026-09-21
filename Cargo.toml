@@ -34,3 +34,11 @@ bcrypt = "0.15"
 jsonwebtoken = "9"
 #markdown = "1.0.0-alpha.16"
 
+# note_sync: github/ai 同步
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+sha2 = "0.10"
+aes-gcm = "0.10"
+base64 = "0.22"
+percent-encoding = "2"
+url = "2"
+

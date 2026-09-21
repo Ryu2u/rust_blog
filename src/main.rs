@@ -24,6 +24,7 @@ mod user;
 mod utils;
 mod comment;
 mod moment;
+mod note_sync;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -32,6 +33,12 @@ async fn main() -> std::io::Result<()> {
     let rbatis = init_rbatis(db_path).await;
 
     info!("config init success!");
+
+    // GitHub 笔记同步后台任务
+    if env::var("NOTE_SYNC_ENABLED").unwrap_or_default() == "true" {
+        info!("note_sync enabled, background task starting");
+        tokio::spawn(note_sync::scheduler::start(rbatis.clone()));
+    }
 
     // 确保数据库表已创建
     info!("database init completed!");
@@ -71,6 +78,7 @@ async fn main() -> std::io::Result<()> {
                     "/comment/admin",
                     "/user/admin",
                     "/moment/admin",
+                    "/note_sync/admin",
                 ],
             }))
             .app_data(white_list)
@@ -89,6 +97,7 @@ async fn main() -> std::io::Result<()> {
                     .service(category_scope())
                     .service(comment_scope())
                     .service(moment_scope())
+                    .service(note_sync::apis::note_sync_scope())
             })
     })
     .bind(server)?

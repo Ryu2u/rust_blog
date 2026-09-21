@@ -218,7 +218,7 @@ pub struct PostTag {
     pub post_id: i32,
     pub tag_id: i32,
 }
-crud!(PostTag {});
+crud!(PostTag {}, "PostTag");
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PostCategory {
@@ -227,4 +227,4 @@ pub struct PostCategory {
     pub post_id: i32,
     pub category_id: i32,
 }
-crud!(PostCategory {});
+crud!(PostCategory {}, "PostCategory");
