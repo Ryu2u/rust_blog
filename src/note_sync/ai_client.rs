@@ -88,14 +88,37 @@ pub async fn extract_meta(
     };
 
     // 第一轮带 thinking:disabled（deepseek-flash 等推理模型省token）；供应商不认(400)则去掉重试
-    let mut resp = client.post(&url)
-        .bearer_auth(&s.api_key)
-        .json(&body_with_thinking)
+    // 网络/HTTP 错误不做外层解析重试，直接 Err 走降级
+    let content_str = request_content(&client, &url, &s.api_key, &body_with_thinking, &body_without_thinking).await?;
+    match parse_ai_meta(&content_str) {
+        Some(m) => Ok(m),
+        // spec §5.1：响应拿到了 content 但解析不成元数据时，同样的请求体整请求重发一次，
+        // 仍失败才 Err 交由调用方降级
+        None => {
+            let retry = request_content(&client, &url, &s.api_key, &body_with_thinking, &body_without_thinking).await?;
+            parse_ai_meta(&retry).ok_or_else(|| "AI 返回内容无法解析为元数据JSON".to_string())
+        }
+    }
+}
+
+/// 发送一轮对话请求并提取 assistant 的 content 文本。
+/// 语义：网络错误、HTTP 非 2xx、响应结构异常均直接 Err（不触发外层解析重试）；
+/// 400 时视为供应商不认 thinking 字段，去掉后重发一次（这是传输层适配，不属于解析重试）。
+async fn request_content(
+    client: &reqwest::Client,
+    url: &str,
+    api_key: &str,
+    body_with_thinking: &serde_json::Value,
+    body_without_thinking: &serde_json::Value,
+) -> Result<String, String> {
+    let mut resp = client.post(url)
+        .bearer_auth(api_key)
+        .json(body_with_thinking)
         .send().await.map_err(|e| format!("AI 网络错误: {}", e))?;
     if resp.status().as_u16() == 400 {
-        resp = client.post(&url)
-            .bearer_auth(&s.api_key)
-            .json(&body_without_thinking)
+        resp = client.post(url)
+            .bearer_auth(api_key)
+            .json(body_without_thinking)
             .send().await.map_err(|e| format!("AI 网络错误: {}", e))?;
     }
     let status = resp.status();
@@ -107,10 +130,9 @@ pub async fn extract_meta(
             .unwrap_or_else(|| format!("HTTP {}", status.as_u16()));
         return Err(format!("AI 调用失败: {}", msg));
     }
-    let content_str = serde_json::from_str::<serde_json::Value>(&text).ok()
+    serde_json::from_str::<serde_json::Value>(&text).ok()
         .and_then(|v| v["choices"][0]["message"]["content"].as_str().map(String::from))
-        .ok_or("AI 响应结构异常")?;
-    parse_ai_meta(&content_str).ok_or_else(|| "AI 返回内容无法解析为元数据JSON".to_string())
+        .ok_or_else(|| "AI 响应结构异常".to_string())
 }
 
 #[cfg(test)]

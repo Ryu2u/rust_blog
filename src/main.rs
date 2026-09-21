@@ -34,6 +34,12 @@ async fn main() -> std::io::Result<()> {
 
     info!("config init success!");
 
+    // GitHub 笔记同步后台任务
+    if env::var("NOTE_SYNC_ENABLED").unwrap_or_default() == "true" {
+        info!("note_sync enabled, background task starting");
+        tokio::spawn(note_sync::scheduler::start(rbatis.clone()));
+    }
+
     // 确保数据库表已创建
     info!("database init completed!");
     HttpServer::new(move || {

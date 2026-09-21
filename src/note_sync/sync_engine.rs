@@ -184,11 +184,11 @@ pub async fn run_sync_cycle(
     for (i, action) in actions.into_iter().enumerate() {
         let r = match action {
             SyncAction::Create { path, blob_sha } =>
-                apply_create(db, &mut *gh, plan, ai.as_ref(), &path, &blob_sha, &categories).await,
+                apply_create(db, &mut *gh, plan, ai.as_ref(), &path, &blob_sha, &categories, &mut stats).await,
             SyncAction::Update { map_id, post_id, path, blob_sha } =>
-                apply_update(db, &mut *gh, plan, ai.as_ref(), map_id, post_id, &path, &blob_sha, &categories).await,
+                apply_update(db, &mut *gh, plan, ai.as_ref(), map_id, post_id, &path, &blob_sha, &categories, &mut stats).await,
             SyncAction::Resurrect { map_id, post_id, path, blob_sha } =>
-                apply_resurrect(db, &mut *gh, plan, ai.as_ref(), map_id, post_id, &path, &blob_sha, &categories).await,
+                apply_resurrect(db, &mut *gh, plan, ai.as_ref(), map_id, post_id, &path, &blob_sha, &categories, &mut stats).await,
             SyncAction::SoftDelete { post_id, .. } => apply_soft_delete(db, post_id).await,
         };
         match r {
@@ -301,10 +301,12 @@ async fn apply_create(
     path: &str,
     blob_sha: &str,
     categories: &[String],
+    stats: &mut SyncStats,
 ) -> Result<String, String> {
     let content = gh.get_file(path).await.map_err(|e| { error!("{}", e); path.to_string() })?;
     let commit_ms = gh.last_commit_ms(path).await.unwrap_or(None);
     let (meta, fb) = meta_for(ai, path, &content, categories).await;
+    if fb { stats.ai_fallback += 1; }
 
     let mut post = Post::new(
         meta.title.clone(),
@@ -348,7 +350,6 @@ async fn apply_create(
         status: "ok".into(),
     };
     if NoteSyncMap::insert(db, &m).await.is_err() { return Err(path.to_string()); }
-    if fb { /* 计数由调用方通过返回值区分——简化：降级也成功 */ }
     Ok("created".into())
 }
 
@@ -362,6 +363,7 @@ async fn apply_update(
     path: &str,
     blob_sha: &str,
     categories: &[String],
+    stats: &mut SyncStats,
 ) -> Result<String, String> {
     // 冲突检测：本地改过（正文 hash != local_sha）-> 本地赢，跳过并标记
     let post = match Post::select_by_id(db, post_id).await {
@@ -373,7 +375,8 @@ async fn apply_update(
         return Ok("conflict".into());
     }
     let content = gh.get_file(path).await.map_err(|e| { error!("{}", e); path.to_string() })?;
-    let (meta, _) = meta_for(ai, path, &content, categories).await;
+    let (meta, fb) = meta_for(ai, path, &content, categories).await;
+    if fb { stats.ai_fallback += 1; }
 
     let old_ai_title = map_field(db, map_id, "ai_title").await.unwrap_or_default();
     let old_ai_view: i32 = map_field_i32(db, map_id, "ai_is_view").await.unwrap_or(post.is_view);
@@ -408,6 +411,7 @@ async fn apply_resurrect(
     path: &str,
     blob_sha: &str,
     categories: &[String],
+    stats: &mut SyncStats,
 ) -> Result<String, String> {
     // 取消软删
     if let Ok(mut v) = Post::select_by_id(db, post_id).await {
@@ -420,7 +424,7 @@ async fn apply_resurrect(
     // 内容也变了就顺带更新
     let sha_changed = map_field(db, map_id, "blob_sha").await.map(|s| s != blob_sha).unwrap_or(true);
     if sha_changed {
-        apply_update(db, gh, plan, ai, map_id, post_id, path, blob_sha, categories).await?;
+        apply_update(db, gh, plan, ai, map_id, post_id, path, blob_sha, categories, stats).await?;
     }
     Ok("resurrected".into())
 }
