@@ -113,6 +113,17 @@ CREATE TABLE note_sync_config (   -- 永远只有一行，id=1
 
 管理后台新增「同步设置」页：启用开关、base_url、api_key（密码框）、model、测试连接按钮、保存。
 
+**默认配置**（实施时播种进 `note_sync_config`，来源为用户本机 `~/Developer/dsh_workspace/credentials.yaml`）：
+
+| 项 | 值 |
+|---|---|
+| ai_base_url | `https://api.deepseek.com/v1` |
+| ai_model | `deepseek-chat`（已实测连通，严格 JSON 输出验证通过） |
+| ai_api_key | credentials.yaml 中的 `DEEPSEEK_API_KEY`（**只进数据库，不进任何 git 追踪文件**） |
+| ai_enabled | 1 |
+
+credentials.yaml 中另有 SiliconFlow / ZAI（智谱）/ OpenCode 三套 OpenAI 兼容凭据，需要时在管理后台直接切换，无需改代码。
+
 **LLM 客户端**（新增 `src/note_sync/ai_client.rs`）：
 
 - 协议：**OpenAI 兼容** `POST {base_url}/chat/completions`，`Authorization: Bearer <key>`，`temperature: 0.2`，超时 60s
