@@ -24,6 +24,7 @@ mod user;
 mod utils;
 mod comment;
 mod moment;
+mod note_sync;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {

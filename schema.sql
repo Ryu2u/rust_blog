@@ -121,3 +121,37 @@ CREATE TABLE `tb_user` (
     `locked` TINYINT NOT NULL DEFAULT 0 COMMENT '是否锁定(0:否 1:是)',
     `role` VARCHAR(20) NOT NULL DEFAULT 'user' COMMENT '角色(admin:管理员 user:普通用户)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+
+-- ----------------------------
+-- GitHub 笔记同步映射表
+-- ----------------------------
+DROP TABLE IF EXISTS `note_sync_map`;
+CREATE TABLE `note_sync_map` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `github_path` VARCHAR(512) NOT NULL,
+  `blob_sha` CHAR(40) NOT NULL,
+  `local_sha` CHAR(64) NOT NULL DEFAULT '',
+  `post_id` INT NOT NULL,
+  `ai_title` VARCHAR(255) NOT NULL DEFAULT '',
+  `ai_is_view` TINYINT NOT NULL DEFAULT 0,
+  `ai_reason` VARCHAR(512) NOT NULL DEFAULT '',
+  `last_commit_time` BIGINT NULL,
+  `synced_at` BIGINT NOT NULL,
+  `status` VARCHAR(16) NOT NULL DEFAULT 'ok',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_github_path` (`github_path`(255))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------
+-- 笔记同步 LLM 配置（单行）
+-- ----------------------------
+DROP TABLE IF EXISTS `note_sync_config`;
+CREATE TABLE `note_sync_config` (
+  `id` TINYINT NOT NULL DEFAULT 1,
+  `ai_enabled` TINYINT NOT NULL DEFAULT 0,
+  `ai_base_url` VARCHAR(255) NOT NULL DEFAULT '',
+  `ai_api_key` VARCHAR(512) NOT NULL DEFAULT '',
+  `ai_model` VARCHAR(128) NOT NULL DEFAULT '',
+  `updated_at` BIGINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
