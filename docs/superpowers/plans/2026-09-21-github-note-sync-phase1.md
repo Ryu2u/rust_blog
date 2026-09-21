@@ -72,7 +72,7 @@ cat >> .env <<EOF
 NOTE_SYNC_ENABLED=true
 NOTE_SYNC_REPO=Ryu2u/md_note
 NOTE_SYNC_BRANCH=
-NOTE_SYNC_TOKEN=GITHUB_PAT_REMOVED
+NOTE_SYNC_TOKEN=<真实PAT见本机.env，勿写入任何被跟踪文件>
 NOTE_SYNC_INTERVAL_MIN=30
 NOTE_SYNC_ROOT=笔记/
 NOTE_SYNC_EXCLUDE_DIRS=.obsidian,.trash
@@ -1972,7 +1972,7 @@ curl -s -c /tmp/cj.txt -X POST localhost:9002/user/login -H 'Content-Type: appli
 curl -s -b /tmp/cj.txt localhost:9002/note_sync/admin/config
 # Expected: {"code":200,...ai_enabled":0,"ai_base_url":""...}（尚无配置行）
 curl -s -b /tmp/cj.txt -X POST localhost:9002/note_sync/admin/config -H 'Content-Type: application/json' \
-  -d '{"ai_enabled":1,"ai_base_url":"https://api.deepseek.com/v1","ai_model":"deepseek-flash","ai_api_key":"DEEPSEEK_KEY_REMOVED"}'
+  -d '{"ai_enabled":1,"ai_base_url":"https://api.deepseek.com/v1","ai_model":"deepseek-flash","ai_api_key":"<真实key由控制台在派发时单独提供，勿写入任何被跟踪文件>"}'
 # Expected: {"code":200,"msg":"保存成功!"...}
 curl -s -b /tmp/cj.txt localhost:9002/note_sync/admin/config
 # Expected: ai_api_key_masked = "sk-74***ae7a"，不出现完整key
