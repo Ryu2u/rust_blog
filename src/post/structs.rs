@@ -192,6 +192,26 @@ impl_select!(
     }
 );
 
+/// 标签云条目：标签名称 + 关联文章数
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TagCount {
+    /// 标签名称
+    pub name: String,
+    /// 关联文章数量
+    pub count: i32,
+}
+
+/// 按标签分页查询文章列表的请求体
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TagPostsQuery {
+    /// 标签名称
+    pub tag_name: String,
+    /// 页码 从 1 开始
+    pub page_num: i32,
+    /// 每页数量
+    pub page_size: i32,
+}
+
 /// 文章类别
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Category {

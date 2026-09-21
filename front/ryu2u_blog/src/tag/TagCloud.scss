@@ -1,0 +1,40 @@
+/* 标签云组件样式：终端风格，与分类页/标签页共用 */
+
+.tag-cloud__total {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-font-default);
+  opacity: 0.6;
+  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+}
+
+/* 标签内右上角的文章数 */
+.tag-cloud__count {
+  margin-left: 6px;
+  font-size: 11px;
+  opacity: 0.65;
+  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+}
+
+.tag-cloud__toggle {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.tag-cloud__toggle-btn {
+  padding: 4px 14px;
+  background: transparent;
+  border: 1px solid #333333;
+  color: #808080;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+}

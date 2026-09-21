@@ -1,11 +1,11 @@
 use actix_web::{get, post, web, Responder};
 
-use crate::post::structs::Tag;
+use crate::post::structs::{Post, Tag, TagCount, TagPostsQuery};
 use crate::utils::parse_slug;
 use crate::Exception::BadRequest;
 use crate::{Exception, R};
-use rbatis::RBatis;
-use rbs::to_value;
+use rbatis::{rbdc, RBatis};
+use rbs::{to_value, Value};
 use tracing::instrument;
 use tracing::log::error;
 
@@ -16,6 +16,8 @@ pub fn tag_scope() -> actix_web::Scope {
         .service(api_tag_del)
         .service(api_tag_update)
         .service(api_get_tag_by_post_id)
+        .service(api_tag_cloud)
+        .service(api_post_list_by_tag)
 }
 
 #[instrument]
@@ -134,6 +136,68 @@ pub async fn get_tag_by_post_id(post_id: i32, db: &RBatis) -> Vec<Tag> {
     }
 }
 
+/// 标签云：所有被文章引用的标签及文章数量，按数量倒序
+#[instrument]
+#[post("/cloud")]
+async fn api_tag_cloud(db: web::Data<RBatis>) -> Result<impl Responder, Exception> {
+    match tag_cloud(&**db).await {
+        Ok(vec) => Ok(R::ok_obj(vec)),
+        Err(e) => Err(BadRequest(e.to_string())),
+    }
+}
+
+pub async fn tag_cloud(db: &RBatis) -> Result<Vec<TagCount>, rbdc::Error> {
+    db.query_decode(
+        "select t.name as name, count(*) as count from PostTag as pt \
+         join tag as t on t.id = pt.tag_id \
+         group by t.name order by count desc",
+        vec![],
+    )
+    .await
+}
+
+/// 按标签名称分页查询已展示的文章
+#[instrument]
+#[post("/posts")]
+async fn api_post_list_by_tag(
+    query: web::Json<TagPostsQuery>,
+    db: web::Data<RBatis>,
+) -> Result<impl Responder, Exception> {
+    let limit = (query.page_num - 1) * query.page_size;
+    match post_list_by_tag(
+        query.tag_name.clone(),
+        limit,
+        query.page_size,
+        &**db,
+    )
+    .await
+    {
+        Ok(vec) => Ok(R::ok_obj(vec)),
+        Err(e) => Err(BadRequest(e.to_string())),
+    }
+}
+
+pub async fn post_list_by_tag(
+    tag_name: String,
+    limit: i32,
+    page_size: i32,
+    db: &RBatis,
+) -> Result<Vec<Post>, rbdc::Error> {
+    db.query_decode(
+        "select b.* from PostTag as a \
+         join post as b on a.post_id = b.id \
+         join tag as t on a.tag_id = t.id \
+         where t.name = ? and b.is_view = 1 and b.is_deleted = 0 \
+         order by b.update_time desc limit ?,?",
+        vec![
+            Value::String(tag_name),
+            Value::I32(limit),
+            Value::I32(page_size),
+        ],
+    )
+    .await
+}
+
 #[cfg(test)]
 mod tests {
     use crate::before_start;
@@ -167,6 +231,11 @@ mod tests {
                 description: Some(language.to_string()),
                 priority: None,
             };
+            // 幂等：同名标签已存在则跳过，避免重复运行在 tag 表堆积重复行
+            match Tag::select_by_column(&rbatis, "name", &tag.name).await {
+                Ok(existing) if !existing.is_empty() => continue,
+                _ => {}
+            }
             tag_add(tag, &rbatis).await.unwrap();
         }
     }

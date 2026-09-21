@@ -61,6 +61,8 @@ async fn main() -> std::io::Result<()> {
             "/comment/list",
             "/tag/list",
             "/tag/post",
+            "/tag/cloud",
+            "/tag/posts",
         ]);
 
         App::new()

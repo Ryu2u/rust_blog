@@ -4,10 +4,11 @@
  */
 import "./PostPage.scss"
 import {useEffect, useRef, useState} from "react";
-import {useParams} from "react-router";
-import {Post, Comment} from "../../common/Structs";
+import {useNavigate, useParams} from "react-router";
+import {Post, Comment, Tag} from "../../common/Structs";
 import PostService from "../../service/PostService";
 import CommentService from "../../service/CommentService";
+import TagService from "../../service/TagService";
 import {SideBar} from "../SideBar";
 import {CatalogCard} from "../Card/CatalogCard";
 import "../../home/md.scss"
@@ -154,7 +155,10 @@ export function PostPage() {
     const postRef = useRef(new Post());
     const param = useParams();
     const postId = param['id'];
+    const navigate = useNavigate();
     const [catalogJson, setCatalogJson] = useState("");
+    // 该文章自己的标签
+    const [postTags, setPostTags] = useState<Tag[]>([]);
 
     // 评论相关状态
     const [comments, setComments] = useState<Comment[]>([]);
@@ -251,6 +255,19 @@ export function PostPage() {
             setLoading(false);
         })
 
+    }, [postId])
+
+    // 加载该文章自己的标签
+    useEffect(() => {
+        if (!postId) {
+            setPostTags([]);
+            return;
+        }
+        TagService.tagsByPost(Number(postId)).then((result) => {
+            if (result.code === 200) {
+                setPostTags((result.obj as Tag[]) || []);
+            }
+        }).catch(() => setPostTags([]));
     }, [postId])
 
     useEffect(() => {
@@ -494,6 +511,26 @@ export function PostPage() {
                                      }}>
                                 </div>
                             </div>
+
+                            {/* 文章标签：点击跳转到对应标签页 */}
+                            {postTags.length > 0 && (
+                                <div className="post-tags">
+                                    <span className="post-tags__label">
+                                        <span className="post-tags__prompt">$</span> tags
+                                    </span>
+                                    <div className="post-tags__list">
+                                        {postTags.map((tagItem) => (
+                                            <span
+                                                key={tagItem.id}
+                                                className="post-tag"
+                                                onClick={() => navigate(`/tag/${encodeURIComponent(tagItem.name)}`)}
+                                            >
+                                                {tagItem.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* 评论区域 */}
                             <div className="comment-section">

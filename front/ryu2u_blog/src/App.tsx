@@ -4,6 +4,7 @@ import {Navigate, Route, Routes} from "react-router";
 import {Home} from "./home/Home";
 import {PostPage} from "./components/Post/PostPage";
 import {CategoryPage} from "./category/CategoryPage.tsx";
+import {TagPage} from "./tag/TagPage.tsx";
 import {Header} from "./components/Header";
 import {Footer} from "./components/Footer";
 
@@ -19,6 +20,7 @@ function App() {
                     <Route path={"/post/:id"} element={<PostPage />}></Route>
                     <Route path={"/category"} element={<CategoryPage />}></Route>
                     <Route path={"/category/:tag"} element={<CategoryPage />}></Route>
+                    <Route path={"/tag/:name"} element={<TagPage />}></Route>
                 </Routes>
                 <Footer/>
             </BrowserRouter>

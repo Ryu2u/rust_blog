@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react';
 export function Weather() {
     const [weatherData, setWeatherData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error] = useState(null);
 
     /**
      * 组件挂载时获取天气数据

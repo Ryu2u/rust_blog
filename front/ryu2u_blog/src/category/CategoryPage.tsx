@@ -1,14 +1,14 @@
 import './category.scss'
 import {useEffect, useState, useCallback} from "react";
 import {SideBar} from "../components/SideBar";
-import {Category, PageInfo, Post} from "../common/Structs";
+import {PageInfo, Post, TagCount} from "../common/Structs";
 import {PostListItem} from "../components/PostListItem/PostListItem";
 import {FloatList} from "../components/FloatList";
 import {useParams, useNavigate} from "react-router-dom";
-import {Tag, Card, Empty, Typography, Space} from "antd";
-import {TagOutlined} from "@ant-design/icons";
-import CategoryService from "../service/CategoryService.ts";
+import {Card, Empty, Typography} from "antd";
 import PostService from "../service/PostService.ts";
+import TagService from "../service/TagService.ts";
+import {TagCloud} from "../tag/TagCloud.tsx";
 
 const {Title} = Typography;
 
@@ -17,13 +17,14 @@ export function CategoryPage() {
     const {tag} = useParams<{tag: string}>();
     const navigate = useNavigate();
     const [postList, setPostList] = useState<Post[]>([]);
-    const [tags, setTags] = useState<string[]>([]);
+    const [tags, setTags] = useState<TagCount[]>([]);
 
     useEffect(() => {
-        // get all tags
-        CategoryService.categoryList().then((res) => {
-            const data = res.obj as Category[];
-            setTags(data.map(v => v.name));
+        // get all tags（标签云：已被文章引用的标签 + 文章数，后端按文章数倒序）
+        TagService.cloud().then((res) => {
+            if (res.code === 200) {
+                setTags(res.obj as TagCount[] || []);
+            }
         });
     }, []);
 
@@ -44,9 +45,9 @@ export function CategoryPage() {
 
     }, [tag]);
 
-    // 处理标签点击
+    // 处理标签点击：跳转到标签页
     const handleTagClick = (clickedTag: string) => {
-        navigate(`/category/${clickedTag}`);
+        navigate(`/tag/${encodeURIComponent(clickedTag)}`);
     };
 
     useEffect(() => {
@@ -75,38 +76,7 @@ export function CategoryPage() {
                     </Card>
 
                     {/* 标签云 */}
-                    <Card
-                        className="tag-cloud"
-                        bordered={false}
-                        style={{
-                            backgroundColor: 'var(--color-post-content-bg-default)',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                        }}
-                    >
-                        <Title level={3} style={{color: 'var(--color-font-default)'}}><TagOutlined
-                            style={{color: 'var(--color-primary)'}}/> 所有标签</Title>
-                        <Space size={[12, 12]} wrap>
-                            {tags.map((tagItem) => (
-                                <Tag
-                                    key={tagItem}
-                                    onClick={() => handleTagClick(tagItem)}
-                                    style={{
-                                        cursor: 'pointer',
-                                        fontSize: '14px',
-                                        padding: '4px 12px',
-                                        borderRadius: '16px',
-                                        backgroundColor: tag === tagItem ? 'var(--color-primary)' : 'transparent',
-                                        color: tag === tagItem ? '#fff' : 'var(--color-font-default)',
-                                        border: `1px solid ${tag === tagItem ? 'var(--color-primary)' : 'var(--color-font-default)'}`,
-                                        opacity: tag === tagItem ? 1 : 0.8,
-                                        transition: 'all 0.3s ease'
-                                    }}
-                                >
-                                    {tagItem}
-                                </Tag>
-                            ))}
-                        </Space>
-                    </Card>
+                    <TagCloud tags={tags} onTagClick={handleTagClick}/>
 
                     {/* 文章列表 */}
                     {tag ? (
@@ -139,7 +109,7 @@ export function CategoryPage() {
                             }}
                         >
                             <Empty
-                                description="请点击上方标签查看对应分类的文章"
+                                description="请点击上方标签查看对应文章"
                                 style={{color: 'var(--color-font-default)'}}
                             />
                         </Card>
