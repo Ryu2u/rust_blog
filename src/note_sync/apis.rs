@@ -39,7 +39,7 @@ pub struct AiTestVo { pub reply: String }
 
 pub fn mask_key(key: &str) -> String {
     let n = key.chars().count();
-    if n <= 8 {
+    if n <= 9 {
         "***".into()
     } else {
         let c: Vec<char> = key.chars().collect();
@@ -163,6 +163,7 @@ mod tests {
         assert_eq!(mask_key("sk-abcdefgh1234"), "sk-ab***1234");
         assert_eq!(mask_key("short"), "***");
         assert_eq!(mask_key(""), "***");
+        assert_eq!(mask_key("123456789"), "***");
     }
     #[test]
     fn test_should_update_key() {

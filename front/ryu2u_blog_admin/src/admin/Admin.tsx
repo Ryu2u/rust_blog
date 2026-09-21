@@ -6,6 +6,7 @@ import {DynamicBreadcrumb} from "../comonents/DynamicBreadcrumb";
 import {
     DashboardOutlined, InfoCircleOutlined, LoginOutlined,
     MessageOutlined, ReadOutlined, ReconciliationOutlined, UserOutlined,
+    CloudSyncOutlined,
 } from '@ant-design/icons';
 import {MenuProps, Tag} from 'antd';
 import {Avatar, Button, Layout, Menu, theme} from 'antd';
@@ -52,6 +53,14 @@ const items: MenuProps['items'] = [
         title: '说说',
         label: "说说",
         icon: createElement(ReconciliationOutlined),
+        disabled: false,
+        danger: false
+    },
+    {
+        key: "/notesync",
+        title: '同步设置',
+        label: "同步设置",
+        icon: createElement(CloudSyncOutlined),
         disabled: false,
         danger: false
     },

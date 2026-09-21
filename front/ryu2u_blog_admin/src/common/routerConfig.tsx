@@ -7,6 +7,7 @@ import {ArticlePage} from "../admin/article/ArticlePage";
 import {UserListPage} from "../admin/user/UserListPage";
 import {UserEditPage} from "../admin/user/UserEditPage";
 import {AboutPage} from "../admin/about/AboutPage";
+import {SyncSettingsPage} from "../admin/notesync/SyncSettingsPage";
 
 interface RouteConfig {
     path: string;
@@ -99,6 +100,14 @@ export const routeConfig: RouteConfig[] = [
         breadcrumb: [
             { title: '首页', path: '/dashboard' },
             { title: '说说管理' }
+        ]
+    },
+    {
+        path: '/notesync',
+        element: SyncSettingsPage,
+        breadcrumb: [
+            { title: '首页', path: '/dashboard' },
+            { title: '同步设置' }
         ]
     },
     {
