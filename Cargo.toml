@@ -40,4 +40,5 @@ sha2 = "0.10"
 aes-gcm = "0.10"
 base64 = "0.22"
 percent-encoding = "2"
+url = "2"
 
