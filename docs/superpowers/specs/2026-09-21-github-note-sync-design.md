@@ -3,7 +3,7 @@
 - **日期**: 2026-09-21
 - **状态**: 待评审
 - **仓库**: `Ryu2u/md_note`（私有，默认分支 `master`，已验证 PAT 具备 Contents 读写权限）
-- **修订**: v2.2 — 增加 AI 调用安全加固（防中继/加密落库/传输/SSRF/审计）
+- **修订**: v2.3 — AI 增加公开性审查（public/reason 字段，降级默认隐藏，人工开关优先）
 
 ## 1. 目标
 
@@ -61,6 +61,8 @@ CREATE TABLE note_sync_map (
   local_sha        CHAR(64)     NOT NULL DEFAULT '',  -- 上次同步成功时本地正文 SHA-256
   post_id          INT          NOT NULL,
   ai_title         VARCHAR(255) NOT NULL DEFAULT '',  -- 上次 AI 生成的标题（更新时判断后台是否改过标题）
+  ai_is_view       TINYINT NOT NULL DEFAULT 0,       -- 上次 AI 公开性判定（更新时判断后台是否手动拨过开关）
+  ai_reason        VARCHAR(512) NOT NULL DEFAULT '', -- AI 判定不可公开时的理由（可追溯）
   last_commit_time BIGINT       NULL,             -- 该文件最近一次 git 提交时间（epoch ms）
   synced_at        BIGINT       NOT NULL,
   status           VARCHAR(16)  NOT NULL DEFAULT 'ok',  -- 'ok' | 'conflicted'
@@ -76,7 +78,7 @@ CREATE TABLE note_sync_map (
 | title | **AI 生成**（≤30 字可读标题）；AI 不可用时降级为文件名去扩展名 |
 | author | `NOTE_SYNC_AUTHOR`（默认 `Ryu2u`） |
 | 分类 | **AI 从现有分类中选**（prompt 附带分类名列表，也可新建）；同时固定关联默认分类「笔记」；AI 不可用时仅挂「笔记」 |
-| is_view | 1（直接发布） |
+| is_view | **AI 公开性审查决定**：判定可公开=1；判定含敏感内容（隐私/凭据/公司机密/草稿碎片）=0 入库但隐藏；**AI 失败降级时=0 默认隐藏**（审查闸门失效则宁可不发布）。人工可在后台手动改 |
 | original_content | Markdown 原文（UTF-8） |
 | format_content | 现有 `pulldown-cmark` 渲染的 HTML |
 | summary | **AI 生成**一句话摘要（≤80 字）；降级为正文剥离 Markdown 后截 200 字符 |
@@ -127,15 +129,16 @@ credentials.yaml 中另有 SiliconFlow / ZAI（智谱）/ OpenCode 三套 OpenAI
 **LLM 客户端**（新增 `src/note_sync/ai_client.rs`）：
 
 - 协议：**OpenAI 兼容** `POST {base_url}/chat/completions`，`Authorization: Bearer <key>`，`temperature: 0.2`，超时 60s
-- System prompt：要求只输出 JSON——`{"title":"≤30字","summary":"≤80字","tags":["3-5个"],"category":"分类名"}`，并附现有分类名列表要求优先从中选择；正文过长时截前 6000 字符送入
-- 解析：剥 ` ```json ` 围栏 → serde 反序列化为 `AiMeta` → 失败重试 1 次 → 仍失败**降级**（文件名标题 + 截断摘要 + 无标签 + 仅「笔记」分类），warn 日志；**降级不会自动重试**，直到内容再变化或后台手动修改
+- System prompt：要求只输出 JSON——`{"title":"≤30字","summary":"≤80字","tags":["3-5个"],"category":"分类名","public":true|false,"reason":"public为false时的一句话理由"}`，并附现有分类名列表要求优先从中选择；正文过长时截前 6000 字符送入
+- **公开性审查**：AI 按以下标准判定 `public`——含个人隐私（证件号/手机号/住址）、凭据密钥（API key/密码/token）、公司敏感（出差报表/薪资/客户信息/内网架构）、不宜公开的草稿碎片，命中任一即 `public:false` 并给出 `reason`；判定与理由存入映射表（`ai_is_view`/`ai_reason`）
+- 解析：剥 ` ```json ` 围栏 → serde 反序列化为 `AiMeta` → 失败重试 1 次 → 仍失败**降级**（文件名标题 + 截断摘要 + 无标签 + 仅「笔记」分类 + **is_view=0 默认隐藏**），warn 日志；**降级不会自动重试**，直到内容再变化或后台手动修改
 
 **触发与更新规则**：
 
 | 场景 | AI 行为 |
 |---|---|
-| 新文件导入 | 全量生成四个字段 |
-| 内容更新（blob_sha 变） | 重新生成 summary/tags/category；标题带保护：`note_sync_map` 新增列 `ai_title` 记录上次 AI 标题，仅当 `post.title == ai_title`（后台没改过）才替换，否则保留后台标题 |
+| 新文件导入 | 全量生成五个字段（含 public 判定与理由） |
+| 内容更新（blob_sha 变） | 重新生成 summary/tags/category/public；标题带保护：`note_sync_map` 新增列 `ai_title` 记录上次 AI 标题，仅当 `post.title == ai_title`（后台没改过）才替换，否则保留后台标题；**is_view 同款保护**：仅当 `post.is_view == ai_is_view`（后台没手动拨过开关）才应用新判定，人工决定优先 |
 | 删除/复活 | 不涉及 AI，复用已有元数据 |
 
 **成本与节奏**：首次导入 132 篇 = 132 次串行 LLM 调用（约 10-20 分钟），后台执行不阻塞任何请求，每 10 篇打一条进度日志；调度器用 AtomicBool 防上一轮未跑完时重叠触发。
@@ -239,7 +242,7 @@ NOTE_SYNC_AI_ALLOW_HTTP=0    # 1=放行 http:// 的 base_url（仅本机 Ollama 
 
 ## 10. 测试
 
-- **单元（不联网）**：`sync_engine` 差分纯函数用 fixture 数据覆盖 create/update/soft-del/resurrect/skip/conflicted/超限/排除目录全部分支；标题、摘要、word_count 推导；path percent-encode；`ai_client` 的 JSON 解析（正常/带围栏/截断/非法 → 重试与降级路径）用 fixture 响应体测试；config 接口的 key 掩码逻辑
+- **单元（不联网）**：`sync_engine` 差分纯函数用 fixture 数据覆盖 create/update/soft-del/resurrect/skip/conflicted/超限/排除目录全部分支；标题、摘要、word_count 推导；path percent-encode；`ai_client` 的 JSON 解析（正常/带围栏/截断/非法 → 重试与降级路径，public/reason 字段）用 fixture 响应体测试；config 接口的 key 掩码逻辑；`is_view`/标题的人工保护判定
 - **集成（手动）**：Phase 1 完成后对真实仓库跑一轮，核对 132 篇文章、AI 标题/摘要/标签/分类、时间；在 GitHub 网页上改一个文件 → ≤30 分钟本地更新；删一个文件 → 文章隐藏；管理后台配置 LLM → 测试连接 → 保存 → key 掩码回显
 - **Phase 2**：后台编辑保存 → 核对 GitHub commit；构造双向同时修改 → 验证冲突弹窗两条路径
 
