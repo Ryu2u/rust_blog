@@ -2,12 +2,7 @@ import {PageInfo, Result} from "../common/Structs";
 import http_client from "../common/HttpClient";
 
 export default {
-    /** 获取全部标签（管理用，公开可读） */
-    tagList(): Promise<Result> {
-        return http_client.post("/tag/list");
-    },
-
-    /** 标签云：所有被文章引用的标签及其文章数，按文章数倒序 */
+    /** 标签云：所有被公开文章引用的标签及其文章数，按文章数倒序 */
     cloud(): Promise<Result> {
         return http_client.post("/tag/cloud");
     },

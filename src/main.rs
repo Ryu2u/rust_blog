@@ -59,7 +59,8 @@ async fn main() -> std::io::Result<()> {
             "/category/**",
             "/comment/add",
             "/comment/list",
-            "/tag/list",
+            // /tag/list 不对外公开：返回全部标签行（含仅被隐藏文章引用的标签名），
+            // 需要登录态才能访问（后台标签管理带 cookie 不受影响）
             "/tag/post",
             "/tag/cloud",
             "/tag/posts",

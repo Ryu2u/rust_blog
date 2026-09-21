@@ -178,9 +178,17 @@ async fn api_post_list_by_category(
 ) -> Result<impl Responder, Exception> {
     let page_num = page_info.page_num;
     let page_size = page_info.page_size;
+    // 分页入参校验：否则 limit 可能为负，直接变成 SQL 语法错误
+    if page_num < 1 || page_size < 1 {
+        return Err(BadRequest("page_num 与 page_size 必须为正整数".to_string()));
+    }
     let limit = (page_num - 1) * page_size;
     match Post::select_by_category(&**db, name.into_inner(), limit, page_size).await {
-        Ok(vec) => Ok(R::ok_obj(vec)),
+        Ok(mut vec) => {
+            // 公开列表脱敏：口令与正文都不下发
+            vec.iter_mut().for_each(|item| item.filter_public_list());
+            Ok(R::ok_obj(vec))
+        }
         Err(e) => Err(BadRequest(e.to_string())),
     }
 }
@@ -238,8 +246,14 @@ async fn post_list_page(
     if let Ok(mut vec) = res {
         let mut iter = vec.iter_mut();
         while let Some(item) = iter.next() {
-            item.format_content = "".to_string();
-            item.original_content = "".to_string();
+            if is_admin {
+                // 后台列表：保留 password（后台可能要用），仅清正文（既有行为）
+                item.format_content = String::new();
+                item.original_content = String::new();
+            } else {
+                // 公开列表脱敏：口令与正文都不下发
+                item.filter_public_list();
+            }
             let tag_vec = get_tag_by_post_id(item.id.unwrap(), &**db).await;
             item.tags = Some(tag_vec);
         }
@@ -294,6 +308,9 @@ async fn post_get(
         if Post::update_by_column(&**db, &post, "id").await.is_err() {
             Err(Exception::BadRequest("update post failed!".to_string()))
         } else {
+            // 公开详情页脱敏：口令不下发。
+            // 必须在 update_by_column 之后调用，否则 password=None 会被一并写回数据库
+            post.filter_pwd();
             Ok(R::<Post>::ok_obj(post))
         }
     } else {

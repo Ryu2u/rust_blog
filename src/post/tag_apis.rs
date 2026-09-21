@@ -172,6 +172,10 @@ async fn api_post_list_by_tag(
     query: web::Json<TagPostsQuery>,
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
+    // 分页入参校验：否则 limit 可能为负，直接变成 SQL 语法错误
+    if query.page_num < 1 || query.page_size < 1 {
+        return Err(BadRequest("page_num 与 page_size 必须为正整数".to_string()));
+    }
     let limit = (query.page_num - 1) * query.page_size;
     match post_list_by_tag(
         query.tag_name.clone(),
@@ -181,7 +185,11 @@ async fn api_post_list_by_tag(
     )
     .await
     {
-        Ok(vec) => Ok(R::ok_obj(vec)),
+        Ok(mut vec) => {
+            // 公开列表脱敏：口令与正文都不下发（与 /post/page 口径一致）
+            vec.iter_mut().for_each(|item| item.filter_public_list());
+            Ok(R::ok_obj(vec))
+        }
         Err(e) => Err(BadRequest(e.to_string())),
     }
 }

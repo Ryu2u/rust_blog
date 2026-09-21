@@ -103,14 +103,26 @@ impl Post {
             .unwrap()
     }
 
-    /// 统计文章总数(已展示的)
+    /// 统计文章总数(已展示的，且未软删)
     pub async fn count_view(db: &RBatis) -> i32 {
         db.query_decode(
-            "select count(*) as count from post where is_view = 1",
+            "select count(*) as count from post where is_view = 1 and is_deleted = 0",
             vec![],
         )
         .await
         .unwrap()
+    }
+
+    /// 公开响应脱敏：口令字段永不下发
+    pub fn filter_pwd(&mut self) {
+        self.password = None;
+    }
+
+    /// 公开列表脱敏：口令与正文都不下发（体积与口径同 /post/page）
+    pub fn filter_public_list(&mut self) {
+        self.filter_pwd();
+        self.format_content = String::new();
+        self.original_content = String::new();
     }
 
     /// 文章是否存在且对公众可见（is_view = 1 且未软删）
@@ -152,7 +164,7 @@ impl_select!(
 impl_select!(
     Post{
         select_page(offset:i32,size: i32) => "`where is_view = 1 and is_deleted = 0 order by \
-        top_priority desc , update_time desc limit  #{offset} , #{size}`"
+        top_priority desc , update_time desc , id desc limit  #{offset} , #{size}`"
     }
 );
 
@@ -160,7 +172,7 @@ impl_select!(
 impl_select!(
     Post{
         select_page_admin(offset:i32,size: i32) => "`where is_deleted = 0 order by update_time \
-        desc \
+        desc , id desc \
         limit ${offset} , #{size}`"
     }
 );
