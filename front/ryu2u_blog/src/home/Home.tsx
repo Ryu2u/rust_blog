@@ -17,6 +17,20 @@ function createPageInfo(pageNum: number, pageSize: number): PageInfo {
     };
 }
 
+/// 窗口式页码：恒显第 1 页与最后一页，当前页左右各 2 个，间隙折叠为省略号
+function buildPageNumbers(pageNum: number, pageSize: number, total: number): (number | '...')[] {
+    const totalPages = Math.max(1, Math.ceil((total || 0) / Math.max(1, pageSize)));
+    const pages: (number | '...')[] = [];
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || Math.abs(i - pageNum) <= 2) {
+            pages.push(i);
+        } else if (pages[pages.length - 1] !== '...') {
+            pages.push('...');
+        }
+    }
+    return pages;
+}
+
 export function Home() {
     const navigate = useNavigate();
     const [postList, setPostList] = useState<Post[]>([]);
@@ -181,22 +195,32 @@ export function Home() {
                                         <button type="button" onClick={() => getPageList(pageInfo.page_num - 1, pageInfo.page_size)}>«</button>
                                     </li>
                                 )}
-                                <li>
-                                    <button type="button" className={"active"}>{pageInfo.page_num}</button>
-                                </li>
+                                {buildPageNumbers(pageInfo.page_num, pageInfo.page_size, pageInfo.total).map((item, idx) =>
+                                    item === '...'
+                                        ? <li key={`ellipsis-${idx}`} className="pagination-ellipsis">…</li>
+                                        : (
+                                            <li key={item}>
+                                                <button
+                                                    type="button"
+                                                    className={item === pageInfo.page_num ? 'active' : ''}
+                                                    onClick={() => getPageList(item, pageInfo.page_size)}
+                                                >
+                                                    {item}
+                                                </button>
+                                            </li>
+                                        )
+                                )}
                                 {(pageInfo.page_num * pageInfo.page_size < pageInfo.total) && (
-                                    <>
-                                        <li>
-                                            <button type="button" onClick={() => getPageList(pageInfo.page_num + 1, pageInfo.page_size)}>
-                                                {pageInfo.page_num + 1}
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button type="button" onClick={() => getPageList(pageInfo.page_num + 1, pageInfo.page_size)}>»</button>
-                                        </li>
-                                    </>
+                                    <li>
+                                        <button type="button" onClick={() => getPageList(pageInfo.page_num + 1, pageInfo.page_size)}>»</button>
+                                    </li>
                                 )}
                             </ul>
+                            {(pageInfo.total > 0) && (
+                                <div className="pagination-total">
+                                    共 {Math.ceil(pageInfo.total / pageInfo.page_size)} 页 · {pageInfo.total} 篇
+                                </div>
+                            )}
                         </div>
                     </section>
                 </div>

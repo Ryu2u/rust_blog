@@ -157,6 +157,19 @@ ul.pagination li button.active {
   border-color: #10a37f;
 }
 
+ul.pagination li.pagination-ellipsis {
+  color: #808080;
+  padding: 4px 6px;
+  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+}
+
+.pagination-total {
+  margin-top: var(--spacing-sm);
+  color: #808080;
+  font-size: 12px;
+  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+}
+
 .footer {
   width: 100%;
   text-align: left;
