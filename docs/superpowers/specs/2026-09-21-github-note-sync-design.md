@@ -3,7 +3,7 @@
 - **日期**: 2026-09-21
 - **状态**: 待评审
 - **仓库**: `Ryu2u/md_note`（私有，默认分支 `master`，已验证 PAT 具备 Contents 读写权限）
-- **修订**: v2 — 增加 AI 元数据生成层（管理后台可配置 LLM，生成标题/摘要/标签/分类）
+- **修订**: v2.2 — 增加 AI 调用安全加固（防中继/加密落库/传输/SSRF/审计）
 
 ## 1. 目标
 
@@ -207,11 +207,25 @@ NOTE_SYNC_EXCLUDE_DIRS=.obsidian,.trash
 NOTE_SYNC_AUTHOR=Ryu2u
 NOTE_SYNC_CATEGORY=笔记
 NOTE_SYNC_MAX_FILE_KB=1024
+NOTE_SYNC_AI_ENC_KEY=<32字节随机数的base64，加密AI key用>   # openssl rand -base64 32
+NOTE_SYNC_AI_ALLOW_HTTP=0    # 1=放行 http:// 的 base_url（仅本机 Ollama 等场景）
 ```
 
 **`.env` 治理（随本工程执行）**：`.env` 目前被提交进 git（已含 DB 密码、JWT_SECRET）。将 `.gitignore` 加入 `.env`，`git rm --cached .env`，新增不含密钥的 `.env.example`。历史泄露建议另行轮换 DB 密码与 JWT_SECRET（超出本工程范围，仅提示）。
 
 `NOTE_SYNC_ENABLED=false` 时完全跳过模块初始化，行为与现在一致。
+
+### 8.1 AI 调用安全加固（v2.2 新增）
+
+| 威胁 | 对策 |
+|---|---|
+| 博客被当作 LLM 开放中继（白嫖 key 额度） | AI 调用只存在于两处：后台同步循环（输入=用户自己仓库的笔记内容）、admin 测试接口（固定极小 prompt + `max_tokens` 上限 + 10 秒滑动窗内仅一次的内存限速）。**不变量：任何未认证/普通用户端点永远不透传 LLM 调用**，后续功能也不得违反 |
+| key 拖库/备份泄露 | `ai_api_key` 以 **AES-256-GCM 加密**落库，主密钥 `NOTE_SYNC_AI_ENC_KEY`（32 字节 base64）放 `.env`（不进 git）。DB 与 .env 分离存储，单侧泄露拿不到可用 key |
+| 传输截获 | `ai_base_url` 强制 https（http 拒绝）；reqwest + rustls 证书校验**不可关闭**；超时 60s。日志与错误信息绝不包含 key、Authorization 头、完整请求体，只记状态码/耗时/token 消耗 |
+| SSRF（base_url 指向内网探测） | base_url 校验为合法 https URL，解析后拒绝链路本地/云元数据地址（169.254.169.254 等）。接本机 Ollama 等明文服务的场景由 `.env` 显式开关 `NOTE_SYNC_AI_ALLOW_HTTP=1` 放行（默认 0） |
+| 配置篡改无迹可查 | 配置修改记审计日志：时间/操作用户/变更字段名列表（不含任何字段值） |
+
+实现代价：新增 `aes-gcm` + `base64` 两个 crate；`ai_test` 增加一个简单的内存滑动窗限速器。
 
 ## 9. 错误处理
 
