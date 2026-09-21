@@ -35,9 +35,10 @@ pub fn strip_fence(raw: &str) -> String {
 pub fn parse_ai_meta(raw: &str) -> Option<AiMeta> {
     let stripped = strip_fence(raw);
     // 有的模型会在JSON前说废话：截取第一个 '{' 到最后一个 '}'
+    // get 而非直接索引：'}' 在 '{' 之后出现（start > end）时返回 None 而不是 panic
     let start = stripped.find('{')?;
     let end = stripped.rfind('}')?;
-    serde_json::from_str::<AiMeta>(&stripped[start..=end]).ok()
+    serde_json::from_str::<AiMeta>(stripped.get(start..=end)?).ok()
 }
 
 /// AI 失败降级元数据：默认隐藏（安全闸门）
@@ -138,6 +139,12 @@ mod tests {
         assert!(parse_ai_meta(&fenced).is_some());
         assert!(parse_ai_meta("我觉得这篇笔记写得不错").is_none());
         assert!(parse_ai_meta("{broken").is_none());
+    }
+    #[test]
+    fn test_parse_ai_meta_reversed_braces_no_panic() {
+        // '}' 在 '{' 之前：截取片段缺字段 -> None；start > end -> None，都不能 panic
+        assert!(parse_ai_meta("废话}…{\"title\":\"t\"}").is_none());
+        assert!(parse_ai_meta("废话}…{").is_none());
     }
     #[test]
     fn test_fallback_meta_hidden() {
