@@ -234,6 +234,11 @@ async fn post_list_page(
 ) -> Result<impl Responder, Exception> {
     let page_num = page_info.page_num;
     let page_size = page_info.page_size;
+    // 分页入参校验（公开 / 后台两个分支共用此函数，一处生效两处）：
+    // 否则 limit 可能为负 → SQL 语法错误 500；page_size=0 会伪装成「空列表 200」
+    if page_num < 1 || page_size < 1 {
+        return Err(BadRequest("page_num 与 page_size 必须为正整数".to_string()));
+    }
     let limit = (page_num - 1) * page_size;
 
     let res = if is_admin {
