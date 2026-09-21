@@ -78,6 +78,7 @@ async fn main() -> std::io::Result<()> {
                     "/comment/admin",
                     "/user/admin",
                     "/moment/admin",
+                    "/note_sync/admin",
                 ],
             }))
             .app_data(white_list)
@@ -96,6 +97,7 @@ async fn main() -> std::io::Result<()> {
                     .service(category_scope())
                     .service(comment_scope())
                     .service(moment_scope())
+                    .service(note_sync::apis::note_sync_scope())
             })
     })
     .bind(server)?
