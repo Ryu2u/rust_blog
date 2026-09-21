@@ -15,6 +15,9 @@ dist
 dist-ssr
 *.local
 
+# 本地开发种子数据：含明文开发账号密码，不入版本库
+seed.sql
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
