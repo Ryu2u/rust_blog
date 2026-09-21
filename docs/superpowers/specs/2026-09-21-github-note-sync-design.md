@@ -120,9 +120,11 @@ CREATE TABLE note_sync_config (   -- 永远只有一行，id=1
 | 项 | 值 |
 |---|---|
 | ai_base_url | `https://api.deepseek.com/v1` |
-| ai_model | `deepseek-chat`（已实测连通，严格 JSON 输出验证通过） |
+| ai_model | `deepseek-flash`（V4 代 flash 快速档；**实测**关闭思考后 78 tokens 即输出完整六字段 JSON，`public` 判定与理由正确。注：`deepseek-chat` 已被平台别名为 flash，本账号另有一档 `deepseek-v4-pro` 未采用） |
 | ai_api_key | credentials.yaml 中的 `DEEPSEEK_API_KEY`（**只进数据库，不进任何 git 追踪文件**） |
 | ai_enabled | 1 |
+
+**推理模型适配**：`deepseek-flash` 默认先输出思考过程（`reasoning_content`）再写正文，会吃掉 max_tokens 预算。调用时固定携带 `"thinking":{"type":"disabled"}` 关闭思考（实测生效）；若切换到的供应商不认此参数返回 400，自动去掉该参数重试一次。`max_tokens` 上限设 300（关思考后六字段 JSON 实测 <100）。
 
 credentials.yaml 中另有 SiliconFlow / ZAI（智谱）/ OpenCode 三套 OpenAI 兼容凭据，需要时在管理后台直接切换，无需改代码。注意：ZAI 那把是 **GLM Coding Plan 订阅 key，只能调用套餐允许的模型**，切过去时 model 必须从其套餐模型列表中选（这就是默认选 DeepSeek 而非智谱的原因——标准平台 key 无模型限制）。
 
