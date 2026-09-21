@@ -124,7 +124,7 @@ CREATE TABLE note_sync_config (   -- 永远只有一行，id=1
 | ai_api_key | credentials.yaml 中的 `DEEPSEEK_API_KEY`（**只进数据库，不进任何 git 追踪文件**） |
 | ai_enabled | 1 |
 
-credentials.yaml 中另有 SiliconFlow / ZAI（智谱）/ OpenCode 三套 OpenAI 兼容凭据，需要时在管理后台直接切换，无需改代码。
+credentials.yaml 中另有 SiliconFlow / ZAI（智谱）/ OpenCode 三套 OpenAI 兼容凭据，需要时在管理后台直接切换，无需改代码。注意：ZAI 那把是 **GLM Coding Plan 订阅 key，只能调用套餐允许的模型**，切过去时 model 必须从其套餐模型列表中选（这就是默认选 DeepSeek 而非智谱的原因——标准平台 key 无模型限制）。
 
 **LLM 客户端**（新增 `src/note_sync/ai_client.rs`）：
 
