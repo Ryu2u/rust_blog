@@ -42,6 +42,10 @@ pub struct NoteSyncConfig {
 }
 crud!(NoteSyncConfig {});
 
+impl_select!(NoteSyncConfig {
+    select_by_id(id: i32) => "`where id = #{id}`"
+});
+
 /// AI 生成的元数据
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AiMeta {
