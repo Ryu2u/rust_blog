@@ -3,6 +3,7 @@
 - **日期**: 2026-09-21
 - **状态**: 待评审
 - **仓库**: `Ryu2u/md_note`（私有，默认分支 `master`，已验证 PAT 具备 Contents 读写权限）
+- **修订**: v2 — 增加 AI 元数据生成层（管理后台可配置 LLM，生成标题/摘要/标签/分类）
 
 ## 1. 目标
 
@@ -37,10 +38,11 @@ Phase 2 在 Phase 1 验证通过后叠加，共用同一套映射表与客户端
 ```
 src/note_sync/
 ├── mod.rs            # 模块声明
-├── structs.rs        # NoteSyncMap 模型、NoteSyncConfig
+├── structs.rs        # NoteSyncMap / NoteSyncConfig 模型、AiMeta DTO
 ├── github_client.rs  # 轻量 REST 客户端（列目录树/拉文件/查提交时间；Phase 2 增加写接口）
+├── ai_client.rs      # OpenAI 兼容 LLM 客户端 + 严格 JSON 解析/降级（v2 新增）
 ├── sync_engine.rs    # 纯函数差分：(远端目录树, 本地映射表) → 动作列表 + 应用循环
-└── scheduler.rs      # tokio::time::interval 轮询循环
+└── scheduler.rs      # tokio::time::interval 轮询循环（AtomicBool 防重入）
 ```
 
 - `main.rs` 在 `init_rbatis` 之后 `tokio::spawn` 后台任务；启动 10 秒后跑第一轮，此后每 `NOTE_SYNC_INTERVAL_MIN` 分钟一轮
@@ -58,6 +60,7 @@ CREATE TABLE note_sync_map (
   blob_sha         CHAR(40)     NOT NULL,         -- 远端文件内容指纹
   local_sha        CHAR(64)     NOT NULL DEFAULT '',  -- 上次同步成功时本地正文 SHA-256
   post_id          INT          NOT NULL,
+  ai_title         VARCHAR(255) NOT NULL DEFAULT '',  -- 上次 AI 生成的标题（更新时判断后台是否改过标题）
   last_commit_time BIGINT       NULL,             -- 该文件最近一次 git 提交时间（epoch ms）
   synced_at        BIGINT       NOT NULL,
   status           VARCHAR(16)  NOT NULL DEFAULT 'ok',  -- 'ok' | 'conflicted'
@@ -70,17 +73,61 @@ CREATE TABLE note_sync_map (
 
 | 字段 | 值 |
 |---|---|
-| title | 文件名去扩展名（如 `axum.md` → `axum`）；**update 时不再回写标题**，后台改标题可保留 |
+| title | **AI 生成**（≤30 字可读标题）；AI 不可用时降级为文件名去扩展名 |
 | author | `NOTE_SYNC_AUTHOR`（默认 `Ryu2u`） |
-| 分类 | 自动创建/复用 `NOTE_SYNC_CATEGORY`（默认「笔记」），写入 PostCategory 关联 |
+| 分类 | **AI 从现有分类中选**（prompt 附带分类名列表，也可新建）；同时固定关联默认分类「笔记」；AI 不可用时仅挂「笔记」 |
 | is_view | 1（直接发布） |
 | original_content | Markdown 原文（UTF-8） |
 | format_content | 现有 `pulldown-cmark` 渲染的 HTML |
-| summary | 正文剥离 Markdown 标记后截取前 200 字符 |
+| summary | **AI 生成**一句话摘要（≤80 字）；降级为正文剥离 Markdown 后截 200 字符 |
+| 标签 | **AI 生成** 3-5 个，自动建 tag（slug 走现有 `parse_slug`）+ PostTag 关联；降级为无标签 |
 | word_count | 正文 Unicode 字符数 |
 | created_time | 该文件在 GitHub 上最近一次提交时间；无记录时取当前时间 |
 
 `visits`、`likes`、评论数等互动字段永不触碰。
+
+### 5.1 AI 元数据层（v2 新增）
+
+**目标**：仓库 md 无 frontmatter，用 LLM 为每篇笔记生成 title / summary / tags / category，替代文件名标题与截断摘要。
+
+**配置存储**（DB 表，管理后台可改，不走 .env）：
+
+```sql
+CREATE TABLE note_sync_config (   -- 永远只有一行，id=1
+  id          TINYINT PRIMARY KEY DEFAULT 1,
+  ai_enabled  TINYINT NOT NULL DEFAULT 0,
+  ai_base_url VARCHAR(255) NOT NULL DEFAULT '',
+  ai_api_key  VARCHAR(255) NOT NULL DEFAULT '',
+  ai_model    VARCHAR(128) NOT NULL DEFAULT '',
+  updated_at  BIGINT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+**管理端接口**（均需登录 + admin 角色，加入 `FilterWhiteList` 之外的同时**必须**加入 `AppState.admin_route_prefixes`）：
+
+| 接口 | 作用 |
+|---|---|
+| `GET /note_sync/admin/config` | 读配置；`ai_api_key` 只返回掩码（`sk-***abc`），绝不回明文 |
+| `POST /note_sync/admin/config` | 保存；key 字段为空/掩码原样时表示「不修改现有 key」 |
+| `POST /note_sync/admin/ai_test` | 发一条极小测试消息，返回模型回复或错误原因 |
+
+管理后台新增「同步设置」页：启用开关、base_url、api_key（密码框）、model、测试连接按钮、保存。
+
+**LLM 客户端**（新增 `src/note_sync/ai_client.rs`）：
+
+- 协议：**OpenAI 兼容** `POST {base_url}/chat/completions`，`Authorization: Bearer <key>`，`temperature: 0.2`，超时 60s
+- System prompt：要求只输出 JSON——`{"title":"≤30字","summary":"≤80字","tags":["3-5个"],"category":"分类名"}`，并附现有分类名列表要求优先从中选择；正文过长时截前 6000 字符送入
+- 解析：剥 ` ```json ` 围栏 → serde 反序列化为 `AiMeta` → 失败重试 1 次 → 仍失败**降级**（文件名标题 + 截断摘要 + 无标签 + 仅「笔记」分类），warn 日志；**降级不会自动重试**，直到内容再变化或后台手动修改
+
+**触发与更新规则**：
+
+| 场景 | AI 行为 |
+|---|---|
+| 新文件导入 | 全量生成四个字段 |
+| 内容更新（blob_sha 变） | 重新生成 summary/tags/category；标题带保护：`note_sync_map` 新增列 `ai_title` 记录上次 AI 标题，仅当 `post.title == ai_title`（后台没改过）才替换，否则保留后台标题 |
+| 删除/复活 | 不涉及 AI，复用已有元数据 |
+
+**成本与节奏**：首次导入 132 篇 = 132 次串行 LLM 调用（约 10-20 分钟），后台执行不阻塞任何请求，每 10 篇打一条进度日志；调度器用 AtomicBool 防上一轮未跑完时重叠触发。
 
 ## 6. GitHub API 使用
 
@@ -107,8 +154,8 @@ commit message 固定格式：`blog-sync: update 笔记/xxx.md` / `blog-sync: de
   1. GET trees(带 ETag) → 304 则结束
   2. 过滤: path 以 "笔记/" 开头 && 以 ".md" 结尾 && 排除 NOTE_SYNC_EXCLUDE_DIRS && size ≤ MAX_FILE_KB
   3. 与 note_sync_map 全表差分:
-     ├─ create  : 树有、映射无 → 拉 content + 提交时间 → 插 post(+分类关联) → 插映射
-     ├─ update  : 都有 且 blob_sha 变了 → 见冲突检测 → 拉 content → 更新内容字段 → 更新映射
+     ├─ create  : 树有、映射无 → 拉 content + 提交时间 → AI 元数据(或降级) → 插 post(含分类/标签关联) → 插映射(含 ai_title)
+     ├─ update  : 都有 且 blob_sha 变了 → 见冲突检测 → 拉 content → AI 重新生成 summary/tags/category、标题按 ai_title 保护规则 → 更新内容字段与关联 → 更新映射
      ├─ soft-del: 映射有、树无 → post.is_deleted=1，映射行保留
      ├─ resurrect: 都有 且 post.is_deleted=1 → is_deleted=0，blob_sha 变了则同时更新内容
      └─ skip    : blob_sha 未变
@@ -167,8 +214,8 @@ NOTE_SYNC_MAX_FILE_KB=1024
 
 ## 10. 测试
 
-- **单元（不联网）**：`sync_engine` 差分纯函数用 fixture 数据覆盖 create/update/soft-del/resurrect/skip/conflicted/超限/排除目录全部分支；标题、摘要、word_count 推导；path percent-encode
-- **集成（手动）**：Phase 1 完成后对真实仓库跑一轮，核对 132 篇文章、分类、时间；在 GitHub 网页上改一个文件 → ≤30 分钟本地更新；删一个文件 → 文章隐藏
+- **单元（不联网）**：`sync_engine` 差分纯函数用 fixture 数据覆盖 create/update/soft-del/resurrect/skip/conflicted/超限/排除目录全部分支；标题、摘要、word_count 推导；path percent-encode；`ai_client` 的 JSON 解析（正常/带围栏/截断/非法 → 重试与降级路径）用 fixture 响应体测试；config 接口的 key 掩码逻辑
+- **集成（手动）**：Phase 1 完成后对真实仓库跑一轮，核对 132 篇文章、AI 标题/摘要/标签/分类、时间；在 GitHub 网页上改一个文件 → ≤30 分钟本地更新；删一个文件 → 文章隐藏；管理后台配置 LLM → 测试连接 → 保存 → key 掩码回显
 - **Phase 2**：后台编辑保存 → 核对 GitHub commit；构造双向同时修改 → 验证冲突弹窗两条路径
 
 ## 11. 风险与边界
@@ -177,3 +224,4 @@ NOTE_SYNC_MAX_FILE_KB=1024
 - 仓库根目录的 `.omc/` 状态文件非 `.md`，天然排除
 - 首轮导入 132 篇会瞬间填充博客列表——符合预期（就是要公开笔记）
 - ETag 缓存在我们自己推送成功后失效，下一轮会重新拉树，代价一次调用，可忽略
+- AI 成本与质量：132 篇首轮 LLM 调用按所选模型计费（正文截 6000 字符控制单次成本）；AI 生成质量依赖模型，标题保护规则防止覆盖人工标题；降级路径保证 AI 故障不影响同步主线
