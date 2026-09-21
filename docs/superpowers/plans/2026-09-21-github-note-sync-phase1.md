@@ -21,7 +21,7 @@
 - CORS 只允许 GET/POST/OPTIONS——新接口全部用 GET/POST
 - 单元测试写在模块文件内 `#[cfg(test)] mod tests`（项目既有模式），纯函数不碰网络和 DB
 - 每个任务结束 `cargo build`（或 `cargo test`）通过并 git commit；commit 末尾带 `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`
-- 验证用 DB：`mysql -uroot -p123456 -h127.0.0.1 rust_blog`；登录态：`admin / ADMIN_PASSWORD_REMOVED`
+- 验证用 DB：`mysql -uroot -p123456 -h127.0.0.1 rust_blog`；登录态：`admin / <ADMIN_PASSWORD>`
 
 ---
 
@@ -1968,7 +1968,7 @@ cargo build 2>&1 | grep -cE "^error"  # 0
 cargo run &   # 或复用已跑进程（先 kill 旧的）
 sleep 5
 curl -s -c /tmp/cj.txt -X POST localhost:9002/user/login -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"ADMIN_PASSWORD_REMOVED","remember":true}' > /dev/null
+  -d '{"username":"admin","password":"<ADMIN_PASSWORD>","remember":true}' > /dev/null
 curl -s -b /tmp/cj.txt localhost:9002/note_sync/admin/config
 # Expected: {"code":200,...ai_enabled":0,"ai_base_url":""...}（尚无配置行）
 curl -s -b /tmp/cj.txt -X POST localhost:9002/note_sync/admin/config -H 'Content-Type: application/json' \
