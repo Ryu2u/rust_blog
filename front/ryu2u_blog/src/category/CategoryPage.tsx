@@ -1,7 +1,7 @@
 import './category.scss'
-import {useEffect, useState, useCallback} from "react";
+import {useEffect, useState} from "react";
 import {SideBar} from "../components/SideBar";
-import {Category, PageInfo, Post, TagCount} from "../common/Structs";
+import {Category, PageInfo, TagCount} from "../common/Structs";
 import {PostListItem} from "../components/PostListItem/PostListItem";
 import {FloatList} from "../components/FloatList";
 import {useParams, useNavigate} from "react-router-dom";
@@ -11,6 +11,7 @@ import CategoryService from "../service/CategoryService.ts";
 import PostService from "../service/PostService.ts";
 import TagService from "../service/TagService.ts";
 import {ChipCloud, DEFAULT_VISIBLE_CHIP_COUNT} from "../components/ChipCloud/ChipCloud.tsx";
+import {usePagedPosts} from "../common/usePagedPosts.ts";
 
 const {Title} = Typography;
 
@@ -18,9 +19,20 @@ export function CategoryPage() {
 
     const {tag} = useParams<{tag: string}>();
     const navigate = useNavigate();
-    const [postList, setPostList] = useState<Post[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [tags, setTags] = useState<TagCount[]>([]);
+
+    // 分类文章列表（分页：返回满一页时给出「加载更多」；切换分类自动回到第一页）
+    const {list: postList, loading, hasMore, loadMore} = usePagedPosts((pageNum, pageSize) => {
+        const pageInfo = new PageInfo();
+        pageInfo.page_num = pageNum;
+        pageInfo.page_size = pageSize;
+        pageInfo.total = 0;
+        pageInfo.list = [];
+        return tag
+            ? PostService.postListByCategory(tag, pageInfo)
+            : Promise.resolve({code: 200, msg: '', obj: []});
+    }, tag);
 
     // 所有分类
     useEffect(() => {
@@ -31,8 +43,8 @@ export function CategoryPage() {
         });
     }, []);
 
+    // 所有标签（标签云：已被公开文章引用的标签 + 文章数，后端按文章数倒序）
     useEffect(() => {
-        // get all tags（标签云：已被文章引用的标签 + 文章数，后端按文章数倒序）
         TagService.cloud().then((res) => {
             if (res.code === 200) {
                 setTags(res.obj as TagCount[] || []);
@@ -40,24 +52,7 @@ export function CategoryPage() {
         });
     }, []);
 
-    // 获取所有文章和标签
-    const getAllPostsAndTags = useCallback(() => {
-        if (tag) {
-            const pageInfo = new PageInfo();
-            pageInfo.page_num = 1;
-            pageInfo.page_size = 100;
-            pageInfo.total = 0;
-            pageInfo.list = [];
-            // 使用模拟数据
-            PostService.postListByCategory(tag, pageInfo).then((res) => {
-                setPostList(res.obj)
-            })
-        }
-
-
-    }, [tag]);
-
-    // 处理分类点击：跳转到分类页（沿用既有分类筛选逻辑）
+    // 处理分类点击：跳转到分类页
     const handleCategoryClick = (clickedCategory: string) => {
         navigate(`/category/${encodeURIComponent(clickedCategory)}`);
     };
@@ -66,10 +61,6 @@ export function CategoryPage() {
     const handleTagClick = (clickedTag: string) => {
         navigate(`/tag/${encodeURIComponent(clickedTag)}`);
     };
-
-    useEffect(() => {
-        getAllPostsAndTags();
-    }, [getAllPostsAndTags]);
 
     return (
         <>
@@ -89,7 +80,7 @@ export function CategoryPage() {
                         {tag && <p style={{
                             color: 'var(--color-font-default)',
                             opacity: 0.8
-                        }}>共有 {postList.length} 篇文章</p>}
+                        }}>{hasMore ? `已加载 ${postList.length} 篇` : `共 ${postList.length} 篇文章`}</p>}
                     </Card>
 
                     {/* 所有分类：点击进入分类页（沿用既有分类筛选逻辑） */}
@@ -110,12 +101,8 @@ export function CategoryPage() {
                     />
 
                     {/* 文章列表 */}
-                    {tag ? (
-                        postList.length > 0 ? (
-                            postList.map((item, index) => (
-                                <PostListItem key={item.id} dir={index % 2 == 0} postItemJson={JSON.stringify(item)}/>
-                            ))
-                        ) : (
+                    {postList.length === 0 ? (
+                        loading ? null : (
                             <Card
                                 className="empty-state"
                                 bordered={false}
@@ -125,25 +112,29 @@ export function CategoryPage() {
                                 }}
                             >
                                 <Empty
-                                    description="该分类下暂无文章"
+                                    description={tag ? '该分类下暂无文章' : '请点击上方分类或标签查看文章'}
                                     style={{color: 'var(--color-font-default)'}}
                                 />
                             </Card>
                         )
                     ) : (
-                        <Card
-                            className="empty-state"
-                            bordered={false}
-                            style={{
-                                backgroundColor: 'var(--color-post-content-bg-default)',
-                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                            }}
-                        >
-                            <Empty
-                                description="请点击上方标签查看对应文章"
-                                style={{color: 'var(--color-font-default)'}}
-                            />
-                        </Card>
+                        <>
+                            {postList.map((item, index) => (
+                                <PostListItem key={item.id} dir={index % 2 == 0} postItemJson={JSON.stringify(item)}/>
+                            ))}
+                            {hasMore && (
+                                <div className="load-more">
+                                    <button
+                                        type="button"
+                                        className="load-more-btn"
+                                        onClick={loadMore}
+                                        disabled={loading}
+                                    >
+                                        {loading ? '加载中…' : `加载更多（已加载 ${postList.length} 篇）`}
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
 
                 </div>

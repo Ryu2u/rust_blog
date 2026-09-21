@@ -118,6 +118,11 @@ async fn api_get_tag_by_post_id(
     post_id: web::Path<i32>,
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
+    // 公开接口：文章不公开（AI 审查隐藏 / 软删）时不暴露它的标签
+    if !Post::is_public(&**db, *post_id).await {
+        return Ok(R::<Vec<Tag>>::ok_obj(vec![]));
+    }
+
     let tag_vec = get_tag_by_post_id(*post_id, &**db).await;
 
     Ok(R::<Vec<Tag>>::ok_obj(tag_vec))
@@ -192,7 +197,7 @@ pub async fn post_list_by_tag(
          join post as b on a.post_id = b.id \
          join tag as t on a.tag_id = t.id \
          where t.name = ? and b.is_view = 1 and b.is_deleted = 0 \
-         order by b.update_time desc limit ?,?",
+         order by b.update_time desc, b.id desc limit ?,?",
         vec![
             Value::String(tag_name),
             Value::I32(limit),

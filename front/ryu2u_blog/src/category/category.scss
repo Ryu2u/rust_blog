@@ -12,9 +12,42 @@
   animation: fadeInUp 0.5s ease-out;
 }
 
+/* 分页「加载更多」（分类页 / 标签页共用） */
+.load-more {
+  display: flex;
+  justify-content: center;
+  margin: var(--spacing-lg) 0;
+}
+
+.load-more-btn {
+  padding: 10px 28px;
+  background: transparent;
+  border: 1px solid #333333;
+  color: var(--color-primary);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    color: #000000;
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    color: #555555;
+    cursor: not-allowed;
+  }
+}
+
 @media (max-width: 768px) {
   .category-header,
   .empty-state {
+    margin: var(--spacing-md) 0;
+  }
+
+  .load-more {
     margin: var(--spacing-md) 0;
   }
 }

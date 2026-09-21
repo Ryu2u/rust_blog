@@ -1,5 +1,6 @@
 use crate::comment::Comment;
 use crate::config::Exception;
+use crate::Post;
 use crate::R;
 use actix_web::{get, post, web, Responder};
 use rbatis::RBatis;
@@ -82,6 +83,10 @@ async fn api_comment_list(
     post_id: web::Path<i32>,
     db: web::Data<RBatis>,
 ) -> Result<impl Responder, Exception> {
+    // 公开接口：文章不公开（AI 审查隐藏 / 软删）时不暴露它的评论
+    if !Post::is_public(&**db, *post_id).await {
+        return Ok(R::ok_obj(Vec::<Comment>::new()));
+    }
     match Comment::select_approved_by_post_id(&**db, *post_id).await {
         Ok(vec) => Ok(R::ok_obj(vec)),
         Err(e) => {

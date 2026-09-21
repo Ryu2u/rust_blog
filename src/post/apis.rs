@@ -276,7 +276,8 @@ async fn post_get(
         if is_admin {
             return Ok(R::<Post>::ok_obj(post));
         }
-        if post.is_view != 1 {
+        // 公开详情页：隐藏（AI 公开性审查未通过）或已软删的文章一律 404
+        if post.is_view != 1 || post.is_deleted == Some(1) {
             return Err(Exception::NotFound);
         }
 

@@ -113,14 +113,28 @@ impl Post {
         .unwrap()
     }
 
+    /// 文章是否存在且对公众可见（is_view = 1 且未软删）
+    /// 公开读接口在返回「从属于某篇文章」的数据（标签、评论等）前必须先过这一关
+    pub async fn is_public(db: &RBatis, id: i32) -> bool {
+        match Post::select_by_id(db, id).await {
+            Ok(rows) => rows
+                .first()
+                .map_or(false, |p| p.is_view == 1 && p.is_deleted != Some(1)),
+            Err(_) => false,
+        }
+    }
+
     pub async fn select_by_category(
         db: &RBatis,
         category_name: String,
         limit: i32,
         page_size: i32,
     ) -> Result<Vec<Post>, rbdc::Error> {
+        // 必须与公开列表口径一致：只返回「公开且未删除」的文章，
+        // 否则 AI 公开性审查/软删在分类页这条路径上会被绕过。
+        // order by 带 id 兜底：分页（加载更多）需要确定序，避免并列 update_time 造成跨页重复/漏项
         db.query_decode(
-            "select b.* from PostCategory as a join post as b on a.post_id = b.id join category as c on a.category_id = c.id where c.name = ? limit ?,?",
+            "select b.* from PostCategory as a join post as b on a.post_id = b.id join category as c on a.category_id = c.id where c.name = ? and b.is_view = 1 and b.is_deleted = 0 order by b.update_time desc, b.id desc limit ?,?",
             vec![Value::String(category_name),Value::I32(limit),Value::I32(page_size)]
         ).await
     }
