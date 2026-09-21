@@ -26,3 +26,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Agent workspace state (may contain credentials in review diffs)
+.superpowers/
+.omc/

@@ -26,6 +26,10 @@ pub async fn start(db: RBatis) {
     let interval_min: u64 = env::var("NOTE_SYNC_INTERVAL_MIN").ok()
         .and_then(|v| v.parse().ok()).unwrap_or(30);
 
+    // ETag 与分支探测结果缓存在客户端实例字段上：构造提升到 loop 之前，
+    // 跨轮复用 If-None-Match（树无变化时 304 零消耗）与已探测分支。
+    let mut gh = GithubClient::new(&plan.token, &plan.repo, &plan.branch);
+
     // 启动后 10 秒先跑一轮（错开服务启动高峰）
     tokio::time::sleep(Duration::from_secs(10)).await;
     let mut ticker = tokio::time::interval(Duration::from_secs(interval_min * 60));
@@ -40,14 +44,13 @@ pub async fn start(db: RBatis) {
             info!("note_sync: 上一轮仍在进行，跳过本轮");
             continue;
         }
-        run_once(&db, &plan).await;
+        run_once(&db, &plan, &mut gh).await;
         RUNNING.store(false, Ordering::SeqCst);
     }
 }
 
-async fn run_once(db: &RBatis, plan: &SyncPlan) {
+async fn run_once(db: &RBatis, plan: &SyncPlan, gh: &mut GithubClient) {
     let ai = load_ai_settings(db, &plan.enc_key, plan.allow_http).await;
-    let mut gh = GithubClient::new(&plan.token, &plan.repo, &plan.branch);
-    let stats = run_sync_cycle(db, &mut gh, plan, ai).await;
+    let stats = run_sync_cycle(db, gh, plan, ai).await;
     info!("note_sync stats: {:?}", stats);
 }
