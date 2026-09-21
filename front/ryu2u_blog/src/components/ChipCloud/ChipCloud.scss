@@ -1,6 +1,11 @@
-/* 标签云组件样式：终端风格，与分类页/标签页共用 */
+/* chips 云组件样式（分类 / 标签共用）：终端风格 */
 
-.tag-cloud__total {
+.chip-cloud {
+  margin: 0 0 var(--spacing-lg) 0;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.chip-cloud__total {
   margin-left: 8px;
   font-size: 13px;
   font-weight: 400;
@@ -9,21 +14,21 @@
   font-family: Monaco, 'Courier New', 'Fira Code', monospace;
 }
 
-/* 标签内右上角的文章数 */
-.tag-cloud__count {
+/* chip 内右侧的计数（如文章数） */
+.chip-cloud__count {
   margin-left: 6px;
   font-size: 11px;
   opacity: 0.65;
   font-family: Monaco, 'Courier New', 'Fira Code', monospace;
 }
 
-.tag-cloud__toggle {
+.chip-cloud__toggle {
   margin-top: 16px;
   display: flex;
   justify-content: flex-start;
 }
 
-.tag-cloud__toggle-btn {
+.chip-cloud__toggle-btn {
   padding: 4px 14px;
   background: transparent;
   border: 1px solid #333333;
@@ -36,5 +41,11 @@
   &:hover {
     color: var(--color-primary);
     border-color: var(--color-primary);
+  }
+}
+
+@media (max-width: 768px) {
+  .chip-cloud {
+    margin: var(--spacing-md) 0;
   }
 }

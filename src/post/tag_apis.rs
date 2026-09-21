@@ -147,9 +147,13 @@ async fn api_tag_cloud(db: web::Data<RBatis>) -> Result<impl Responder, Exceptio
 }
 
 pub async fn tag_cloud(db: &RBatis) -> Result<Vec<TagCount>, rbdc::Error> {
+    // 口径与 post_list_by_tag 保持一致：只统计「公开且未删除」的文章，
+    // 保证标签云里的数字 == 点进标签页看到的篇数
     db.query_decode(
         "select t.name as name, count(*) as count from PostTag as pt \
          join tag as t on t.id = pt.tag_id \
+         join post as p on p.id = pt.post_id \
+         where p.is_view = 1 and p.is_deleted = 0 \
          group by t.name order by count desc",
         vec![],
     )

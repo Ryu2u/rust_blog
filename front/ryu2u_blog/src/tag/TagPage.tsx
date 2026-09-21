@@ -11,7 +11,7 @@ import {FloatList} from "../components/FloatList";
 import {PostListItem} from "../components/PostListItem/PostListItem";
 import {PageInfo, Post, TagCount} from "../common/Structs";
 import TagService from "../service/TagService";
-import {TagCloud} from "./TagCloud";
+import {ChipCloud, DEFAULT_VISIBLE_CHIP_COUNT} from "../components/ChipCloud/ChipCloud";
 
 const {Title} = Typography;
 
@@ -83,7 +83,13 @@ export function TagPage() {
                     </Card>
 
                     {/* 标签云 */}
-                    <TagCloud tags={tags} activeName={name} onTagClick={handleTagClick}/>
+                    <ChipCloud
+                        title="所有标签"
+                        items={tags}
+                        activeName={name}
+                        visibleCount={DEFAULT_VISIBLE_CHIP_COUNT}
+                        onChipClick={handleTagClick}
+                    />
 
                     {/* 文章列表 */}
                     {loading ? null : postList.length > 0 ? (

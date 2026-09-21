@@ -1,14 +1,16 @@
 import './category.scss'
 import {useEffect, useState, useCallback} from "react";
 import {SideBar} from "../components/SideBar";
-import {PageInfo, Post, TagCount} from "../common/Structs";
+import {Category, PageInfo, Post, TagCount} from "../common/Structs";
 import {PostListItem} from "../components/PostListItem/PostListItem";
 import {FloatList} from "../components/FloatList";
 import {useParams, useNavigate} from "react-router-dom";
 import {Card, Empty, Typography} from "antd";
+import {FolderOutlined} from "@ant-design/icons";
+import CategoryService from "../service/CategoryService.ts";
 import PostService from "../service/PostService.ts";
 import TagService from "../service/TagService.ts";
-import {TagCloud} from "../tag/TagCloud.tsx";
+import {ChipCloud, DEFAULT_VISIBLE_CHIP_COUNT} from "../components/ChipCloud/ChipCloud.tsx";
 
 const {Title} = Typography;
 
@@ -17,7 +19,17 @@ export function CategoryPage() {
     const {tag} = useParams<{tag: string}>();
     const navigate = useNavigate();
     const [postList, setPostList] = useState<Post[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [tags, setTags] = useState<TagCount[]>([]);
+
+    // 所有分类
+    useEffect(() => {
+        CategoryService.categoryList().then((res) => {
+            if (res.code === 200) {
+                setCategories((res.obj as Category[]) || []);
+            }
+        });
+    }, []);
 
     useEffect(() => {
         // get all tags（标签云：已被文章引用的标签 + 文章数，后端按文章数倒序）
@@ -44,6 +56,11 @@ export function CategoryPage() {
 
 
     }, [tag]);
+
+    // 处理分类点击：跳转到分类页（沿用既有分类筛选逻辑）
+    const handleCategoryClick = (clickedCategory: string) => {
+        navigate(`/category/${encodeURIComponent(clickedCategory)}`);
+    };
 
     // 处理标签点击：跳转到标签页
     const handleTagClick = (clickedTag: string) => {
@@ -75,8 +92,22 @@ export function CategoryPage() {
                         }}>共有 {postList.length} 篇文章</p>}
                     </Card>
 
+                    {/* 所有分类：点击进入分类页（沿用既有分类筛选逻辑） */}
+                    <ChipCloud
+                        title="所有分类"
+                        icon={<FolderOutlined style={{color: 'var(--color-primary)'}}/>}
+                        items={categories}
+                        activeName={tag}
+                        onChipClick={handleCategoryClick}
+                    />
+
                     {/* 标签云 */}
-                    <TagCloud tags={tags} onTagClick={handleTagClick}/>
+                    <ChipCloud
+                        title="所有标签"
+                        items={tags}
+                        visibleCount={DEFAULT_VISIBLE_CHIP_COUNT}
+                        onChipClick={handleTagClick}
+                    />
 
                     {/* 文章列表 */}
                     {tag ? (
@@ -94,7 +125,7 @@ export function CategoryPage() {
                                 }}
                             >
                                 <Empty
-                                    description="该标签下暂无文章"
+                                    description="该分类下暂无文章"
                                     style={{color: 'var(--color-font-default)'}}
                                 />
                             </Card>
