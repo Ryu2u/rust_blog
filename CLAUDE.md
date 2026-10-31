@@ -42,7 +42,7 @@ Blog platform: one Rust/Actix-web backend + two independent React frontends.
 - `structs.rs` — rbatis model structs with `crud!()`/`impl_select!()` macros, DTOs, `PageInfo`
 - `apis.rs` — Actix request handlers plus a `<domain>_scope()` fn that registers the module's routes
 
-Modules: `user/`, `post/` (split into `apis.rs`, `tag_apis.rs`, `category_apis.rs`), `comment/`, `moment/` (说说/动态), plus `config.rs`, `middleware.rs`, `utils/` (`time_utils`, `utils`, `jwt_utils`).
+Modules: `user/`, `post/` (split into `apis.rs`, `tag_apis.rs`, `category_apis.rs`), `comment/`, `moment/` (说说/动态), `dashboard/` (后台仪表盘统计，仅 `apis.rs`), plus `config.rs`, `middleware.rs`, `utils/` (`time_utils`, `utils`, `jwt_utils`).
 
 **`note_sync/` module** — GitHub 笔记单向同步 (pull-only, md_note repo → blog posts). Sub-modules: `github_client.rs` (REST + ETag 条件请求), `ai_client.rs` (AI 五字段解析/降级/URL 校验), `derive.rs` (本地差分引擎：建/改/删/复活), `sync_engine.rs` (应用循环 + 分类标签落库), `scheduler.rs` (tokio 定时轮询，启动 10s 后首轮，防重入), `crypto.rs` (AES-GCM 配置加密), `apis.rs` (管理接口 `GET/POST /note_sync/admin/config`、`POST /note_sync/admin/ai_test`). Driven entirely by `.env` `NOTE_SYNC_*` vars; state lives in tables `note_sync_map` (path→post 映射 + AI 元数据) and `note_sync_config` (AI 配置，API key AES 密文存储/掩码回显).
 
@@ -52,7 +52,7 @@ Modules: `user/`, `post/` (split into `apis.rs`, `tag_apis.rs`, `category_apis.r
 - `middleware.rs` — `AuthFilter`: whitelist bypass → JWT verify → admin role check
 - `src/utils/jwt_utils.rs` — `create_jwt` / `verify_jwt`, `AUTH_COOKIE_NAME`, claims (`sub`, `username`, `role`, `exp`)
 
-**Routes** (scope → handlers): `/user` (`login`, `logout`, `get`, `admin/*`), `/post` (`get`, `page`, `list_by_category`, `admin/*`), `/tag`, `/category`, `/comment` (`add`, `list/{post_id}`, `admin/*`), `/moment` (`admin/*` only), `/note_sync` (`admin/config`, `admin/ai_test` only). Every mutation is a GET or POST — CORS only allows `GET, POST, OPTIONS`.
+**Routes** (scope → handlers): `/user` (`login`, `logout`, `get`, `admin/*`), `/post` (`get`, `page`, `list_by_category`, `admin/*`), `/tag`, `/category`, `/comment` (`add`, `list/{post_id}`, `admin/*`), `/moment` (`admin/*` only), `/note_sync` (`admin/config`, `admin/ai_test` only), `/dashboard` (`admin/stats` only). Every mutation is a GET or POST — CORS only allows `GET, POST, OPTIONS`.
 
 **Response format**: all handlers return `Result<impl Responder, Exception>` producing `R<T>` → `{ "code", "msg", "obj" }`. Handlers take `db: web::Data<RBatis>` (not `AppState`) as their data param; `AppState` only carries `app_name` and `admin_route_prefixes`. `Exception` maps to HTTP 400/500/404. Note `error_response` sets `ContentType::html()` even though the body is JSON.
 
@@ -61,7 +61,7 @@ Modules: `user/`, `post/` (split into `apis.rs`, `tag_apis.rs`, `category_apis.r
 This is the easiest thing to get wrong — two separate lists in `main.rs` must both be updated:
 
 1. **`FilterWhiteList`** — paths not matching this require a valid `auth_token`. Matching is segment-wise: `*` matches exactly one segment, `**` matches all remaining segments, and a whitelist entry also covers longer URLs with that prefix (`/comment/list` covers `/comment/list/5`).
-2. **`AppState.admin_route_prefixes`** — after JWT verification, a request whose path `starts_with()` one of these entries is treated as an admin route. The current entries are verb-specific (`/post/admin`, `/post/add`, `/post/test/form`, `/tag/add`, `/tag/del`, `/tag/update`, `/comment/admin`, `/user/admin`, `/moment/admin`, `/note_sync/admin`), so a new admin route must be added here explicitly — being authenticated is not sufficient. Admin check queries `tb_user` per request and requires `role == "admin"` **and** `locked == 0`.
+2. **`AppState.admin_route_prefixes`** — after JWT verification, a request whose path `starts_with()` one of these entries is treated as an admin route. The current entries are verb-specific (`/post/admin`, `/post/add`, `/post/test/form`, `/tag/add`, `/tag/del`, `/tag/update`, `/comment/admin`, `/user/admin`, `/moment/admin`, `/note_sync/admin`, `/dashboard/admin`), so a new admin route must be added here explicitly — being authenticated is not sufficient. Admin check queries `tb_user` per request and requires `role == "admin"` **and** `locked == 0`.
 
 Failure modes are plain `ErrorUnauthorized` (401) / `ErrorForbidden` (403), not `R<T>`. `ContentTypeGuard` wraps all scopes but currently always returns `true` (no-op).
 
