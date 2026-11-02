@@ -1,6 +1,6 @@
 import './Admin.scss'
 import {useEffect, useState} from "react";
-import {Outlet, useNavigate} from "react-router";
+import {Outlet, useLocation, useNavigate} from "react-router";
 import {DynamicBreadcrumb} from "../comonents/DynamicBreadcrumb";
 
 import {
@@ -85,6 +85,13 @@ export function Admin() {
     const siderWidth = collapsed ? 72 : 220;
 
     const navigate = useNavigate();
+    const {pathname} = useLocation();
+
+    // 子页面（如 /article/new、/user/edit/3）归到同一个一级菜单项：按路径第一段匹配
+    const segment = pathname.split('/')[1];
+    const currentItem = items?.find(
+        (item) => item?.key !== undefined && String(item.key).split('/')[1] === segment
+    ) as { key: string; label: string } | undefined;
 
     useEffect(() => {
 
@@ -131,7 +138,7 @@ export function Admin() {
                     theme={colorTheme}
                     mode="inline"
                     defaultSelectedKeys={['/dashboard']}
-                    selectedKeys={[window.location.pathname]}
+                    selectedKeys={[currentItem?.key ?? '/dashboard']}
                     items={items}
                     onClick={menuClick}
                     className={"admin-menu"}
@@ -140,7 +147,7 @@ export function Admin() {
             <Layout className={"layout-content"} style={{marginLeft: siderWidth}}>
                 <Header className={"layout-header"} style={{left: siderWidth}}>
                     <div className="admin-header-title">
-                        {(items as any)?.find((item: any) => item.key === window.location.pathname)?.label || '仪表盘'}
+                        {currentItem?.label ?? '仪表盘'}
                     </div>
                     <div className="admin-header-actions">
                         <div className="admin-session-card">
