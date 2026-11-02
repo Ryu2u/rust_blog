@@ -25,6 +25,7 @@ mod utils;
 mod comment;
 mod moment;
 mod note_sync;
+mod dashboard;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -82,6 +83,7 @@ async fn main() -> std::io::Result<()> {
                     "/user/admin",
                     "/moment/admin",
                     "/note_sync/admin",
+                    "/dashboard/admin",
                 ],
             }))
             .app_data(white_list)
@@ -101,6 +103,7 @@ async fn main() -> std::io::Result<()> {
                     .service(comment_scope())
                     .service(moment_scope())
                     .service(note_sync::apis::note_sync_scope())
+                    .service(dashboard::apis::dashboard_scope())
             })
     })
     .bind(server)?

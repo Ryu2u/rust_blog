@@ -5,7 +5,7 @@
 import '../category/category.scss'
 import {useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
-import {Card, Empty, Typography} from "antd";
+import {Empty} from "antd";
 import {SideBar} from "../components/SideBar";
 import {FloatList} from "../components/FloatList";
 import {PostListItem} from "../components/PostListItem/PostListItem";
@@ -13,8 +13,6 @@ import {PageInfo, TagCount} from "../common/Structs";
 import TagService from "../service/TagService";
 import {ChipCloud, DEFAULT_VISIBLE_CHIP_COUNT} from "../components/ChipCloud/ChipCloud";
 import {usePagedPosts} from "../common/usePagedPosts";
-
-const {Title} = Typography;
 
 export function TagPage() {
 
@@ -50,25 +48,16 @@ export function TagPage() {
 
     return (
         <>
-            <div className={"container flex"}>
+            <div className={"container"}>
                 <div className={"post-list"}>
                     {/* 页面标题 */}
-                    <Card
-                        className="category-header"
-                        bordered={false}
-                        style={{
-                            backgroundColor: 'var(--color-post-content-bg-default)',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                        }}
-                    >
-                        <Title level={2} style={{color: 'var(--color-font-default)'}}>
-                            {name ? `#${name} 标签` : '标签'}
-                        </Title>
-                        {name && <p style={{
-                            color: 'var(--color-font-default)',
-                            opacity: 0.8
-                        }}>{hasMore ? `已加载 ${postList.length} 篇` : `共 ${postList.length} 篇文章`}</p>}
-                    </Card>
+                    <header className="page-header">
+                        <div className="page-header__eyebrow">标签</div>
+                        <h1 className="page-header__title">{name ? `#${name}` : '所有标签'}</h1>
+                        {name && <p className="page-header__meta">
+                            {hasMore ? `已加载 ${postList.length} 篇` : `共 ${postList.length} 篇文章`}
+                        </p>}
+                    </header>
 
                     {/* 标签云 */}
                     <ChipCloud
@@ -82,26 +71,20 @@ export function TagPage() {
                     {/* 文章列表 */}
                     {postList.length === 0 ? (
                         loading ? null : (
-                            <Card
-                                className="empty-state"
-                                bordered={false}
-                                style={{
-                                    backgroundColor: 'var(--color-post-content-bg-default)',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                                }}
-                            >
+                            <div className="empty-state">
                                 <Empty
                                     description={name ? `#${name} 标签下暂无文章` : '请点击上方标签查看文章'}
-                                    style={{color: 'var(--color-font-default)'}}
+                                    image={Empty.PRESENTED_IMAGE_SIMPLE}
                                 />
-                            </Card>
+                            </div>
                         )
                     ) : (
                         <>
-                            {postList.map((item, index) => (
-                                <PostListItem key={item.id} dir={index % 2 == 0}
-                                              postItemJson={JSON.stringify(item)}/>
-                            ))}
+                            <div className="post-stream">
+                                {postList.map((item) => (
+                                    <PostListItem key={item.id} postItemJson={JSON.stringify(item)}/>
+                                ))}
+                            </div>
                             {hasMore && (
                                 <div className="load-more">
                                     <button

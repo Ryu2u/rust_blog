@@ -80,15 +80,19 @@ export function CatalogCard({catalogJson}: CatalogCardProps) {
      * 渲染目录卡片
      * @returns {JSX.Element} 目录卡片组件
      */
+    if (catalog === '') {
+        return null;
+    }
+
     return (
         <>
-            <div className={"card-widget catalog-card"}>
-                <h3>目录</h3>
+            <nav className={"catalog-card"}>
+                <div className="catalog-card__title">目录</div>
                 <div dangerouslySetInnerHTML={{
                     __html: catalog
                 }}>
                 </div>
-            </div>
+            </nav>
         </>
     )
 }

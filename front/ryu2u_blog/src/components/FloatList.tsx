@@ -1,38 +1,28 @@
-import {Button} from "antd";
-import {MoonOutlined, SunOutlined} from "@ant-design/icons";
+import {ArrowUpOutlined} from "@ant-design/icons";
 import {useEffect, useState} from "react";
-import {THEME, THEME_DARK, THEME_KEY, THEME_LIGHT} from "../common/constants";
 
+/// 右下角浮动按钮：页面滚动一段距离后显示「回到顶部」
 export function FloatList() {
-    const [isLight, setIsLight] = useState(true);
+    const [visible, setVisible] = useState(false);
 
     useEffect(() => {
-        const theme = localStorage.getItem(THEME_KEY);
-        setIsLight(theme === THEME_LIGHT);
+        const onScroll = () => setVisible(window.scrollY > 400);
+        onScroll();
+        window.addEventListener('scroll', onScroll, {passive: true});
+        return () => window.removeEventListener('scroll', onScroll);
     }, []);
-
-    const changeThemeClick = () => {
-        const theme = localStorage.getItem(THEME_KEY);
-        if (theme === THEME_LIGHT) {
-            document.documentElement.setAttribute(THEME, THEME_DARK);
-            localStorage.setItem(THEME_KEY, THEME_DARK);
-            setIsLight(false);
-        } else {
-            document.documentElement.setAttribute(THEME, THEME_LIGHT);
-            localStorage.setItem(THEME_KEY, THEME_LIGHT);
-            setIsLight(true);
-        }
-    }
 
     return (
         <>
-            <div className={"flex float-div"}>
-                <Button className={'float-btn'} icon={
-                    isLight ?
-                        <MoonOutlined/>
-                        :
-                        <SunOutlined/>
-                } onClick={changeThemeClick}/>
+            <div className={"float-div"}>
+                <button
+                    type="button"
+                    aria-label="回到顶部"
+                    className={visible ? 'float-btn is-visible' : 'float-btn'}
+                    onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
+                >
+                    <ArrowUpOutlined/>
+                </button>
             </div>
         </>
     )

@@ -57,7 +57,7 @@ export function SyncSettingsPage() {
     };
 
     return (
-        <Card title="同步设置 · AI 元数据" style={{margin: 16}}>
+        <Card title="同步设置 · AI 元数据">
             <Form form={form} layout="vertical" style={{maxWidth: 520}}>
                 <Form.Item name="enabled" label="启用 AI 元数据生成" valuePropName="checked">
                     <Switch/>
@@ -78,7 +78,7 @@ export function SyncSettingsPage() {
                     <Button style={{marginLeft: 8}} loading={testing} onClick={onTest}>测试连接</Button>
                 </Form.Item>
             </Form>
-            <div style={{color: "#888", fontSize: 12}}>
+            <div style={{color: "var(--color-text-muted)", fontSize: 12}}>
                 说明：AI 为同步的笔记生成标题/摘要/标签/分类，并判定是否可公开；AI 不可用时笔记默认隐藏。
             </div>
         </Card>

@@ -5,15 +5,12 @@ import {Category, PageInfo, TagCount} from "../common/Structs";
 import {PostListItem} from "../components/PostListItem/PostListItem";
 import {FloatList} from "../components/FloatList";
 import {useParams, useNavigate} from "react-router-dom";
-import {Card, Empty, Typography} from "antd";
-import {FolderOutlined} from "@ant-design/icons";
+import {Empty} from "antd";
 import CategoryService from "../service/CategoryService.ts";
 import PostService from "../service/PostService.ts";
 import TagService from "../service/TagService.ts";
 import {ChipCloud, DEFAULT_VISIBLE_CHIP_COUNT} from "../components/ChipCloud/ChipCloud.tsx";
 import {usePagedPosts} from "../common/usePagedPosts.ts";
-
-const {Title} = Typography;
 
 export function CategoryPage() {
 
@@ -64,29 +61,20 @@ export function CategoryPage() {
 
     return (
         <>
-            <div className={"container flex"}>
+            <div className={"container"}>
                 <div className={"post-list"}>
                     {/* 页面标题 */}
-                    <Card
-                        className="category-header"
-                        bordered={false}
-                        style={{
-                            backgroundColor: 'var(--color-post-content-bg-default)',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                        }}
-                    >
-                        <Title level={2}
-                               style={{color: 'var(--color-font-default)'}}>{tag ? `${tag} 分类` : '所有分类'}</Title>
-                        {tag && <p style={{
-                            color: 'var(--color-font-default)',
-                            opacity: 0.8
-                        }}>{hasMore ? `已加载 ${postList.length} 篇` : `共 ${postList.length} 篇文章`}</p>}
-                    </Card>
+                    <header className="page-header">
+                        <div className="page-header__eyebrow">分类</div>
+                        <h1 className="page-header__title">{tag ? tag : '所有分类'}</h1>
+                        {tag && <p className="page-header__meta">
+                            {hasMore ? `已加载 ${postList.length} 篇` : `共 ${postList.length} 篇文章`}
+                        </p>}
+                    </header>
 
                     {/* 所有分类：点击进入分类页（沿用既有分类筛选逻辑） */}
                     <ChipCloud
                         title="所有分类"
-                        icon={<FolderOutlined style={{color: 'var(--color-primary)'}}/>}
                         items={categories}
                         activeName={tag}
                         onChipClick={handleCategoryClick}
@@ -103,25 +91,20 @@ export function CategoryPage() {
                     {/* 文章列表 */}
                     {postList.length === 0 ? (
                         loading ? null : (
-                            <Card
-                                className="empty-state"
-                                bordered={false}
-                                style={{
-                                    backgroundColor: 'var(--color-post-content-bg-default)',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                                }}
-                            >
+                            <div className="empty-state">
                                 <Empty
                                     description={tag ? '该分类下暂无文章' : '请点击上方分类或标签查看文章'}
-                                    style={{color: 'var(--color-font-default)'}}
+                                    image={Empty.PRESENTED_IMAGE_SIMPLE}
                                 />
-                            </Card>
+                            </div>
                         )
                     ) : (
                         <>
-                            {postList.map((item, index) => (
-                                <PostListItem key={item.id} dir={index % 2 == 0} postItemJson={JSON.stringify(item)}/>
-                            ))}
+                            <div className="post-stream">
+                                {postList.map((item) => (
+                                    <PostListItem key={item.id} postItemJson={JSON.stringify(item)}/>
+                                ))}
+                            </div>
                             {hasMore && (
                                 <div className="load-more">
                                     <button

@@ -1,51 +1,94 @@
-/* chips 云组件样式（分类 / 标签共用）：终端风格 */
+/* chips 云组件样式（分类 / 标签共用） */
 
 .chip-cloud {
-  margin: 0 0 var(--spacing-lg) 0;
-  animation: fadeInUp 0.6s ease-out;
+  margin: 0 0 var(--spacing-lg);
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.chip-cloud__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.chip-cloud__title {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 500;
 }
 
 .chip-cloud__total {
-  margin-left: 8px;
+  color: var(--color-text-muted);
   font-size: 13px;
-  font-weight: 400;
-  color: var(--color-font-default);
-  opacity: 0.6;
-  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+}
+
+.chip-cloud__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-muted);
+    color: var(--color-text);
+  }
+
+  &.is-active {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #ffffff;
+  }
 }
 
 /* chip 内右侧的计数（如文章数） */
-.chip-cloud__count {
-  margin-left: 6px;
-  font-size: 11px;
-  opacity: 0.65;
-  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
+.chip__count {
+  color: var(--color-text-muted);
+  font-size: 12px;
+
+  .chip.is-active & {
+    color: rgba(255, 255, 255, 0.8);
+  }
 }
 
 .chip-cloud__toggle {
   margin-top: 16px;
-  display: flex;
-  justify-content: flex-start;
 }
 
 .chip-cloud__toggle-btn {
-  padding: 4px 14px;
+  padding: 0;
+  border: 0;
   background: transparent;
-  border: 1px solid #333333;
-  color: #808080;
-  font-size: 12px;
+  color: var(--color-primary);
+  font-size: 13px;
   cursor: pointer;
-  font-family: Monaco, 'Courier New', 'Fira Code', monospace;
-  transition: all 0.3s ease;
 
   &:hover {
-    color: var(--color-primary);
-    border-color: var(--color-primary);
+    color: var(--color-primary-hover);
   }
 }
 
 @media (max-width: 768px) {
   .chip-cloud {
-    margin: var(--spacing-md) 0;
+    padding: 18px;
   }
 }

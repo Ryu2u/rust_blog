@@ -1,40 +1,59 @@
-.login-wrapper {
-  display: table;
-  // 注意设置宽度和
-  width: 100%;
-  height: 100%;
-  margin: 0 auto;
-  color: red;
-}
-
-.login-cell {
-  display: table-cell;
-  vertical-align: middle;
-}
-
-.login-form {
-  max-width: 500px;
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
   padding: 24px;
-  margin: 0 auto;
-  text-align: left;
-  border: 1px solid #8888;
-  border-radius: 10px;
-  box-shadow: 0 0 5px 0 #8888;
+  box-sizing: border-box;
+  background: var(--color-bg);
 }
 
-.login-form-forget {
-  float: right;
-}
-
-.ant-col-rtl .login-form-forgot {
-  float: left;
-}
-
-.login-form-button {
+.login-card {
   width: 100%;
+  max-width: 400px;
+  padding: 40px 36px 36px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
 }
 
-.login-div {
+.login-card__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 20px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: #ffffff;
+  font-family: var(--font-serif);
+  font-size: 22px;
+}
 
+.login-card__title {
+  margin: 0 0 6px;
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 500;
+}
 
+.login-card__subtitle {
+  margin: 0 0 28px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.login-card__icon {
+  color: var(--color-text-muted);
+}
+
+.login-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -4px 0 20px;
 }
