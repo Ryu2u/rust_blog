@@ -73,7 +73,7 @@ export const UserListPage = () => {
             title: 'ID',
             dataIndex: 'id',
             key: 'id',
-            render: (value) => <span style={{ color: '#555555' }}>{value}</span>,
+            render: (value) => <span style={{ color: 'var(--color-text-muted)' }}>{value}</span>,
         },
         {
             title: '用户信息',
@@ -81,10 +81,10 @@ export const UserListPage = () => {
             key: 'username',
             render: (username, record) => (
                 <Space size="middle">
-                    <UserOutlined style={{ fontSize: 20, color: '#555555' }} />
+                    <UserOutlined style={{ fontSize: 20, color: 'var(--color-text-muted)' }} />
                     <div>
-                        <div style={{ color: '#e0e0e0' }}>{username}</div>
-                        <div style={{ fontSize: 12, color: '#555555' }}>{record.nick_name}</div>
+                        <div style={{ color: 'var(--color-text)' }}>{username}</div>
+                        <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{record.nick_name}</div>
                     </div>
                 </Space>
             ),
@@ -94,12 +94,7 @@ export const UserListPage = () => {
             dataIndex: 'gender',
             key: 'gender',
             render: (gender) => (
-                <Tag style={{
-                    background: '#0a0a0a',
-                    border: '1px solid #333333',
-                    color: '#808080',
-                    borderRadius: 0,
-                }}>
+                <Tag className="admin-tag">
                     {gender === 1 ? '男' : gender === 2 ? '其他' : '女'}
                 </Tag>
             ),
@@ -109,12 +104,7 @@ export const UserListPage = () => {
             dataIndex: 'role',
             key: 'role',
             render: (role) => (
-                <Tag style={{
-                    background: role === 'admin' ? '#10a37f' : '#0a0a0a',
-                    color: role === 'admin' ? '#000000' : '#808080',
-                    border: role === 'admin' ? 'none' : '1px solid #333333',
-                    borderRadius: 0,
-                }}>
+                <Tag className={role === 'admin' ? 'admin-tag admin-tag--active' : 'admin-tag'}>
                     {role === 'admin' ? '管理员' : '普通用户'}
                 </Tag>
             ),
@@ -124,19 +114,14 @@ export const UserListPage = () => {
             dataIndex: 'signature',
             key: 'signature',
             ellipsis: true,
-            render: (value) => <span style={{ color: '#808080' }}>{value || '-'}</span>,
+            render: (value) => <span style={{ color: 'var(--color-text-secondary)' }}>{value || '-'}</span>,
         },
         {
             title: '状态',
             dataIndex: 'locked',
             key: 'locked',
             render: (locked) => (
-                <Tag style={{
-                    background: locked === 1 ? '#1a1a1a' : '#10a37f',
-                    color: locked === 1 ? '#808080' : '#000000',
-                    border: 'none',
-                    borderRadius: 0,
-                }}>
+                <Tag className={locked === 1 ? 'admin-tag' : 'admin-tag admin-tag--active'}>
                     {locked === 1 ? '锁定' : '正常'}
                 </Tag>
             ),
@@ -145,7 +130,7 @@ export const UserListPage = () => {
             title: '创建时间',
             dataIndex: 'created_time',
             key: 'created_time',
-            render: (created_time) => <span style={{ color: '#808080' }}>{formatDate(new Date(created_time))}</span>,
+            render: (created_time) => <span style={{ color: 'var(--color-text-secondary)' }}>{formatDate(new Date(created_time))}</span>,
         },
         {
             title: '操作',
@@ -159,7 +144,6 @@ export const UserListPage = () => {
                         icon={<EditOutlined />}
                         size="small"
                         onClick={() => navigate(`/user/edit/${record.id}`)}
-                        style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                     >
                         编辑
                     </Button>
@@ -167,7 +151,6 @@ export const UserListPage = () => {
                         icon={record.locked === 1 ? <UnlockOutlined /> : <LockOutlined />}
                         size="small"
                         onClick={() => handleLock(record.id, record.locked)}
-                        style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                     >
                         {record.locked === 1 ? '解锁' : '锁定'}
                     </Button>
@@ -182,7 +165,6 @@ export const UserListPage = () => {
                             danger
                             icon={<DeleteOutlined />}
                             size="small"
-                            style={{ borderRadius: 0 }}
                         >
                             删除
                         </Button>
@@ -241,28 +223,18 @@ export const UserListPage = () => {
         <>
             {contextHolder}
             <div>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '16px',
-                    paddingBottom: '12px',
-                    borderBottom: '1px solid #333333',
-                }}>
-                    <div style={{ color: '#e0e0e0', fontSize: '13px', fontWeight: 700 }}>
-                        <span style={{ color: '#10a37f' }}>&gt;</span> 用户管理
-                    </div>
+                <div className="admin-page-head">
+                    <h2 className="admin-page-title">用户管理</h2>
                     <Button
                         type="primary"
                         icon={<PlusOutlined />}
                         onClick={() => navigate('/user/edit')}
-                        style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                     >
                         新建用户
                     </Button>
                 </div>
 
-                <div style={{ border: '1px solid #333333', padding: '16px', marginBottom: '16px', background: '#0a0a0a' }}>
+                <div className="admin-filter-panel">
                     <Row gutter={16} align="middle">
                         <Col span={12}>
                             <Search
@@ -271,7 +243,7 @@ export const UserListPage = () => {
                                 onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
                                 onSearch={handleSearch}
                                 style={{ width: '100%' }}
-                                prefix={<SearchOutlined style={{ color: '#555555' }} />}
+                                prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />}
                             />
                         </Col>
                         <Col span={6}>
@@ -292,13 +264,11 @@ export const UserListPage = () => {
                                     type="primary"
                                     icon={<SearchOutlined />}
                                     onClick={handleSearch}
-                                    style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                                 >
                                     搜索
                                 </Button>
                                 <Button
                                     onClick={handleReset}
-                                    style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                                 >
                                     重置
                                 </Button>
@@ -308,9 +278,9 @@ export const UserListPage = () => {
                 </div>
 
                 {selectedRowKeys.length > 0 && (
-                    <div style={{ marginBottom: 16, padding: '8px 12px', background: '#0a0a0a', border: '1px solid #333333' }}>
+                    <div className="admin-selection-bar">
                         <Space>
-                            <span style={{ color: '#808080' }}>已选择 {selectedRowKeys.length} 项</span>
+                            <span style={{ color: 'var(--color-text-secondary)' }}>已选择 {selectedRowKeys.length} 项</span>
                             <Popconfirm
                                 title="确定要批量删除这些用户吗？"
                                 description="删除后将无法恢复"
@@ -321,7 +291,6 @@ export const UserListPage = () => {
                                 <Button
                                     danger
                                     icon={<DeleteOutlined />}
-                                    style={{ borderRadius: 0 }}
                                 >
                                     批量删除
                                 </Button>

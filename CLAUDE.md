@@ -67,7 +67,7 @@ Failure modes are plain `ErrorUnauthorized` (401) / `ErrorForbidden` (403), not 
 
 ### Frontend (`front/`)
 
-Two independent React 18 + TypeScript + Vite apps sharing a dark terminal aesthetic:
+Two independent React 18 + TypeScript + Vite apps sharing a light, claude.ai-style design (cream `#faf9f5` background, terracotta `#c96442` accent, serif headings). Design tokens are CSS variables in `ryu2u_blog/src/index.scss` and `ryu2u_blog_admin/src/index.css` (the admin also mirrors them as antd tokens in `main.tsx`) — use the variables, not hardcoded colors. Light theme only; there is no dark mode:
 
 - **`ryu2u_blog/`** — public blog (:8088). Routes: `/home`, `/post/:id`, `/category`, `/category/:tag` (defined inline in `App.tsx`)
 - **`ryu2u_blog_admin/`** — admin panel (:8089). Routes come from `common/routerConfig.tsx`, a `RouteConfig[]` that drives both the routes and the breadcrumbs; `App.tsx` flattens it. Paths: `/dashboard`, `/article`(`/list`, `/new`, `/edit/:id`), `/user/list`, `/user/edit/:id`, `/comment`, `/moments`, `/about`

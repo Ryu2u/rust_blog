@@ -9,7 +9,8 @@ import {Post, Comment, Tag} from "../../common/Structs";
 import PostService from "../../service/PostService";
 import CommentService from "../../service/CommentService";
 import TagService from "../../service/TagService";
-import {SideBar} from "../SideBar";
+import {FloatList} from "../FloatList";
+import {formatDate} from "../../common/utils";
 import {CatalogCard} from "../Card/CatalogCard";
 import "../../home/md.scss"
 
@@ -65,10 +66,10 @@ function CommentItem({
     return (
         <div className="comment-item">
             <div className="comment-header">
+                <span className="comment-avatar">{comment.user_name?.slice(0, 1).toUpperCase()}</span>
                 <span className="comment-user">{comment.user_name}</span>
-                <span className="comment-email">({comment.user_email})</span>
                 <span className="comment-time">
-                    {comment.created_time ? new Date(comment.created_time).toLocaleString() : ''}
+                    {comment.created_time ? formatDate(new Date(comment.created_time), 'yyyy-MM-dd HH:mm') : ''}
                 </span>
                 <button className="reply-btn" onClick={() => onReply(comment)}>回复</button>
             </div>
@@ -82,21 +83,23 @@ function CommentItem({
                     <div className="reply-form-header">
                         <span>回复 @ {comment.user_name}</span>
                     </div>
-                    <div className="form-group">
-                        <input
-                            type="email"
-                            value={userEmail}
-                            onChange={(e) => onEmailChange(e.target.value)}
-                            placeholder="邮箱"
-                        />
-                    </div>
-                    <div className="form-group">
-                        <input
-                            type="text"
-                            value={userName}
-                            onChange={(e) => onNameChange(e.target.value)}
-                            placeholder="昵称"
-                        />
+                    <div className="comment-form__row">
+                        <div className="form-group">
+                            <input
+                                type="email"
+                                value={userEmail}
+                                onChange={(e) => onEmailChange(e.target.value)}
+                                placeholder="邮箱"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <input
+                                type="text"
+                                value={userName}
+                                onChange={(e) => onNameChange(e.target.value)}
+                                placeholder="昵称"
+                            />
+                        </div>
                     </div>
                     <div className="form-group">
                         <textarea
@@ -107,14 +110,14 @@ function CommentItem({
                         />
                     </div>
                     <div className="reply-form-actions">
+                        <button className="cancel-reply-btn" onClick={onCancelReply}>取消</button>
                         <button
                             className="comment-submit-btn"
                             onClick={onSubmitReply}
                             disabled={commentLoading}
                         >
-                            {commentLoading ? "提交中..." : "提交"}
+                            {commentLoading ? "提交中..." : "回复"}
                         </button>
-                        <button className="cancel-reply-btn" onClick={onCancelReply}>取消</button>
                     </div>
                 </div>
             )}
@@ -435,148 +438,122 @@ export function PostPage() {
         setCatalogJson(JSON.stringify(tree));
     }
 
+    const hasToc = catalogJson !== '' && catalogJson !== '[]';
+    const post = postRef.current;
+
     return (
         <>
-            <div className="post-page flex">
-                {!loading && (
-                    <div className="side-list left-sidebar">
-                        <div className="catalog">
-                            <CatalogCard catalogJson={catalogJson}/>
-                        </div>
-                    </div>
+            <div className={hasToc ? "post-page" : "post-page post-page--no-toc"}>
+                {!loading && hasToc && (
+                    <aside className="post-toc">
+                        <CatalogCard catalogJson={catalogJson}/>
+                    </aside>
                 )}
-                <div className="post-main">
+                <main className="post-main">
                     {loading ? (
-                        <div className="post-loading-shell">
-                            <section className="post-loading-card post-loading-card--hero">
-                                <div className="post-loading-card__terminal">
-                                    <span className="post-loading-card__prompt">$</span> preparing article
-                                </div>
-                                <div className="post-loading-line post-loading-line--title"/>
-                                <div className="post-loading-meta">
-                                    <span className="post-loading-chip"/>
-                                    <span className="post-loading-chip"/>
-                                    <span className="post-loading-chip post-loading-chip--short"/>
-                                </div>
-                            </section>
-
-                            <section className="post-loading-card">
-                                <div className="post-loading-line post-loading-line--heading"/>
-                                <div className="post-loading-paragraph">
-                                    <span className="post-loading-line"/>
-                                    <span className="post-loading-line post-loading-line--wide"/>
-                                    <span className="post-loading-line post-loading-line--medium"/>
-                                </div>
-                                <div className="post-loading-block"/>
-                                <div className="post-loading-paragraph">
-                                    <span className="post-loading-line post-loading-line--wide"/>
-                                    <span className="post-loading-line"/>
-                                    <span className="post-loading-line post-loading-line--short"/>
-                                </div>
-                            </section>
-
-                            <section className="post-loading-card">
-                                <div className="post-loading-card__terminal">
-                                    <span className="post-loading-card__prompt">&gt;</span> loading comments
-                                </div>
-                                <div className="post-loading-comment">
-                                    <span className="post-loading-avatar"/>
-                                    <div className="post-loading-comment__body">
-                                        <span className="post-loading-line post-loading-line--medium"/>
-                                        <span className="post-loading-line post-loading-line--wide"/>
-                                    </div>
-                                </div>
-                            </section>
+                        <div className="post-loading-shell" aria-label="文章加载中">
+                            <span className="post-loading-line post-loading-line--eyebrow"/>
+                            <span className="post-loading-line post-loading-line--title"/>
+                            <span className="post-loading-line post-loading-line--meta"/>
+                            <div className="post-loading-paragraph">
+                                <span className="post-loading-line"/>
+                                <span className="post-loading-line post-loading-line--wide"/>
+                                <span className="post-loading-line post-loading-line--medium"/>
+                            </div>
+                            <span className="post-loading-block"/>
+                            <div className="post-loading-paragraph">
+                                <span className="post-loading-line post-loading-line--wide"/>
+                                <span className="post-loading-line"/>
+                                <span className="post-loading-line post-loading-line--short"/>
+                            </div>
                         </div>
                     ) : (
                         <>
-                            <div className="post-info">
-                                <div className="post-title">
-                                    {postRef.current.title}
-                                </div>
+                            <header className="post-header">
+                                <div className="post-header__eyebrow">{post.category ? post.category : '未分类'}</div>
+                                <h1 className="post-title">{post.title}</h1>
                                 <div className="post-meta">
-                                    <span className="fa fa-calendar"> </span>
-                                    发表于{postRef.current.created_time.toLocaleString()}|
-                                    <span className="fa fa-history"> </span>
-                                    更新于{postRef.current.update_time.toLocaleString()} |
-                                    <span className="fa fa-archive"></span>
-                                    {postRef.current.category ? postRef.current.category : '未知分类'}
+                                    {post.author && <span>{post.author}</span>}
+                                    <span>发表于 {formatDate(post.created_time as Date, 'yyyy-MM-dd')}</span>
+                                    <span>更新于 {formatDate(post.update_time as Date, 'yyyy-MM-dd')}</span>
+                                    {post.word_count ? <span>{post.word_count.toLocaleString()} 字</span> : null}
                                 </div>
-                            </div>
+                            </header>
 
-                            <div className="content">
+                            <article className="post-content">
                                 <div ref={post_content_ref} id="post-content" className="markdown-body"
                                      dangerouslySetInnerHTML={{
-                                         __html: postRef.current.format_content
+                                         __html: post.format_content
                                      }}>
                                 </div>
-                            </div>
+                            </article>
 
                             {/* 文章标签：点击跳转到对应标签页 */}
                             {postTags.length > 0 && (
                                 <div className="post-tags">
-                                    <span className="post-tags__label">
-                                        <span className="post-tags__prompt">$</span> tags
-                                    </span>
-                                    <div className="post-tags__list">
-                                        {postTags.map((tagItem) => (
-                                            <span
-                                                key={tagItem.id}
-                                                className="post-tag"
-                                                onClick={() => navigate(`/tag/${encodeURIComponent(tagItem.name)}`)}
-                                            >
-                                                {tagItem.name}
-                                            </span>
-                                        ))}
-                                    </div>
+                                    {postTags.map((tagItem) => (
+                                        <button
+                                            type="button"
+                                            key={tagItem.id}
+                                            className="post-tag"
+                                            onClick={() => navigate(`/tag/${encodeURIComponent(tagItem.name)}`)}
+                                        >
+                                            #{tagItem.name}
+                                        </button>
+                                    ))}
                                 </div>
                             )}
 
                             {/* 评论区域 */}
-                            <div className="comment-section">
-                                <h3>评论</h3>
+                            <section className="comment-section">
+                                <h2 className="comment-section__title">
+                                    评论 <span className="comment-section__count">{comments.length}</span>
+                                </h2>
                                 <div className="comment-form">
-                                    <div className="form-group">
-                                        <label>邮箱：</label>
-                                        <input
-                                            type="email"
-                                            value={userEmail}
-                                            onChange={(e) => handleEmailChange(e.target.value)}
-                                            placeholder="请输入邮箱"
-                                        />
+                                    <div className="comment-form__row">
+                                        <label className="form-group">
+                                            <span>邮箱</span>
+                                            <input
+                                                type="email"
+                                                value={userEmail}
+                                                onChange={(e) => handleEmailChange(e.target.value)}
+                                                placeholder="不会公开显示"
+                                            />
+                                        </label>
+                                        <label className="form-group">
+                                            <span>昵称</span>
+                                            <input
+                                                type="text"
+                                                value={userName}
+                                                onChange={(e) => setUserName(e.target.value)}
+                                                placeholder="怎么称呼你"
+                                            />
+                                        </label>
                                     </div>
-                                    <div className="form-group">
-                                        <label>昵称：</label>
-                                        <input
-                                            type="text"
-                                            value={userName}
-                                            onChange={(e) => setUserName(e.target.value)}
-                                            placeholder="请输入昵称"
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>评论内容：</label>
+                                    <label className="form-group">
+                                        <span>评论内容</span>
                                         <textarea
                                             value={commentContent}
                                             onChange={(e) => setCommentContent(e.target.value)}
-                                            placeholder="请输入评论内容"
+                                            placeholder="写下你的想法…"
                                             rows={4}
                                         />
+                                    </label>
+                                    <div className="comment-form__actions">
+                                        <button
+                                            className="comment-submit-btn"
+                                            onClick={handleSubmitComment}
+                                            disabled={commentLoading}
+                                        >
+                                            {commentLoading ? "提交中..." : "提交评论"}
+                                        </button>
                                     </div>
-                                    <button
-                                        className="comment-submit-btn"
-                                        onClick={handleSubmitComment}
-                                        disabled={commentLoading}
-                                    >
-                                        {commentLoading ? "提交中..." : "提交评论"}
-                                    </button>
                                 </div>
 
                                 {/* 评论列表 */}
                                 <div className="comment-list">
-                                    <h4>评论列表 ({comments.length})</h4>
                                     {comments.length === 0 ? (
-                                        <p className="no-comment">暂无评论，快来抢沙发吧！</p>
+                                        <p className="no-comment">还没有评论，来说点什么吧。</p>
                                     ) : (
                                         comments.map((comment) => (
                                             <CommentItem
@@ -597,13 +574,13 @@ export function PostPage() {
                                         ))
                                     )}
                                 </div>
-                            </div>
+                            </section>
                         </>
                     )}
-                </div>
-
-                {!loading && <SideBar catalogJson={catalogJson}/>}
+                </main>
             </div>
+
+            <FloatList/>
         </>
     )
 }

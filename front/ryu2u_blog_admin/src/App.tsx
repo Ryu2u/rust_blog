@@ -1,4 +1,3 @@
-import './App.css'
 import {Admin} from "./admin/Admin";
 import {BrowserRouter, Route, Routes, Navigate,} from "react-router-dom";
 import {LoginPage} from "./login/LoginPage";
