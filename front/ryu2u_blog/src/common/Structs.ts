@@ -11,6 +11,14 @@ export class Result{
     obj!: any;
 }
 
+/** 当前登录用户（/user/me 与登录响应里取出的身份字段） */
+export interface AuthUser {
+    id: number;
+    username: string;
+    nick_name: string;
+    role: string;
+}
+
 export class User {
     id!: number;
     username!: string;

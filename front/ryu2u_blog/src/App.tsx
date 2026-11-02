@@ -8,14 +8,16 @@ import {TagPage} from "./tag/TagPage.tsx";
 import {MomentPage} from "./moment/MomentPage.tsx";
 import {Header} from "./components/Header";
 import {Footer} from "./components/Footer";
+import {AuthProvider} from "./auth/AuthProvider";
 
 function App() {
 
     return (
         <>
             <BrowserRouter>
-                <Header/>
-                <Routes>
+                <AuthProvider>
+                    <Header/>
+                    <Routes>
                     <Route path={"/"} element={<Navigate to={"/home"}/>}></Route>
                     <Route path={"/home"} element={<Home />}></Route>
                     <Route path={"/post/:id"} element={<PostPage />}></Route>
@@ -23,8 +25,9 @@ function App() {
                     <Route path={"/category/:tag"} element={<CategoryPage />}></Route>
                     <Route path={"/tag/:name"} element={<TagPage />}></Route>
                     <Route path={"/moment"} element={<MomentPage />}></Route>
-                </Routes>
-                <Footer/>
+                    </Routes>
+                    <Footer/>
+                </AuthProvider>
             </BrowserRouter>
         </>
     )
