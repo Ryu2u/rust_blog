@@ -1,0 +1,119 @@
+/* 说说时间线：竖线 + 圆点 + 卡片 */
+
+.moment-timeline {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 28px;
+  list-style: none;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 5px;
+    width: 1px;
+    background: var(--color-border);
+  }
+}
+
+.moment-item {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.moment-item__dot {
+  position: absolute;
+  top: 24px;
+  left: -28px;
+  width: 11px;
+  height: 11px;
+  box-sizing: border-box;
+  border: 2px solid var(--color-primary);
+  border-radius: 50%;
+  background: var(--color-bg);
+}
+
+.moment-card {
+  padding: 20px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.moment-card__time {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.moment-card__content {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 16px;
+  line-height: 1.85;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.moment-images {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 480px;
+  margin-top: 14px;
+
+  &--single {
+    grid-template-columns: minmax(0, 320px);
+  }
+
+  &--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 320px;
+  }
+
+  .ant-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-muted);
+  }
+
+  &--single .ant-image {
+    aspect-ratio: 4 / 3;
+  }
+
+  .ant-image-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.moment-card__location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .moment-timeline {
+    padding-left: 20px;
+  }
+
+  .moment-item__dot {
+    left: -20px;
+  }
+
+  .moment-card {
+    padding: 16px;
+  }
+}

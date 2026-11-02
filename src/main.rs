@@ -64,6 +64,8 @@ async fn main() -> std::io::Result<()> {
             "/tag/post",
             "/tag/cloud",
             "/tag/posts",
+            // 公开说说分页：精确到 /moment/page，不能写成 /moment/**，否则会放行 /moment/admin/*
+            "/moment/page",
         ]);
 
         App::new()

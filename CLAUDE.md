@@ -52,7 +52,7 @@ Modules: `user/`, `post/` (split into `apis.rs`, `tag_apis.rs`, `category_apis.r
 - `middleware.rs` — `AuthFilter`: whitelist bypass → JWT verify → admin role check
 - `src/utils/jwt_utils.rs` — `create_jwt` / `verify_jwt`, `AUTH_COOKIE_NAME`, claims (`sub`, `username`, `role`, `exp`)
 
-**Routes** (scope → handlers): `/user` (`login`, `logout`, `get`, `admin/*`), `/post` (`get`, `page`, `list_by_category`, `admin/*`), `/tag`, `/category`, `/comment` (`add`, `list/{post_id}`, `admin/*`), `/moment` (`admin/*` only), `/note_sync` (`admin/config`, `admin/ai_test` only). Every mutation is a GET or POST — CORS only allows `GET, POST, OPTIONS`.
+**Routes** (scope → handlers): `/user` (`login`, `logout`, `get`, `admin/*`), `/post` (`get`, `page`, `list_by_category`, `admin/*`), `/tag`, `/category`, `/comment` (`add`, `list/{post_id}`, `admin/*`), `/moment` (`POST /moment/page` is public — only `is_public=1` and not deleted, page_size ≤ 50; everything else is `admin/*`), `/note_sync` (`admin/config`, `admin/ai_test` only). Every mutation is a GET or POST — CORS only allows `GET, POST, OPTIONS`.
 
 **Response format**: all handlers return `Result<impl Responder, Exception>` producing `R<T>` → `{ "code", "msg", "obj" }`. Handlers take `db: web::Data<RBatis>` (not `AppState`) as their data param; `AppState` only carries `app_name` and `admin_route_prefixes`. `Exception` maps to HTTP 400/500/404. Note `error_response` sets `ContentType::html()` even though the body is JSON.
 
@@ -69,7 +69,7 @@ Failure modes are plain `ErrorUnauthorized` (401) / `ErrorForbidden` (403), not 
 
 Two independent React 18 + TypeScript + Vite apps sharing a light, claude.ai-style design (cream `#faf9f5` background, terracotta `#c96442` accent, serif headings). Design tokens are CSS variables in `ryu2u_blog/src/index.scss` and `ryu2u_blog_admin/src/index.css` (the admin also mirrors them as antd tokens in `main.tsx`) — use the variables, not hardcoded colors. Light theme only; there is no dark mode:
 
-- **`ryu2u_blog/`** — public blog (:8088). Routes: `/home`, `/post/:id`, `/category`, `/category/:tag` (defined inline in `App.tsx`)
+- **`ryu2u_blog/`** — public blog (:8088). Routes: `/home`, `/post/:id`, `/category`, `/category/:tag`, `/moment` (defined inline in `App.tsx`)
 - **`ryu2u_blog_admin/`** — admin panel (:8089). Routes come from `common/routerConfig.tsx`, a `RouteConfig[]` that drives both the routes and the breadcrumbs; `App.tsx` flattens it. Paths: `/dashboard`, `/article`(`/list`, `/new`, `/edit/:id`), `/user/list`, `/user/edit/:id`, `/comment`, `/moments`, `/about`
 
 Both use Ant Design 5, Axios, and `@bytemd` for Markdown. The admin app additionally uses a `useAjaxEffect`/`HttpEffectFragment` interceptor pair (`common/AxioConfig.tsx`) that redirects to `/login` on 401 and shows a message on 403.

@@ -64,6 +64,15 @@ export class Tag {
     priority?: number;
 }
 
+/** 公开说说（/moment/page 的单条，只含展示字段） */
+export class Moment {
+    id!: number;
+    content!: string;
+    images!: string[];
+    location?: string;
+    created_time!: number;
+}
+
 /** 标签云条目：标签名 + 关联文章数 */
 export class TagCount {
     name!: string;

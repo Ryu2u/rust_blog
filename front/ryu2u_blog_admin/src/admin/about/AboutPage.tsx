@@ -7,11 +7,12 @@ export function AboutPage() {
         "文章列表 / 新建 / 编辑 / 删除",
         "评论审核 / 拒绝 / 删除 / 批量操作",
         "用户列表 / 新建 / 编辑 / 锁定 / 删除",
+        "说说发布 / 编辑 / 删除 / 公开切换",
+        "同步设置（笔记同步的 AI 元数据配置与连接测试）",
         "仪表盘最近文章展示",
     ];
 
     const pending = [
-        "说说模块目前仍是前端示例数据，后端接口尚未接入",
         "仪表盘统计项还没有全部接真实统计数据",
     ];
 
@@ -29,8 +30,8 @@ export function AboutPage() {
                 <Col span={12}>
                     <Card title="项目说明">
                         <Paragraph>
-                            这是博客系统的管理后台，负责文章、评论和用户的日常运营管理。
-                            当前界面采用 Claude 风格的浅色设计，用户管理也已经接入真实后端接口。
+                            这是博客系统的管理后台，负责文章、评论、用户和说说的日常运营管理，
+                            也可以配置 GitHub 笔记同步。当前界面采用 Claude 风格的浅色设计。
                         </Paragraph>
                         <Paragraph>
                             <Text type="secondary">API Base:</Text> http://localhost:9002
@@ -46,20 +47,22 @@ export function AboutPage() {
                         </Space>
                     </Card>
                 </Col>
-                <Col span={24}>
-                    <Alert
-                        type="warning"
-                        showIcon
-                        message="仍待完善"
-                        description={
-                            <Space direction="vertical">
-                                {pending.map((item) => (
-                                    <div key={item}>{item}</div>
-                                ))}
-                            </Space>
-                        }
-                    />
-                </Col>
+                {pending.length > 0 && (
+                    <Col span={24}>
+                        <Alert
+                            type="warning"
+                            showIcon
+                            message="仍待完善"
+                            description={
+                                <Space direction="vertical">
+                                    {pending.map((item) => (
+                                        <div key={item}>{item}</div>
+                                    ))}
+                                </Space>
+                            }
+                        />
+                    </Col>
+                )}
             </Row>
         </div>
     );

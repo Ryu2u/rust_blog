@@ -44,6 +44,16 @@ impl Moment {
         db.query_decode(sql.as_str(), vec![]).await.unwrap_or(0)
     }
 
+    /// 统计公开说说总数（公开且未软删）
+    pub async fn count_public(db: &rbatis::RBatis) -> i32 {
+        db.query_decode(
+            "select count(*) as count from moment where is_public = 1 and is_deleted = 0",
+            vec![],
+        )
+        .await
+        .unwrap_or(0)
+    }
+
     pub async fn select_page(
         db: &rbatis::RBatis,
         offset: i32,
@@ -69,6 +79,15 @@ crud!(Moment {}, "moment");
 impl_select!(
     Moment {
         select_by_id(id:i32) => "`where id = #{id} and is_deleted = 0`"
+    },
+    "moment"
+);
+
+// 公开分页：仅公开且未软删，按发布时间倒序（id 兜底保证翻页顺序确定）
+impl_select!(
+    Moment {
+        select_page_public(offset:i32, size:i32) => "`where is_public = 1 and is_deleted = 0 \
+        order by created_time desc , id desc limit #{offset} , #{size}`"
     },
     "moment"
 );

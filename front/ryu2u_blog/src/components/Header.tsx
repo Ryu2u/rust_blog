@@ -28,6 +28,11 @@ export function Header() {
                                 </button>
                             </li>
                             <li>
+                                <button type="button" className={navClass('/moment')} onClick={() => navigate("/moment")}>
+                                    说说
+                                </button>
+                            </li>
+                            <li>
                                 <button type="button">
                                     友链
                                 </button>

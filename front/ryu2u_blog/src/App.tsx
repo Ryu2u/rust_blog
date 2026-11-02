@@ -5,6 +5,7 @@ import {Home} from "./home/Home";
 import {PostPage} from "./components/Post/PostPage";
 import {CategoryPage} from "./category/CategoryPage.tsx";
 import {TagPage} from "./tag/TagPage.tsx";
+import {MomentPage} from "./moment/MomentPage.tsx";
 import {Header} from "./components/Header";
 import {Footer} from "./components/Footer";
 
@@ -21,6 +22,7 @@ function App() {
                     <Route path={"/category"} element={<CategoryPage />}></Route>
                     <Route path={"/category/:tag"} element={<CategoryPage />}></Route>
                     <Route path={"/tag/:name"} element={<TagPage />}></Route>
+                    <Route path={"/moment"} element={<MomentPage />}></Route>
                 </Routes>
                 <Footer/>
             </BrowserRouter>

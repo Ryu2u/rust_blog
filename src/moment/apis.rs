@@ -28,8 +28,29 @@ pub struct MomentPageQuery {
     pub keyword: Option<String>,
 }
 
+/// 公开说说分页入参（未登录可访问；多余字段如 total / list 会被忽略）
+#[derive(Debug, Clone, Deserialize)]
+pub struct PublicMomentPageQuery {
+    pub page_num: i32,
+    pub page_size: i32,
+}
+
+/// 公开说说响应：只下发展示字段，不含 is_public / update_time / 点赞评论计数
+#[derive(Debug, Clone, Serialize)]
+pub struct PublicMoment {
+    pub id: Option<i32>,
+    pub content: String,
+    pub images: Vec<String>,
+    pub location: Option<String>,
+    pub created_time: Option<i64>,
+}
+
+/// 公开分页单页条数上限（接口无需登录，必须限制单次查询规模）
+const PUBLIC_PAGE_SIZE_MAX: i32 = 50;
+
 pub fn moment_scope() -> actix_web::Scope {
     actix_web::web::scope("/moment")
+        .service(api_moment_list_page)
         .service(api_admin_moment_list_page)
         .service(api_admin_moment_get)
         .service(api_admin_moment_add)
@@ -65,6 +86,54 @@ fn to_payload(moment: Moment) -> MomentPayload {
         created_time: moment.created_time,
         update_time: moment.update_time,
     }
+}
+
+/// 公开分页入参校验，返回 SQL offset。
+/// 非正数会让 limit 为负 → SQL 语法错误 500；乘法溢出同理，统一按 400 拒绝。
+fn public_page_offset(page_num: i32, page_size: i32) -> Result<i32, Exception> {
+    if page_num < 1 || !(1..=PUBLIC_PAGE_SIZE_MAX).contains(&page_size) {
+        return Err(Exception::BadRequest(format!(
+            "page_num 必须为正整数，page_size 必须在 1~{} 之间",
+            PUBLIC_PAGE_SIZE_MAX
+        )));
+    }
+    (page_num - 1)
+        .checked_mul(page_size)
+        .ok_or_else(|| Exception::BadRequest("page_num 过大".to_string()))
+}
+
+fn to_public(moment: Moment) -> PublicMoment {
+    PublicMoment {
+        id: moment.id,
+        content: moment.content,
+        images: parse_images(moment.images),
+        location: moment.location,
+        created_time: moment.created_time,
+    }
+}
+
+/// 公开说说分页（无需登录）：只返回公开且未删除的说说。
+/// skip(db)：避免 instrument 把含数据库口令的连接对象写进日志。
+#[instrument(skip(db))]
+#[post("/page")]
+async fn api_moment_list_page(
+    query: web::Json<PublicMomentPageQuery>,
+    db: web::Data<RBatis>,
+) -> Result<impl Responder, Exception> {
+    let offset = public_page_offset(query.page_num, query.page_size)?;
+
+    let total = Moment::count_public(&**db).await;
+    let rows = Moment::select_page_public(&**db, offset, query.page_size)
+        .await
+        .map_err(|_| Exception::InternalError)?;
+
+    let page = PageInfo {
+        page_num: query.page_num,
+        page_size: query.page_size,
+        total,
+        list: Some(rows.into_iter().map(to_public).collect::<Vec<_>>()),
+    };
+    Ok(R::ok_obj(page))
 }
 
 #[instrument]
@@ -205,4 +274,62 @@ async fn api_admin_moment_toggle_public(
         .await
         .map_err(|_| Exception::BadRequest("状态更新失败".to_string()))?;
     Ok(R::<()>::ok_msg("状态已更新"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample(images: Option<&str>) -> Moment {
+        Moment::new(
+            "今天天气不错".to_string(),
+            images.map(|v| v.to_string()),
+            1,
+            Some("南京".to_string()),
+        )
+    }
+
+    #[test]
+    fn public_offset_accepts_valid_pages() {
+        assert_eq!(public_page_offset(1, 10).ok(), Some(0));
+        assert_eq!(public_page_offset(3, 20).ok(), Some(40));
+        assert_eq!(public_page_offset(1, PUBLIC_PAGE_SIZE_MAX).ok(), Some(0));
+    }
+
+    #[test]
+    fn public_offset_rejects_bad_input() {
+        for (num, size) in [(0, 10), (-1, 10), (1, 0), (1, -5), (1, PUBLIC_PAGE_SIZE_MAX + 1)] {
+            assert!(
+                matches!(public_page_offset(num, size), Err(Exception::BadRequest(_))),
+                "page_num={num} page_size={size} 应被拒绝"
+            );
+        }
+        // (page_num - 1) * page_size 溢出 i32
+        assert!(matches!(
+            public_page_offset(i32::MAX, PUBLIC_PAGE_SIZE_MAX),
+            Err(Exception::BadRequest(_))
+        ));
+    }
+
+    #[test]
+    fn to_public_parses_images_and_keeps_display_fields() {
+        let m = to_public(sample(Some(r#"["a.png","b.png"]"#)));
+        assert_eq!(m.content, "今天天气不错");
+        assert_eq!(m.images, vec!["a.png".to_string(), "b.png".to_string()]);
+        assert_eq!(m.location.as_deref(), Some("南京"));
+    }
+
+    #[test]
+    fn to_public_tolerates_missing_or_broken_images() {
+        assert!(to_public(sample(None)).images.is_empty());
+        assert!(to_public(sample(Some("not json"))).images.is_empty());
+    }
+
+    #[test]
+    fn public_response_omits_internal_fields() {
+        let json = serde_json::to_string(&to_public(sample(None))).unwrap();
+        for field in ["is_public", "is_deleted", "update_time", "likes", "comments"] {
+            assert!(!json.contains(field), "公开响应不应包含 {field}：{json}");
+        }
+    }
 }
