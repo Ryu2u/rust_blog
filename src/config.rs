@@ -72,6 +72,19 @@ pub enum Exception {
     InternalError,
     NotFound,
     BadRequest(String),
+    /// 429：登录失败过多被临时锁定
+    TooManyRequests { msg: String, retry_after_secs: u64 },
+}
+
+impl Exception {
+    /// 登录被临时锁定：文案按剩余时间向上取整到分钟（至少 1 分钟），不透露是哪条规则触发的
+    pub fn too_many_requests(retry_after_secs: u64) -> Self {
+        let minutes = retry_after_secs.div_ceil(60).max(1);
+        Exception::TooManyRequests {
+            msg: format!("尝试次数过多，请 {minutes} 分钟后再试"),
+            retry_after_secs,
+        }
+    }
 }
 
 pub struct ContentTypeGuard;
@@ -90,7 +103,41 @@ impl Display for Exception {
             Exception::InternalError => write!(f, "internal error"),
             Exception::BadRequest(msg) => write!(f, "{}", msg),
             Exception::NotFound => write!(f, "not found"),
+            Exception::TooManyRequests { msg, .. } => write!(f, "{}", msg),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::ResponseError;
+
+    #[test]
+    fn too_many_requests_is_429_with_retry_after_header() {
+        let e = Exception::too_many_requests(61);
+        let resp = e.error_response();
+        assert_eq!(resp.status(), StatusCode::TOO_MANY_REQUESTS);
+        assert_eq!(resp.headers().get("Retry-After").unwrap().to_str().unwrap(), "61");
+    }
+
+    #[test]
+    fn retry_minutes_round_up_with_a_floor_of_one() {
+        let cases = [(0, 1), (1, 1), (60, 1), (61, 2), (900, 15)];
+        for (secs, minutes) in cases {
+            assert_eq!(
+                Exception::too_many_requests(secs).to_string(),
+                format!("尝试次数过多，请 {minutes} 分钟后再试"),
+                "{secs} 秒"
+            );
+        }
+    }
+
+    #[test]
+    fn other_errors_have_no_retry_after_header() {
+        let resp = Exception::BadRequest("x".to_string()).error_response();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+        assert!(resp.headers().get("Retry-After").is_none());
     }
 }
 
@@ -100,6 +147,7 @@ impl error::ResponseError for Exception {
             Exception::BadRequest(_) => StatusCode::BAD_REQUEST,
             Exception::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             Exception::NotFound => StatusCode::NOT_FOUND,
+            Exception::TooManyRequests { .. } => StatusCode::TOO_MANY_REQUESTS,
         }
     }
     fn error_response(&self) -> HttpResponse {
@@ -109,9 +157,12 @@ impl error::ResponseError for Exception {
             obj: (),
         };
         error!("Error: {:?}", result);
-        HttpResponse::build(self.status_code())
-            .insert_header(ContentType::html())
-            .body(serde_json::to_string(&result).unwrap())
+        let mut builder = HttpResponse::build(self.status_code());
+        builder.insert_header(ContentType::html());
+        if let Exception::TooManyRequests { retry_after_secs, .. } = self {
+            builder.insert_header(("Retry-After", retry_after_secs.to_string()));
+        }
+        builder.body(serde_json::to_string(&result).unwrap())
     }
 }
 
