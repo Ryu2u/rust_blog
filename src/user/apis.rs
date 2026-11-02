@@ -2,7 +2,7 @@ use crate::user::login_support::{
     auth_cookie, burn_dummy_verify, check_password, clear_auth_cookie, cookie_secure,
     sanitize_for_log, validate_login_input, PasswordCheck,
 };
-use crate::user::structs::LoginDto;
+use crate::user::structs::{AuthUser, LoginDto};
 use crate::utils::client_ip::client_ip;
 use crate::utils::jwt_utils::{create_jwt, jwt_exp_hours};
 use crate::utils::login_guard::LoginGuard;
@@ -24,6 +24,7 @@ pub fn user_scope() -> actix_web::Scope {
                 .route(web::post().to(api_login)),
         )
         .service(api_logout)
+        .service(api_user_me)
         .service(api_user_get)
         .service(api_user_get_admin)
         .service(api_user_add)
@@ -130,6 +131,12 @@ pub async fn api_logout() -> Result<impl Responder, Exception> {
     let cookie = clear_auth_cookie(cookie_secure());
 
     Ok(HttpResponse::Ok().cookie(cookie).json(R::<()>::ok()))
+}
+
+/// 当前登录用户（需登录）。中间件已校验账号状态，并把 AuthUser 放进了请求扩展。
+#[get("/me")]
+pub async fn api_user_me(user: web::ReqData<AuthUser>) -> Result<impl Responder, Exception> {
+    Ok(R::ok_obj(user.into_inner()))
 }
 
 #[instrument]

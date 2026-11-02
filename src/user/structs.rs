@@ -123,3 +123,45 @@ pub struct LoginDto {
     pub password: String,
     pub remember: bool,
 }
+
+/// 通过登录校验后放进请求扩展的「当前用户」，也是 `GET /user/me` 的响应体。
+/// 刻意只含身份字段：不含密码、盐、锁定标记等。
+#[derive(Clone, Debug, Serialize)]
+pub struct AuthUser {
+    pub id: i32,
+    pub username: String,
+    pub nick_name: String,
+    pub role: String,
+}
+
+impl From<&User> for AuthUser {
+    fn from(u: &User) -> Self {
+        AuthUser {
+            id: u.id.unwrap_or_default(),
+            username: u.username.clone(),
+            nick_name: u.nick_name.clone(),
+            role: u.role.clone(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn auth_user_exposes_only_identity_fields() {
+        let mut u = User::new("alice", "s3cret-password", "Alice");
+        u.id = Some(7);
+        u.role = "admin".to_string();
+        let au = AuthUser::from(&u);
+        assert_eq!(au.id, 7);
+        assert_eq!(au.username, "alice");
+        assert_eq!(au.nick_name, "Alice");
+        assert_eq!(au.role, "admin");
+        let json = serde_json::to_string(&au).unwrap();
+        for forbidden in ["password", "s3cret", "salt", "locked", "created_time"] {
+            assert!(!json.contains(forbidden), "{forbidden} 不应出现：{json}");
+        }
+    }
+}

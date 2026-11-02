@@ -98,10 +98,12 @@ async fn main() -> std::io::Result<()> {
             .app_data(white_list)
             // 文件上传大小限制
             .app_data(MultipartFormConfig::default().memory_limit(25 * 1024 * 1024))
+            // 中间件的执行顺序是「后注册的在最外层」：AuthFilter 先注册（内层），
+            // CORS 后注册（最外层）。这样 AuthFilter 拒绝请求时返回的 401 / 403 也会带上 CORS 头；
+            // 反过来的话，浏览器会把跨域的 401 当成网络错误，前端读不到状态码。
+            .wrap(AuthFilter)
             // 添加跨域配置
             .wrap(cors)
-            // 添加拦截器配置
-            .wrap(AuthFilter)
             .service({
                 web::scope("")
                     .guard(ContentTypeGuard)
