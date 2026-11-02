@@ -1,6 +1,6 @@
 extern crate core;
 
-use crate::middleware::{AuthFilter, FilterWhiteList};
+use crate::middleware::{AuthFilter, FilterWhiteList, PUBLIC_PATHS};
 use crate::moment::apis::moment_scope;
 use crate::post::category_apis::category_scope;
 use crate::post::structs::Post;
@@ -58,23 +58,7 @@ async fn main() -> std::io::Result<()> {
             .supports_credentials()
             .allowed_methods(vec!["GET", "POST", "OPTIONS"])
             .allow_any_header();
-        let white_list = FilterWhiteList(vec![
-            "/user/login",
-            "/user/get",
-            "/post/get",
-            "/post/page",
-            "/post/list_by_category/*",
-            "/category/**",
-            "/comment/add",
-            "/comment/list",
-            // /tag/list 不对外公开：返回全部标签行（含仅被隐藏文章引用的标签名），
-            // 需要登录态才能访问（后台标签管理带 cookie 不受影响）
-            "/tag/post",
-            "/tag/cloud",
-            "/tag/posts",
-            // 公开说说分页：精确到 /moment/page，不能写成 /moment/**，否则会放行 /moment/admin/*
-            "/moment/page",
-        ]);
+        let white_list = FilterWhiteList(PUBLIC_PATHS.to_vec());
 
         App::new()
             // 配置全局对象
