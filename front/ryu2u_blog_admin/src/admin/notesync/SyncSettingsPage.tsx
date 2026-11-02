@@ -79,7 +79,7 @@ export function SyncSettingsPage() {
                 </Form.Item>
             </Form>
             <div style={{color: "var(--color-text-muted)", fontSize: 12}}>
-                说明：AI 为同步的笔记生成标题/摘要/标签/分类，并判定是否可公开；AI 不可用时笔记默认隐藏。
+                说明：AI 为同步的笔记生成标题/摘要/标签/分类。所有同步的文章默认展示，AI 不会隐藏任何文章；需要取消展示时，请到「文章」页手动设置。
             </div>
         </Card>
     );

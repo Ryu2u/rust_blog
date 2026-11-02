@@ -41,14 +41,15 @@ pub fn parse_ai_meta(raw: &str) -> Option<AiMeta> {
     serde_json::from_str::<AiMeta>(stripped.get(start..=end)?).ok()
 }
 
-/// AI 失败降级元数据：默认隐藏（安全闸门）
+/// AI 失败降级元数据。没有拿到 AI 的公开性判定，所以不能把它记成「AI 判定不可公开」：
+/// public = true / reason 为空表示「没有被标记」。展示与否本来就不由 AI 决定（见 new_post_from_sync）。
 pub fn fallback_meta(path: &str, content: &str) -> AiMeta {
     AiMeta {
         title: title_from_path(path),
         summary: summarize(content, 200),
         tags: vec![],
         category: String::new(),
-        public: false,
+        public: true,
         reason: String::new(),
     }
 }
@@ -169,10 +170,11 @@ mod tests {
         assert!(parse_ai_meta("废话}…{").is_none());
     }
     #[test]
-    fn test_fallback_meta_hidden() {
+    fn test_fallback_meta_not_flagged() {
         let m = fallback_meta("笔记/Docker/安装.md", "# 安装\n正文");
         assert_eq!(m.title, "安装");
-        assert!(!m.public, "降级元数据必须默认隐藏");
+        assert!(m.public, "AI 没给出判定时，不能被记成「AI 判定不可公开」");
+        assert!(m.reason.is_empty());
         assert!(m.tags.is_empty());
     }
 }

@@ -3,7 +3,8 @@
 - **日期**: 2026-09-21
 - **状态**: 待评审
 - **仓库**: `Ryu2u/md_note`（私有，默认分支 `master`，已验证 PAT 具备 Contents 读写权限）
-- **修订**: v2.3 — AI 增加公开性审查（public/reason 字段，降级默认隐藏，人工开关优先）
+- **修订**: v2.4 — **展示不再由 AI 决定**：同步文章一律展示，AI 的公开性判定仅作记录，只有后台手动设置才能取消展示（见下文各处「v2.4」标注）
+- **修订**: v2.3 — AI 增加公开性审查（public/reason 字段，降级默认隐藏，人工开关优先）——其中「决定展示与否」的部分已被 v2.4 取代
 
 ## 1. 目标
 
@@ -61,7 +62,7 @@ CREATE TABLE note_sync_map (
   local_sha        CHAR(64)     NOT NULL DEFAULT '',  -- 上次同步成功时本地正文 SHA-256
   post_id          INT          NOT NULL,
   ai_title         VARCHAR(255) NOT NULL DEFAULT '',  -- 上次 AI 生成的标题（更新时判断后台是否改过标题）
-  ai_is_view       TINYINT NOT NULL DEFAULT 0,       -- 上次 AI 公开性判定（更新时判断后台是否手动拨过开关）
+  ai_is_view       TINYINT NOT NULL DEFAULT 0,       -- AI 的公开性判定，仅作记录（v2.4 起不再参与展示决定，也不再用来判断后台是否手动拨过开关）
   ai_reason        VARCHAR(512) NOT NULL DEFAULT '', -- AI 判定不可公开时的理由（可追溯）
   last_commit_time BIGINT       NULL,             -- 该文件最近一次 git 提交时间（epoch ms）
   synced_at        BIGINT       NOT NULL,
@@ -78,7 +79,7 @@ CREATE TABLE note_sync_map (
 | title | **AI 生成**（≤30 字可读标题）；AI 不可用时降级为文件名去扩展名 |
 | author | `NOTE_SYNC_AUTHOR`（默认 `Ryu2u`） |
 | 分类 | **AI 从现有分类中选**（prompt 附带分类名列表，也可新建）；同时固定关联默认分类「笔记」；AI 不可用时仅挂「笔记」 |
-| is_view | **AI 公开性审查决定**：判定可公开=1；判定含敏感内容（隐私/凭据/公司机密/草稿碎片）=0 入库但隐藏；**AI 失败降级时=0 默认隐藏**（审查闸门失效则宁可不发布）。人工可在后台手动改 |
+| is_view | **v2.4：一律 =1（展示）**，与 AI 的公开性判定无关；同步更新时也**绝不改动** is_view。只有在后台手动设置才能取消展示（v2.3 及以前由 AI 公开性审查决定、降级时默认隐藏，已废止） |
 | original_content | Markdown 原文（UTF-8） |
 | format_content | 现有 `pulldown-cmark` 渲染的 HTML |
 | summary | **AI 生成**一句话摘要（≤80 字）；降级为正文剥离 Markdown 后截 200 字符 |
@@ -132,15 +133,15 @@ credentials.yaml 中另有 SiliconFlow / ZAI（智谱）/ OpenCode 三套 OpenAI
 
 - 协议：**OpenAI 兼容** `POST {base_url}/chat/completions`，`Authorization: Bearer <key>`，`temperature: 0.2`，超时 60s
 - System prompt：要求只输出 JSON——`{"title":"≤30字","summary":"≤80字","tags":["3-5个"],"category":"分类名","public":true|false,"reason":"public为false时的一句话理由"}`，并附现有分类名列表要求优先从中选择；正文过长时截前 6000 字符送入
-- **公开性审查**：AI 按以下标准判定 `public`——含个人隐私（证件号/手机号/住址）、凭据密钥（API key/密码/token）、公司敏感（出差报表/薪资/客户信息/内网架构）、不宜公开的草稿碎片，命中任一即 `public:false` 并给出 `reason`；判定与理由存入映射表（`ai_is_view`/`ai_reason`）
-- 解析：剥 ` ```json ` 围栏 → serde 反序列化为 `AiMeta` → 失败重试 1 次 → 仍失败**降级**（文件名标题 + 截断摘要 + 无标签 + 仅「笔记」分类 + **is_view=0 默认隐藏**），warn 日志；**降级不会自动重试**，直到内容再变化或后台手动修改
+- **公开性审查**：AI 按以下标准判定 `public`——含个人隐私（证件号/手机号/住址）、凭据密钥（API key/密码/token）、公司敏感（出差报表/薪资/客户信息/内网架构）、不宜公开的草稿碎片，命中任一即 `public:false` 并给出 `reason`；判定与理由存入映射表（`ai_is_view`/`ai_reason`）。**v2.4：这只是供追溯的记录，不影响文章是否展示**
+- 解析：剥 ` ```json ` 围栏 → serde 反序列化为 `AiMeta` → 失败重试 1 次 → 仍失败**降级**（文件名标题 + 截断摘要 + 无标签 + 仅「笔记」分类；**v2.4：降级元数据不带任何「不可公开」标记（public=true、reason 为空），文章同样展示**），warn 日志；**降级不会自动重试**，直到内容再变化或后台手动修改
 
 **触发与更新规则**：
 
 | 场景 | AI 行为 |
 |---|---|
 | 新文件导入 | 全量生成五个字段（含 public 判定与理由） |
-| 内容更新（blob_sha 变） | 重新生成 summary/tags/category/public；标题带保护：`note_sync_map` 新增列 `ai_title` 记录上次 AI 标题，仅当 `post.title == ai_title`（后台没改过）才替换，否则保留后台标题；**is_view 同款保护**：仅当 `post.is_view == ai_is_view`（后台没手动拨过开关）才应用新判定，人工决定优先 |
+| 内容更新（blob_sha 变） | 重新生成 summary/tags/category/public；标题带保护：`note_sync_map` 新增列 `ai_title` 记录上次 AI 标题，仅当 `post.title == ai_title`（后台没改过）才替换，否则保留后台标题；**is_view（v2.4）**：更新时**不改动**，展示与否只由后台手动设置决定 |
 | 删除/复活 | 不涉及 AI，复用已有元数据 |
 
 **成本与节奏**：首次导入 132 篇 = 132 次串行 LLM 调用（约 10-20 分钟），后台执行不阻塞任何请求，每 10 篇打一条进度日志；调度器用 AtomicBool 防上一轮未跑完时重叠触发。

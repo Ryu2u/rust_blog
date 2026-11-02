@@ -44,7 +44,7 @@ Blog platform: one Rust/Actix-web backend + two independent React frontends.
 
 Modules: `user/`, `post/` (split into `apis.rs`, `tag_apis.rs`, `category_apis.rs`), `comment/`, `moment/` (说说/动态), plus `config.rs`, `middleware.rs`, `utils/` (`time_utils`, `utils`, `jwt_utils`).
 
-**`note_sync/` module** — GitHub 笔记单向同步 (pull-only, md_note repo → blog posts). Sub-modules: `github_client.rs` (REST + ETag 条件请求), `ai_client.rs` (AI 五字段解析/降级/URL 校验), `derive.rs` (本地差分引擎：建/改/删/复活), `sync_engine.rs` (应用循环 + 分类标签落库), `scheduler.rs` (tokio 定时轮询，启动 10s 后首轮，防重入), `crypto.rs` (AES-GCM 配置加密), `apis.rs` (管理接口 `GET/POST /note_sync/admin/config`、`POST /note_sync/admin/ai_test`). Driven entirely by `.env` `NOTE_SYNC_*` vars; state lives in tables `note_sync_map` (path→post 映射 + AI 元数据) and `note_sync_config` (AI 配置，API key AES 密文存储/掩码回显).
+**`note_sync/` module** — GitHub 笔记单向同步 (pull-only, md_note repo → blog posts). Sub-modules: `github_client.rs` (REST + ETag 条件请求), `ai_client.rs` (AI 五字段解析/降级/URL 校验), `derive.rs` (本地差分引擎：建/改/删/复活), `sync_engine.rs` (应用循环 + 分类标签落库), `scheduler.rs` (tokio 定时轮询，启动 10s 后首轮，防重入), `crypto.rs` (AES-GCM 配置加密), `apis.rs` (管理接口 `GET/POST /note_sync/admin/config`、`POST /note_sync/admin/ai_test`). **Synced posts are always shown (`is_view = 1`); sync never touches `is_view` on update, and the AI "public" judgment is only recorded in `note_sync_map` (`ai_is_view`/`ai_reason`) — hiding a post is only possible by hand in the admin.** Driven entirely by `.env` `NOTE_SYNC_*` vars; state lives in tables `note_sync_map` (path→post 映射 + AI 元数据) and `note_sync_config` (AI 配置，API key AES 密文存储/掩码回显).
 
 **Key files**:
 - `main.rs` — entry: tracing, `.env`, rbatis init, CORS, `FilterWhiteList`, `AppState.admin_route_prefixes`, and the service scopes

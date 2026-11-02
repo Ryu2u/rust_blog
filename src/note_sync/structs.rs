@@ -53,6 +53,8 @@ pub struct AiMeta {
     pub summary: String,
     pub tags: Vec<String>,
     pub category: String,
+    /// AI 对「是否适合公开」的判定，**仅作记录**（写入 note_sync_map.ai_is_view / ai_reason 供追溯），
+    /// 不决定文章是否展示：展示与否只由后台手动设置决定
     pub public: bool,
     #[serde(default)]
     pub reason: String,

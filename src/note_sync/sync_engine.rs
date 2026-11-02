@@ -93,13 +93,37 @@ pub fn merged_title(post_title: &str, ai_title: &str, new_title: &str) -> String
     }
 }
 
-/// is_view 人工保护：后台没拨过开关（当前值==上次AI判定）才采纳新判定
-pub fn merged_is_view(post_is_view: i32, ai_is_view: i32, new_public: bool) -> i32 {
-    if post_is_view == ai_is_view {
-        new_public as i32
-    } else {
-        post_is_view
+/// 新同步进来的文章：**一律展示**（is_view = 1）。
+/// 展示与否不由 AI 决定：AI 的公开性判定只记录在映射表里（ai_is_view / ai_reason）供追溯，
+/// 不影响展示；只有在后台手动设置才能取消展示。
+pub fn new_post_from_sync(author: &str, content: &str, meta: &AiMeta, commit_ms: Option<i64>) -> Post {
+    let mut post = Post::new(
+        meta.title.clone(),
+        author.to_string(),
+        content.to_string(),
+        md_to_html(content),
+        word_count(content),
+        Some(meta.summary.clone()),
+    );
+    post.is_view = 1;
+    if let Some(ms) = commit_ms {
+        post.created_time = Some(ms);
+        post.update_time = Some(ms);
     }
+    post
+}
+
+/// 把本轮同步到的内容与 AI 元数据应用到已有文章上。
+/// `is_view` 刻意不动：展示与否只由后台手动设置决定，同步与 AI 判定都不能改它；
+/// 标题仍受「后台手改过就不覆盖」的保护（merged_title）。
+pub fn updated_post_from_sync(mut p: Post, content: &str, meta: &AiMeta, old_ai_title: &str, now: i64) -> Post {
+    p.title = merged_title(&p.title, old_ai_title, &meta.title);
+    p.original_content = content.to_string();
+    p.format_content = md_to_html(content);
+    p.summary = Some(meta.summary.clone());
+    p.word_count = Some(word_count(content));
+    p.update_time = Some(now);
+    p
 }
 
 // ==================== apply 层（DB 编排 + AI 集成）====================
@@ -308,16 +332,7 @@ async fn apply_create(
     let (meta, fb) = meta_for(ai, path, &content, categories).await;
     if fb { stats.ai_fallback += 1; }
 
-    let mut post = Post::new(
-        meta.title.clone(),
-        plan.author.clone(),
-        content.clone(),
-        md_to_html(&content),
-        word_count(&content),
-        Some(meta.summary.clone()),
-    );
-    post.is_view = meta.public as i32;
-    if let Some(ms) = commit_ms { post.created_time = Some(ms); post.update_time = Some(ms); }
+    let post = new_post_from_sync(&plan.author, &content, &meta, commit_ms);
     // 首选 last_insert_id（无歧义）；驱动未回填时兜底按 title+正文精确反查
     let mut post_id = match Post::insert(db, &post).await {
         Ok(r) => value_to_i32(&r.last_insert_id),
@@ -379,16 +394,8 @@ async fn apply_update(
     if fb { stats.ai_fallback += 1; }
 
     let old_ai_title = map_field(db, map_id, "ai_title").await.unwrap_or_default();
-    let old_ai_view: i32 = map_field_i32(db, map_id, "ai_is_view").await.unwrap_or(post.is_view);
-
-    let mut p = post;
-    p.title = merged_title(&p.title, &old_ai_title, &meta.title);
-    p.is_view = merged_is_view(p.is_view, old_ai_view, meta.public);
-    p.original_content = content.clone();
-    p.format_content = md_to_html(&content);
-    p.summary = Some(meta.summary.clone());
-    p.word_count = Some(word_count(&content));
-    p.update_time = Some(get_sys_time());
+    // is_view 不动：展示与否只由后台手动设置决定（见 updated_post_from_sync）
+    let p = updated_post_from_sync(post, &content, &meta, &old_ai_title, get_sys_time());
     if Post::update_by_column(db, &p, "id").await.is_err() { return Err(path.to_string()); }
 
     // 分类重建：默认分类 + AI 分类（同名时 ensure_category_and_link 内部去重）
@@ -452,10 +459,6 @@ async fn current_local_sha(db: &RBatis, map_id: i32) -> String {
 async fn map_field(db: &RBatis, map_id: i32, field: &str) -> Option<String> {
     let sql = format!("select {} from note_sync_map where id = ?", field);
     db.query_decode::<Option<String>>(&sql, vec![rbs::to_value!(map_id)]).await.ok().flatten()
-}
-async fn map_field_i32(db: &RBatis, map_id: i32, field: &str) -> Option<i32> {
-    let sql = format!("select {} from note_sync_map where id = ?", field);
-    db.query_decode::<Option<i32>>(&sql, vec![rbs::to_value!(map_id)]).await.ok().flatten()
 }
 async fn mark_conflicted(db: &RBatis, map_id: i32) {
     let _ = db.exec("update note_sync_map set status = 'conflicted' where id = ?",
@@ -534,10 +537,51 @@ mod tests {
         assert_eq!(merged_title("我的标题", "AI标题", "AI新标题"), "我的标题");
         assert_eq!(merged_title("AI标题", "AI标题", "AI新标题"), "AI新标题");
     }
+
+    // ---- 展示状态：同步与 AI 都不能决定，只有后台手动设置才能取消展示 ----
+    fn ai_meta(public: bool) -> AiMeta {
+        AiMeta {
+            title: "AI 标题".into(),
+            summary: "摘要".into(),
+            tags: vec![],
+            category: "c".into(),
+            public,
+            reason: if public { String::new() } else { "含内网 IP".into() },
+        }
+    }
+    fn existing_post(is_view: i32) -> Post {
+        let mut p = Post::new(
+            "手工标题".into(), "hai".into(), "旧正文".into(), "<p>旧正文</p>".into(), 3, Some("旧摘要".into()),
+        );
+        p.is_view = is_view;
+        p
+    }
+
     #[test]
-    fn test_merged_is_view_admin_kept() {
-        assert_eq!(merged_is_view(0, 1, true), 0);   // 后台手动隐藏过 -> 保持隐藏
-        assert_eq!(merged_is_view(1, 1, false), 0);  // 未动过 -> 采纳AI新判定
-        assert_eq!(merged_is_view(1, 1, true), 1);
+    fn test_new_synced_post_is_always_shown() {
+        for public in [true, false] {
+            let p = new_post_from_sync("hai", "# 标题\n正文", &ai_meta(public), Some(1_700_000_000_000));
+            assert_eq!(p.is_view, 1, "AI 判定 public={public} 时，新同步的文章也必须展示");
+        }
+        let p = new_post_from_sync("hai", "正文", &ai_meta(true), Some(42));
+        assert_eq!((p.created_time, p.update_time), (Some(42), Some(42)), "沿用 GitHub 提交时间");
+    }
+
+    #[test]
+    fn test_update_never_changes_visibility() {
+        // 后台手动隐藏过的文章，AI 觉得可公开也不能把它放出来
+        assert_eq!(updated_post_from_sync(existing_post(0), "新正文", &ai_meta(true), "", 9).is_view, 0);
+        // 展示中的文章，AI 觉得敏感也不能把它藏起来
+        assert_eq!(updated_post_from_sync(existing_post(1), "新正文", &ai_meta(false), "", 9).is_view, 1);
+    }
+
+    #[test]
+    fn test_update_applies_content_and_keeps_manual_title() {
+        let p = updated_post_from_sync(existing_post(1), "# 新\n正文", &ai_meta(true), "AI 旧标题", 777);
+        assert_eq!(p.original_content, "# 新\n正文");
+        assert_eq!(p.summary.as_deref(), Some("摘要"));
+        assert_eq!(p.update_time, Some(777));
+        assert!(p.format_content.contains("<h1"), "正文要重新渲染成 HTML");
+        assert_eq!(p.title, "手工标题", "后台手改过的标题仍受保护");
     }
 }
