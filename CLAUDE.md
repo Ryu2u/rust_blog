@@ -34,7 +34,7 @@ Blog platform: one Rust/Actix-web backend + two independent React frontends.
 - **Framework**: Actix-web 4, single binary crate (not a workspace)
 - **ORM**: rbatis 4.5 (MyBatis-style macros)
 - **Database**: MySQL via `rbdc-mysql`; connection string in `.env` as `DATABASE_URL`
-- **Auth**: JWT (`jsonwebtoken`) delivered in an **httpOnly cookie named `auth_token`** — there is no `actix-session` in this project
+- **Auth**: JWT (`jsonwebtoken`) delivered in an **httpOnly cookie named `auth_token`** — there is no `actix-session` in this project. **The whole blog is login-gated**: only `/user/login` and `/user/logout` are public (`PUBLIC_PATHS` in `middleware.rs`); every other request needs a valid cookie **and** an existing, unlocked account (looked up in `tb_user` on every request, so locking a user takes effect immediately). Login is rate-limited in memory (`utils/login_guard.rs`) and uses bound SQL parameters only
 - **Markdown**: `pulldown-cmark` renders to HTML on save; both raw and rendered content stored in `post`
 
 **Module layout** — each domain module (`post/`, `user/`, `comment/`, `moment/`, `note_sync/`) follows the same pattern:
@@ -49,10 +49,10 @@ Modules: `user/`, `post/` (split into `apis.rs`, `tag_apis.rs`, `category_apis.r
 **Key files**:
 - `main.rs` — entry: tracing, `.env`, rbatis init, CORS, `FilterWhiteList`, `AppState.admin_route_prefixes`, and the service scopes
 - `config.rs` — `AppState`, generic `R<T>` response struct, `Exception` error enum, `ContentTypeGuard`, `init_rbatis`
-- `middleware.rs` — `AuthFilter`: whitelist bypass → JWT verify → admin role check
+- `middleware.rs` — `AuthFilter`: whitelist bypass → JWT verify → account status check → admin role check. It must stay **inside** the CORS middleware (`.wrap(AuthFilter)` before `.wrap(cors)` in `main.rs`) and return normal 401/403 responses instead of `Err`, otherwise rejected responses carry no CORS headers and browsers hide the status code from the frontend
 - `src/utils/jwt_utils.rs` — `create_jwt` / `verify_jwt`, `AUTH_COOKIE_NAME`, claims (`sub`, `username`, `role`, `exp`)
 
-**Routes** (scope → handlers): `/user` (`login`, `logout`, `get`, `admin/*`), `/post` (`get`, `page`, `list_by_category`, `admin/*`), `/tag`, `/category`, `/comment` (`add`, `list/{post_id}`, `admin/*`), `/moment` (`POST /moment/page` is public — only `is_public=1` and not deleted, page_size ≤ 50; everything else is `admin/*`), `/note_sync` (`admin/config`, `admin/ai_test` only). Every mutation is a GET or POST — CORS only allows `GET, POST, OPTIONS`.
+**Routes** (scope → handlers): `/user` (`login`, `logout`, `me`, `get`, `admin/*`), `/post` (`get`, `page`, `list_by_category`, `admin/*`), `/tag`, `/category`, `/comment` (`add`, `list/{post_id}`, `admin/*`), `/moment` (`POST /moment/page` is open to any logged-in user — only `is_public=1` and not deleted, page_size ≤ 50; everything else is `admin/*`), `/note_sync` (`admin/config`, `admin/ai_test` only). Every mutation is a GET or POST — CORS only allows `GET, POST, OPTIONS`.
 
 **Response format**: all handlers return `Result<impl Responder, Exception>` producing `R<T>` → `{ "code", "msg", "obj" }`. Handlers take `db: web::Data<RBatis>` (not `AppState`) as their data param; `AppState` only carries `app_name` and `admin_route_prefixes`. `Exception` maps to HTTP 400/500/404. Note `error_response` sets `ContentType::html()` even though the body is JSON.
 
@@ -60,7 +60,7 @@ Modules: `user/`, `post/` (split into `apis.rs`, `tag_apis.rs`, `category_apis.r
 
 This is the easiest thing to get wrong — two separate lists in `main.rs` must both be updated:
 
-1. **`FilterWhiteList`** — paths not matching this require a valid `auth_token`. Matching is segment-wise: `*` matches exactly one segment, `**` matches all remaining segments, and a whitelist entry also covers longer URLs with that prefix (`/comment/list` covers `/comment/list/5`).
+1. **`FilterWhiteList`** — built from `PUBLIC_PATHS` in `src/middleware.rs`, which contains only `/user/login` and `/user/logout`. Paths not matching it require a valid `auth_token`, so **new endpoints are authenticated by default; do not add public ones**. Matching is segment-wise: `*` matches exactly one segment, `**` matches all remaining segments, and a whitelist entry also covers longer URLs with that prefix (`/comment/list` covers `/comment/list/5`).
 2. **`AppState.admin_route_prefixes`** — after JWT verification, a request whose path `starts_with()` one of these entries is treated as an admin route. The current entries are verb-specific (`/post/admin`, `/post/add`, `/post/test/form`, `/tag/add`, `/tag/del`, `/tag/update`, `/comment/admin`, `/user/admin`, `/moment/admin`, `/note_sync/admin`), so a new admin route must be added here explicitly — being authenticated is not sufficient. Admin check queries `tb_user` per request and requires `role == "admin"` **and** `locked == 0`.
 
 Failure modes are plain `ErrorUnauthorized` (401) / `ErrorForbidden` (403), not `R<T>`. `ContentTypeGuard` wraps all scopes but currently always returns `true` (no-op).
@@ -69,7 +69,7 @@ Failure modes are plain `ErrorUnauthorized` (401) / `ErrorForbidden` (403), not 
 
 Two independent React 18 + TypeScript + Vite apps sharing a light, claude.ai-style design (cream `#faf9f5` background, terracotta `#c96442` accent, serif headings). Design tokens are CSS variables in `ryu2u_blog/src/index.scss` and `ryu2u_blog_admin/src/index.css` (the admin also mirrors them as antd tokens in `main.tsx`) — use the variables, not hardcoded colors. Light theme only; there is no dark mode:
 
-- **`ryu2u_blog/`** — public blog (:8088). Routes: `/home`, `/post/:id`, `/category`, `/category/:tag`, `/moment` (defined inline in `App.tsx`)
+- **`ryu2u_blog/`** — public blog (:8088). Routes: `/home`, `/post/:id`, `/category`, `/category/:tag`, `/moment` (defined inline in `App.tsx`, all inside the `RequireAuth` layout route), plus the public `/login`. Login state lives in `auth/AuthProvider.tsx` (`useAuth()` from `auth/authContext.ts`); a 401 from any request clears it
 - **`ryu2u_blog_admin/`** — admin panel (:8089). Routes come from `common/routerConfig.tsx`, a `RouteConfig[]` that drives both the routes and the breadcrumbs; `App.tsx` flattens it. Paths: `/dashboard`, `/article`(`/list`, `/new`, `/edit/:id`), `/user/list`, `/user/edit/:id`, `/comment`, `/moments`, `/about`
 
 Both use Ant Design 5, Axios, and `@bytemd` for Markdown. The admin app additionally uses a `useAjaxEffect`/`HttpEffectFragment` interceptor pair (`common/AxioConfig.tsx`) that redirects to `/login` on 401 and shows a message on 403.
@@ -98,7 +98,7 @@ Timestamps are `bigint` epoch **milliseconds**, not SQL datetime. Use `crate::ut
 
 ## Environment Variables
 
-`.env` at project root: `SERVER_IP`, `SERVER_PORT` (9002), `DATABASE_URL`, `BLOG_ORIGIN`, `ADMIN_ORIGIN` (CORS allow-list), `JWT_SECRET`, `JWT_EXPIRE_HOURS` (default 12).
+`.env` at project root: `SERVER_IP`, `SERVER_PORT` (9002), `DATABASE_URL`, `BLOG_ORIGIN`, `ADMIN_ORIGIN` (CORS allow-list), `JWT_SECRET`, `JWT_EXPIRE_HOURS` (default 12). Login protection (all optional): `LOGIN_MAX_FAIL_PER_IP` (10), `LOGIN_MAX_FAIL_PER_USER_IP` (5), `LOGIN_MAX_FAIL_PER_USER` (30), `LOGIN_WINDOW_MIN` (15), `LOGIN_LOCK_MIN` (15), `TRUST_PROXY_HEADER` (false — set true only behind a reverse proxy that appends the real client IP to `X-Forwarded-For`), `COOKIE_SECURE` (false — set true on HTTPS).
 
 GitHub 笔记同步（`note_sync` 模块，见 `.env.example`）:
 - `NOTE_SYNC_ENABLED` — `true` 时启动后端轮询调度器
