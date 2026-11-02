@@ -1,7 +1,8 @@
-import { List, Avatar, Progress } from 'antd';
+import { List, Avatar } from 'antd';
 import { FileTextOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import PostService from '../../service/PostService';
+import DashboardService from '../../service/DashboardService';
 import { PageInfo, Post, Result } from '../../common/Structs';
 
 interface Article {
@@ -9,6 +10,19 @@ interface Article {
   title: string;
   author: string;
   created_time: string;
+}
+
+// GET /dashboard/admin/stats 的 obj；文章相关统计不含软删文章
+interface DashboardStats {
+  post_count: number;
+  visit_count: number;
+  last_update_time: number | null;
+  user_count: number;
+  comment_total: number;
+  comment_pending: number;
+  comment_approved: number;
+  comment_rejected: number;
+  version: string;
 }
 
 function formatDate(timestamp?: number | Date): string {
@@ -19,17 +33,25 @@ function formatDate(timestamp?: number | Date): string {
 }
 
 export function Dashboard() {
-  const [articleCount, setArticleCount] = useState(0);
-  const [commentCount, setCommentCount] = useState(0);
-  const [visitsCount, setVisitsCount] = useState(0);
-  const [userCount] = useState(1);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [statsFailed, setStatsFailed] = useState(false);
   const [recentArticles, setRecentArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setArticleCount(42);
-    setCommentCount(156);
-    setVisitsCount(3245);
+    const fetchStats = async () => {
+      try {
+        const res: Result = await DashboardService.stats();
+        if (res.code === 200 && res.obj) {
+          setStats(res.obj);
+        } else {
+          setStatsFailed(true);
+        }
+      } catch (e) {
+        console.error('Failed to fetch dashboard stats:', e);
+        setStatsFailed(true);
+      }
+    };
 
     const fetchRecentPosts = async () => {
       try {
@@ -52,8 +74,11 @@ export function Dashboard() {
         setLoading(false);
       }
     };
+    fetchStats();
     fetchRecentPosts();
   }, []);
+
+  const serviceStatus = stats ? '运行中' : statsFailed ? '异常' : '-';
 
   return (
     <div>
@@ -64,14 +89,14 @@ export function Dashboard() {
       {/* 统计 */}
       <div className="admin-stat-grid">
         {[
-          { label: '文章', value: articleCount },
-          { label: '评论', value: commentCount },
-          { label: '访问', value: visitsCount },
-          { label: '用户', value: userCount },
+          { label: '文章', value: stats?.post_count },
+          { label: '评论', value: stats?.comment_total },
+          { label: '访问', value: stats?.visit_count },
+          { label: '用户', value: stats?.user_count },
         ].map((stat) => (
           <div key={stat.label} className="admin-stat">
             <div className="admin-stat__label">{stat.label}</div>
-            <div className="admin-stat__value">{stat.value.toLocaleString()}</div>
+            <div className="admin-stat__value">{stat.value?.toLocaleString() ?? '-'}</div>
           </div>
         ))}
       </div>
@@ -110,23 +135,18 @@ export function Dashboard() {
         {/* 系统信息 */}
         <div className="admin-panel">
           <h3 className="admin-panel__title">系统信息</h3>
-          {[
-            { label: '磁盘', percent: 65 },
-            { label: '内存', percent: 42 },
-            { label: 'CPU', percent: 28 },
-          ].map((item) => (
-            <div key={item.label} className="dashboard-usage">
-              <div className="dashboard-usage__head">
-                <span>{item.label}</span>
-                <span>{item.percent}%</span>
-              </div>
-              <Progress percent={item.percent} showInfo={false} size="small" strokeColor="var(--color-primary)" trailColor="var(--color-surface-muted)" />
-            </div>
-          ))}
           <dl className="dashboard-facts">
-            <div><dt>服务状态</dt><dd className="dashboard-facts__ok">运行中</dd></div>
-            <div><dt>版本</dt><dd>v1.0.0</dd></div>
-            <div><dt>最近更新</dt><dd>2024-01-24</dd></div>
+            <div><dt>服务状态</dt><dd className={stats ? 'dashboard-facts__ok' : undefined}>{serviceStatus}</dd></div>
+            <div><dt>后端版本</dt><dd>{stats ? `v${stats.version}` : '-'}</dd></div>
+            <div><dt>文章最近更新</dt><dd>{formatDate(stats?.last_update_time ?? undefined)}</dd></div>
+            <div>
+              <dt>评论审核</dt>
+              <dd>
+                {stats
+                  ? `待审 ${stats.comment_pending} · 通过 ${stats.comment_approved} · 拒绝 ${stats.comment_rejected}`
+                  : '-'}
+              </dd>
+            </div>
           </dl>
         </div>
       </div>
