@@ -159,7 +159,7 @@ export function MomentsPage() {
             dataIndex: 'id',
             key: 'id',
             width: 60,
-            render: (value) => <span style={{ color: '#555555' }}>{value}</span>,
+            render: (value) => <span style={{ color: 'var(--color-text-muted)' }}>{value}</span>,
         },
         {
             title: '说说内容',
@@ -168,7 +168,7 @@ export function MomentsPage() {
             width: 380,
             render: (content, record) => (
                 <div>
-                    <div style={{ marginBottom: 8, whiteSpace: 'pre-wrap', color: '#e0e0e0' }}>{content}</div>
+                    <div style={{ marginBottom: 8, whiteSpace: 'pre-wrap', color: 'var(--color-text)' }}>{content}</div>
                     {record.images && record.images.length > 0 && (
                         <div style={{ marginTop: 8 }}>
                             <Image.PreviewGroup>
@@ -179,7 +179,7 @@ export function MomentsPage() {
                                             width={60}
                                             height={60}
                                             src={img}
-                                            style={{ objectFit: 'cover', borderRadius: 0, border: '1px solid #333333' }}
+                                            style={{ objectFit: 'cover', border: '1px solid var(--color-border)' }}
                                         />
                                     ))}
                                 </Space>
@@ -187,7 +187,7 @@ export function MomentsPage() {
                         </div>
                     )}
                     {record.location && (
-                        <div style={{ marginTop: 8, color: '#555555', fontSize: 12 }}>
+                        <div style={{ marginTop: 8, color: 'var(--color-text-muted)', fontSize: 12 }}>
                             <EnvironmentOutlined style={{ marginRight: 4 }} />
                             {record.location}
                         </div>
@@ -201,12 +201,7 @@ export function MomentsPage() {
             key: 'is_public',
             width: 100,
             render: (is_public) => (
-                <Tag style={{
-                    background: is_public === 1 ? '#10a37f' : '#1a1a1a',
-                    color: is_public === 1 ? '#000000' : '#808080',
-                    border: 'none',
-                    borderRadius: 0,
-                }}>
+                <Tag className={is_public === 1 ? 'admin-tag admin-tag--active' : 'admin-tag'}>
                     {is_public === 1 ? '公开' : '私密'}
                 </Tag>
             ),
@@ -218,12 +213,12 @@ export function MomentsPage() {
             render: (_, record) => (
                 <Space direction="vertical" size="small">
                     <Space>
-                        <HeartOutlined style={{ color: '#555555' }} />
-                        <span style={{ color: '#808080' }}>{record.likes}</span>
+                        <HeartOutlined style={{ color: 'var(--color-text-muted)' }} />
+                        <span style={{ color: 'var(--color-text-secondary)' }}>{record.likes}</span>
                     </Space>
                     <Space>
-                        <MessageOutlined style={{ color: '#555555' }} />
-                        <span style={{ color: '#808080' }}>{record.comments}</span>
+                        <MessageOutlined style={{ color: 'var(--color-text-muted)' }} />
+                        <span style={{ color: 'var(--color-text-secondary)' }}>{record.comments}</span>
                     </Space>
                 </Space>
             ),
@@ -234,7 +229,7 @@ export function MomentsPage() {
             key: 'created_time',
             width: 180,
             render: (created_time) => (
-                <span style={{ color: '#808080' }}>
+                <span style={{ color: 'var(--color-text-secondary)' }}>
                     {created_time ? formatDate(new Date(created_time * 1000)) : '-'}
                 </span>
             ),
@@ -251,7 +246,6 @@ export function MomentsPage() {
                         icon={<EditOutlined />}
                         size="small"
                         onClick={() => showModal(record)}
-                        style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                     >
                         编辑
                     </Button>
@@ -259,7 +253,6 @@ export function MomentsPage() {
                         icon={record.is_public === 1 ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                         size="small"
                         onClick={() => handleTogglePublic(record.id)}
-                        style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                     >
                         {record.is_public === 1 ? '私密' : '公开'}
                     </Button>
@@ -270,7 +263,7 @@ export function MomentsPage() {
                         okText="确定"
                         cancelText="取消"
                     >
-                        <Button danger icon={<DeleteOutlined />} size="small" style={{ borderRadius: 0 }}>
+                        <Button danger icon={<DeleteOutlined />} size="small">
                             删除
                         </Button>
                     </Popconfirm>
@@ -312,63 +305,46 @@ export function MomentsPage() {
         <>
             {contextHolder}
             <div>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '16px',
-                    paddingBottom: '12px',
-                    borderBottom: '1px solid #333333',
-                }}>
-                    <div style={{ color: '#e0e0e0', fontSize: '13px', fontWeight: 700 }}>
-                        <span style={{ color: '#10a37f' }}>&gt;</span> 说说管理
-                    </div>
+                <div className="admin-page-head">
+                    <h2 className="admin-page-title">说说管理</h2>
                     <Space size="large">
                         <Space size="middle">
-                            <Badge count={publicCount} showZero style={{ background: '#10a37f', color: '#000000' }}>
-                                <Tag style={{ background: '#0a0a0a', color: '#10a37f', border: '1px solid #10a37f', borderRadius: 0 }}>公开</Tag>
+                            <Badge count={publicCount} showZero style={{ background: 'var(--color-primary)' }}>
+                                <Tag className="admin-tag admin-tag--active">公开</Tag>
                             </Badge>
-                            <Badge count={privateCount} showZero style={{ background: '#1a1a1a', color: '#808080' }}>
-                                <Tag style={{ background: '#1a1a1a', color: '#808080', border: '1px solid #333333', borderRadius: 0 }}>私密</Tag>
+                            <Badge count={privateCount} showZero style={{ background: 'var(--color-text-muted)' }}>
+                                <Tag className="admin-tag">私密</Tag>
                             </Badge>
                         </Space>
                         <Button
                             type="primary"
                             icon={<PlusOutlined />}
                             onClick={() => showModal()}
-                            style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                         >
                             发布说说
                         </Button>
                     </Space>
                 </div>
 
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(4, 1fr)',
-                    gap: '1px',
-                    background: '#333333',
-                    border: '1px solid #333333',
-                    marginBottom: '16px',
-                }}>
+                <div className="admin-stat-grid">
                     {[
                         { label: '总说说', value: pageInfoRef.current.total },
                         { label: '公开', value: publicCount },
                         { label: '点赞', value: totalLikes },
                         { label: '评论', value: totalComments },
                     ].map((stat) => (
-                        <div key={stat.label} style={{ background: '#000000', padding: '16px', textAlign: 'center' }}>
-                            <div style={{ color: '#555555', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase' }}>
+                        <div key={stat.label} className="admin-stat">
+                            <div className="admin-stat__label">
                                 {stat.label}
                             </div>
-                            <div style={{ color: '#10a37f', fontSize: '20px', fontWeight: 700, fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace" }}>
+                            <div className="admin-stat__value">
                                 {stat.value}
                             </div>
                         </div>
                     ))}
                 </div>
 
-                <div style={{ border: '1px solid #333333', padding: '16px', marginBottom: '16px', background: '#0a0a0a' }}>
+                <div className="admin-filter-panel">
                     <Row gutter={16} align="middle">
                         <Col span={18}>
                             <Search
@@ -377,7 +353,7 @@ export function MomentsPage() {
                                 onChange={(e) => setSearchParams({ keyword: e.target.value })}
                                 onSearch={handleSearch}
                                 style={{ width: '100%' }}
-                                prefix={<SearchOutlined style={{ color: '#555555' }} />}
+                                prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />}
                             />
                         </Col>
                         <Col span={6}>
@@ -386,13 +362,11 @@ export function MomentsPage() {
                                     type="primary"
                                     icon={<SearchOutlined />}
                                     onClick={handleSearch}
-                                    style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                                 >
                                     搜索
                                 </Button>
                                 <Button
                                     onClick={handleReset}
-                                    style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                                 >
                                     重置
                                 </Button>
@@ -402,9 +376,9 @@ export function MomentsPage() {
                 </div>
 
                 {selectedRowKeys.length > 0 && (
-                    <div style={{ marginBottom: 16, padding: '8px 12px', background: '#0a0a0a', border: '1px solid #333333' }}>
+                    <div className="admin-selection-bar">
                         <Space>
-                            <span style={{ color: '#808080' }}>已选择 {selectedRowKeys.length} 项</span>
+                            <span style={{ color: 'var(--color-text-secondary)' }}>已选择 {selectedRowKeys.length} 项</span>
                             <Popconfirm
                                 title="确定要批量删除这些说说吗？"
                                 description="删除后将无法恢复"
@@ -412,7 +386,7 @@ export function MomentsPage() {
                                 okText="确定"
                                 cancelText="取消"
                             >
-                                <Button danger icon={<DeleteOutlined />} style={{ borderRadius: 0 }}>
+                                <Button danger icon={<DeleteOutlined />}>
                                     批量删除
                                 </Button>
                             </Popconfirm>
@@ -460,14 +434,12 @@ export function MomentsPage() {
                             placeholder="分享你的想法..."
                             maxLength={500}
                             showCount
-                            style={{ background: '#000000', border: '1px solid #333333', color: '#e0e0e0', borderRadius: 0 }}
                         />
                     </Form.Item>
                     <Form.Item label="位置" name="location">
                         <Input
-                            prefix={<EnvironmentOutlined style={{ color: '#555555' }} />}
+                            prefix={<EnvironmentOutlined style={{ color: 'var(--color-text-muted)' }} />}
                             placeholder="你在哪里？（可选）"
-                            style={{ background: '#000000', border: '1px solid #333333', color: '#e0e0e0', borderRadius: 0 }}
                         />
                     </Form.Item>
                     <Form.Item
@@ -478,7 +450,6 @@ export function MomentsPage() {
                         <TextArea
                             rows={4}
                             placeholder={"https://example.com/1.jpg\nhttps://example.com/2.jpg"}
-                            style={{ background: '#000000', border: '1px solid #333333', color: '#e0e0e0', borderRadius: 0 }}
                         />
                     </Form.Item>
                     <Form.Item label="公开设置" name="is_public" valuePropName="checked">

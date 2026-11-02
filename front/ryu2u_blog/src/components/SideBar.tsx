@@ -29,15 +29,13 @@ export function SideBar({homeMeta}: SideBarProps) {
 
     return (
         <>
-            <div className={"side-list"}>
+            <aside className={"side-list"}>
                 <UserInfo/>
                 <Weather/>
                 {homeMeta && (
                     <>
                         <section className="side-widget">
-                            <div className="side-widget__title">
-                                <span className="side-widget__prompt">$</span> blog status
-                            </div>
+                            <h4 className="side-widget__title">博客概况</h4>
                             <div className="side-metric-grid">
                                 <div className="side-metric">
                                     <span>文章</span>
@@ -59,9 +57,7 @@ export function SideBar({homeMeta}: SideBarProps) {
                         </section>
 
                         <section className="side-widget">
-                            <div className="side-widget__title">
-                                <span className="side-widget__prompt">&gt;</span> quick links
-                            </div>
+                            <h4 className="side-widget__title">从这里开始</h4>
                             <div className="side-widget__body">
                                 <p className="side-widget__copy">
                                     首页更适合慢慢逛。可以先从分类进入，也可以直接继续读最近更新。
@@ -83,7 +79,7 @@ export function SideBar({homeMeta}: SideBarProps) {
                         </section>
                     </>
                 )}
-            </div>
+            </aside>
 
         </>
     )

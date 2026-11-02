@@ -125,12 +125,12 @@ export function CommentPage() {
 
     const getStatusTag = (status: number) => {
         const statusMap = {
-            0: { bg: '#1a1a1a', color: '#808080', text: '待审核' },
-            1: { bg: '#10a37f', color: '#000000', text: '已通过' },
-            2: { bg: '#1a1a1a', color: '#808080', text: '已拒绝' }
+            0: { className: 'admin-tag', text: '待审核' },
+            1: { className: 'admin-tag admin-tag--active', text: '已通过' },
+            2: { className: 'admin-tag admin-tag--danger', text: '已拒绝' }
         };
         const statusInfo = statusMap[status as keyof typeof statusMap];
-        return <Tag style={{ background: statusInfo.bg, color: statusInfo.color, border: 'none', borderRadius: 0 }}>{statusInfo.text}</Tag>;
+        return <Tag className={statusInfo.className}>{statusInfo.text}</Tag>;
     };
 
     const columns: TableProps<Comment>['columns'] = [
@@ -139,7 +139,7 @@ export function CommentPage() {
             dataIndex: 'id',
             key: 'id',
             width: 60,
-            render: (value) => <span style={{ color: '#555555' }}>{value}</span>,
+            render: (value) => <span style={{ color: 'var(--color-text-muted)' }}>{value}</span>,
         },
         {
             title: '评论内容',
@@ -150,18 +150,18 @@ export function CommentPage() {
                 <div>
                     <div style={{ marginBottom: 8 }}>
                         <Space>
-                            <UserOutlined style={{ color: '#555555' }} />
-                            <strong style={{ color: '#e0e0e0' }}>{record.user_name}</strong>
+                            <UserOutlined style={{ color: 'var(--color-text-muted)' }} />
+                            <strong style={{ color: 'var(--color-text)' }}>{record.user_name}</strong>
                             {record.user_email && (
-                                <span style={{ color: '#555555', fontSize: 12 }}>({record.user_email})</span>
+                                <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>({record.user_email})</span>
                             )}
                         </Space>
                     </div>
-                    <div style={{ color: '#808080' }}>{content}</div>
+                    <div style={{ color: 'var(--color-text-secondary)' }}>{content}</div>
                     {record.parent_id && (
-                        <div style={{ marginTop: 8, padding: 8, background: '#0a0a0a', border: '1px solid #333333' }}>
-                            <MessageOutlined style={{ marginRight: 4, color: '#555555' }} />
-                            <span style={{ color: '#555555', fontSize: 12 }}>
+                        <div style={{ marginTop: 8, padding: 8, background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
+                            <MessageOutlined style={{ marginRight: 4, color: 'var(--color-text-muted)' }} />
+                            <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>
                                 回复评论 #{record.parent_id}
                             </span>
                         </div>
@@ -177,7 +177,7 @@ export function CommentPage() {
             ellipsis: true,
             render: (title) => (
                 <Tooltip title={title}>
-                    <a style={{ color: '#808080' }}>{title}</a>
+                    <a style={{ color: 'var(--color-text-secondary)' }}>{title}</a>
                 </Tooltip>
             ),
         },
@@ -199,7 +199,7 @@ export function CommentPage() {
             dataIndex: 'created_time',
             key: 'created_time',
             width: 180,
-            render: (created_time) => <span style={{ color: '#808080' }}>{created_time ? formatDate(new Date(created_time * 1000)) : '-'}</span>,
+            render: (created_time) => <span style={{ color: 'var(--color-text-secondary)' }}>{created_time ? formatDate(new Date(created_time * 1000)) : '-'}</span>,
             sorter: (a, b) => (a.created_time ?? 0) - (b.created_time ?? 0),
         },
         {
@@ -215,7 +215,6 @@ export function CommentPage() {
                             icon={<CheckOutlined />}
                             size="small"
                             onClick={() => handleApprove(record.id!)}
-                            style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                         />
                     )}
                     {record.status !== 2 && (
@@ -223,7 +222,6 @@ export function CommentPage() {
                             icon={<CloseOutlined />}
                             size="small"
                             onClick={() => handleReject(record.id!)}
-                            style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                         />
                     )}
                     <Popconfirm
@@ -237,7 +235,6 @@ export function CommentPage() {
                             danger
                             icon={<DeleteOutlined />}
                             size="small"
-                            style={{ borderRadius: 0 }}
                         />
                     </Popconfirm>
                 </Space>
@@ -279,31 +276,22 @@ export function CommentPage() {
         <>
             {contextHolder}
             <div>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '16px',
-                    paddingBottom: '12px',
-                    borderBottom: '1px solid #333333',
-                }}>
-                    <div style={{ color: '#e0e0e0', fontSize: '13px', fontWeight: 700 }}>
-                        <span style={{ color: '#10a37f' }}>&gt;</span> 评论管理
-                    </div>
+                <div className="admin-page-head">
+                    <h2 className="admin-page-title">评论管理</h2>
                     <Space size="middle">
-                        <Badge count={pendingCount} showZero style={{ background: '#1a1a1a', color: '#808080' }}>
-                            <Tag style={{ background: '#1a1a1a', color: '#808080', border: '1px solid #333333', borderRadius: 0 }}>待审核</Tag>
+                        <Badge count={pendingCount} showZero style={{ background: 'var(--color-text-muted)' }}>
+                            <Tag className="admin-tag">待审核</Tag>
                         </Badge>
-                        <Badge count={approvedCount} showZero style={{ background: '#10a37f', color: '#000000' }}>
-                            <Tag style={{ background: '#0a0a0a', color: '#10a37f', border: '1px solid #10a37f', borderRadius: 0 }}>已通过</Tag>
+                        <Badge count={approvedCount} showZero style={{ background: 'var(--color-primary)' }}>
+                            <Tag className="admin-tag admin-tag--active">已通过</Tag>
                         </Badge>
-                        <Badge count={rejectedCount} showZero style={{ background: '#1a1a1a', color: '#808080' }}>
-                            <Tag style={{ background: '#1a1a1a', color: '#808080', border: '1px solid #333333', borderRadius: 0 }}>已拒绝</Tag>
+                        <Badge count={rejectedCount} showZero style={{ background: 'var(--color-text-muted)' }}>
+                            <Tag className="admin-tag">已拒绝</Tag>
                         </Badge>
                     </Space>
                 </div>
 
-                <div style={{ border: '1px solid #333333', padding: '16px', marginBottom: '16px', background: '#0a0a0a' }}>
+                <div className="admin-filter-panel">
                     <Row gutter={16} align="middle">
                         <Col span={10}>
                             <Search
@@ -312,7 +300,7 @@ export function CommentPage() {
                                 onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
                                 onSearch={handleSearch}
                                 style={{ width: '100%' }}
-                                prefix={<SearchOutlined style={{ color: '#555555' }} />}
+                                prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />}
                             />
                         </Col>
                         <Col span={6}>
@@ -334,14 +322,12 @@ export function CommentPage() {
                                     type="primary"
                                     icon={<SearchOutlined />}
                                     onClick={handleSearch}
-                                    style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                                 >
                                     搜索
                                 </Button>
                                 <Button
                                     icon={<FilterOutlined />}
                                     onClick={handleReset}
-                                    style={{ borderRadius: 0, border: '1px solid #333333', color: '#808080' }}
                                 >
                                     重置
                                 </Button>
@@ -351,14 +337,13 @@ export function CommentPage() {
                 </div>
 
                 {selectedRowKeys.length > 0 && (
-                    <div style={{ marginBottom: 16, padding: '8px 12px', background: '#0a0a0a', border: '1px solid #333333' }}>
+                    <div className="admin-selection-bar">
                         <Space>
-                            <span style={{ color: '#808080' }}>已选择 {selectedRowKeys.length} 项</span>
+                            <span style={{ color: 'var(--color-text-secondary)' }}>已选择 {selectedRowKeys.length} 项</span>
                             <Button
                                 type="primary"
                                 icon={<CheckOutlined />}
                                 onClick={handleBatchApprove}
-                                style={{ borderRadius: 0, background: '#10a37f', border: 'none' }}
                             >
                                 批量通过
                             </Button>
@@ -372,7 +357,6 @@ export function CommentPage() {
                                 <Button
                                     danger
                                     icon={<DeleteOutlined />}
-                                    style={{ borderRadius: 0 }}
                                 >
                                     批量删除
                                 </Button>

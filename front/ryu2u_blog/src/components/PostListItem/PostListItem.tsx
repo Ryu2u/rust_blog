@@ -5,11 +5,10 @@ import {Post} from "../../common/Structs";
 import {formatDate} from "../../common/utils";
 
 interface PostListItemProps {
-    dir: boolean;
     postItemJson: string;
 }
 
-export function PostListItem({dir, postItemJson}: PostListItemProps) {
+export function PostListItem({postItemJson}: PostListItemProps) {
     const navigate = useNavigate();
     const [post, setPost] = useState(new Post());
 
@@ -29,33 +28,27 @@ export function PostListItem({dir, postItemJson}: PostListItemProps) {
 
     return (
         <>
-            <div className={dir ? 'post-list-item' : 'post-list-item post-left'}>
-                <div className={"post-bg"}>
-                    <a onClick={postClick} href={""}>
-                        <img alt={"post-alt"} src={post.cover_img ? post.cover_img : "https://ryu2u-1305537946.cos.ap-nanjing.myqcloud.com//5.jpg"}/>
-                    </a>
+            <article className={"post-list-item"}>
+                <div className="post-list-item__meta">
+                    <span className="post-list-item__category">{post.category || '未分类'}</span>
+                    <span>{post.created_time ? formatDate(post.created_time as Date, 'yyyy-MM-dd') : ''}</span>
                 </div>
-                <div className={"recent-post-info"}>
-                    <div className="recent-post-kicker">dispatch #{post.id}</div>
-                    <div className={"recent-post-title"}>
-                        <button type="button" onClick={postClick} className={"recent-post-title-a"}>
-                            {post.title}
-                        </button>
-                    </div>
-                    <div className="recent-post-time">
-                        <span>发表于 {post.created_time ? formatDate(post.created_time as Date) : ''}</span>
-                        <span>更新于 {post.update_time ? formatDate(post.update_time as Date) : ''}</span>
-                        <span>{post.category || '未分类'}</span>
-                    </div>
-                    <div className={"recent-post-summary"}>
-                        {post.summary || '这篇文章暂时没有摘要，可以点进去继续阅读全文。'}
-                    </div>
-                    <button type="button" className="recent-post-readmore" onClick={postClick}>
-                        read article
+                <h3 className={"post-list-item__title"}>
+                    <button type="button" onClick={postClick}>
+                        {post.title}
+                    </button>
+                </h3>
+                <p className={"post-list-item__summary"}>
+                    {post.summary || '这篇文章暂时没有摘要，可以点进去继续阅读全文。'}
+                </p>
+                <div className="post-list-item__footer">
+                    {post.word_count ? <span>{post.word_count.toLocaleString()} 字</span> : null}
+                    <span>更新于 {post.update_time ? formatDate(post.update_time as Date, 'yyyy-MM-dd') : ''}</span>
+                    <button type="button" className="post-list-item__more" onClick={postClick}>
+                        阅读全文 →
                     </button>
                 </div>
-
-            </div>
+            </article>
         </>
     )
 }

@@ -77,11 +77,12 @@ const items: MenuProps['items'] = [
 
 export function Admin() {
 
-    const colorTheme = "dark";
+    const colorTheme = "light";
 
     const {token: {}} = theme.useToken();
 
     const [collapsed, setCollapsed] = useState(false);
+    const siderWidth = collapsed ? 72 : 220;
 
     const navigate = useNavigate();
 
@@ -115,31 +116,16 @@ export function Admin() {
         <Layout hasSider className={"layout-div"}>
             <Sider
                 theme={colorTheme}
-                style={{
-                    overflow: 'hidden',
-                    height: '100vh',
-                    position: 'fixed',
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    transition: 'all 0.3s ease',
-                    background: '#000000',
-                }}
+                className={"admin-sider"}
+                width={220}
+                collapsedWidth={72}
                 collapsed={collapsed}
                 collapsible
                 onCollapse={(value) => setCollapsed(value)}
             >
-                <div className="logo" style={{
-                    textAlign: 'center',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    color: '#e0e0e0',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                    borderBottom: '1px solid #333333',
-                }}>
-                    <span style={{ color: '#10a37f' }}>&gt;</span> admin{!collapsed && " ~"}
+                <div className="logo">
+                    <span className="logo__mark">H</span>
+                    {!collapsed && <span className="logo__text">博客后台</span>}
                 </div>
                 <Menu
                     theme={colorTheme}
@@ -148,44 +134,13 @@ export function Admin() {
                     selectedKeys={[window.location.pathname]}
                     items={items}
                     onClick={menuClick}
-                    style={{
-                        marginTop: '16px',
-                        height: 'calc(100vh - 80px)',
-                        borderRight: 0,
-                        overflow: 'auto',
-                        background: '#000000',
-                        fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                    }}
+                    className={"admin-menu"}
                 />
             </Sider>
-            <Layout className={"layout-content"}
-                    style={{
-                        marginLeft: collapsed ? '80px' : '200px',
-                        minHeight: '100vh',
-                        transition: 'all 0.3s ease',
-                        background: '#000000',
-                    }}
-            >
-                <Header
-                    className={"layout-header"}
-                    style={{
-                        padding: '0 24px',
-                        background: '#000000',
-                        borderBottom: '1px solid #333333',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        position: 'fixed',
-                        top: 0,
-                        left: collapsed ? '80px' : '200px',
-                        right: 0,
-                        zIndex: 100,
-                        transition: 'all 0.3s ease',
-                        fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                    }}
-                >
-                    <div style={{fontSize: '14px', fontWeight: 500, color: '#e0e0e0'}}>
-                        <span style={{ color: '#10a37f' }}>$</span> {(items as any)?.find((item: any) => item.key === window.location.pathname)?.label || '仪表盘'}
+            <Layout className={"layout-content"} style={{marginLeft: siderWidth}}>
+                <Header className={"layout-header"} style={{left: siderWidth}}>
+                    <div className="admin-header-title">
+                        {(items as any)?.find((item: any) => item.key === window.location.pathname)?.label || '仪表盘'}
                     </div>
                     <div className="admin-header-actions">
                         <div className="admin-session-card">
@@ -194,56 +149,25 @@ export function Admin() {
                                 src={<img src="/react.svg" alt="avatar"/>}
                                 className="admin-session-card__avatar"
                             />
-                            <div className="admin-session-card__meta">
-                                <div className="admin-session-card__label">active session</div>
-                                <div className="admin-session-card__name-row">
-                                    <span className="admin-session-card__name">Admin</span>
-                                    <Tag className="admin-session-card__tag">
-                                        root
-                                    </Tag>
-                                </div>
-                            </div>
+                            <span className="admin-session-card__name">Admin</span>
+                            <Tag className="admin-tag admin-tag--active">管理员</Tag>
                         </div>
                         <Button
-                            type="text"
                             icon={<LoginOutlined/>}
                             onClick={logout}
-                            className="admin-header-exit-btn"
                         >
-                            exit
+                            退出登录
                         </Button>
                     </div>
                 </Header>
-                <Content className={"content-div"} style={{
-                    padding: '24px 0 0',
-                    marginBottom: '0',
-                    background: '#000000',
-                }}>
-                    <div
-                        className={"container"}
-                        style={{
-                            background: '#000000',
-                            borderRadius: 0,
-                            padding: '24px',
-                            border: '1px solid #333333',
-                            fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                        }}
-                    >
+                <Content className={"content-div"}>
+                    <div className={"container"}>
                         <DynamicBreadcrumb/>
                         <Outlet/>
                     </div>
                 </Content>
-                <Footer className={"footer"} style={{
-                    textAlign: 'center',
-                    padding: '0 16px',
-                    margin: '0',
-                    background: '#000000',
-                    color: '#bcc5d1',
-                    borderTop: '1px solid #333333',
-                    fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                    fontSize: '12px',
-                }}>
-                    $ echo "{new Date().getFullYear()} hai_tao@admin"
+                <Footer className={"footer"}>
+                    © {new Date().getFullYear()} Hai Tao · 博客后台
                 </Footer>
             </Layout>
         </Layout>

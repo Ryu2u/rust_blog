@@ -5,71 +5,76 @@ import './index.css'
 import { ConfigProvider, theme } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 
+// 与 index.css 中的设计变量保持一致（antd token 需要具体色值）
+const FONT_SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif';
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ConfigProvider
       locale={zhCN}
       theme={{
-        algorithm: theme.darkAlgorithm,
+        algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#10a37f',
-          colorBgBase: '#000000',
-          colorBgContainer: '#0a0a0a',
-          colorBgElevated: '#1a1a1a',
-          colorBorder: '#333333',
-          colorBorderSecondary: '#333333',
-          colorText: '#e0e0e0',
-          colorTextSecondary: '#808080',
-          colorTextTertiary: '#555555',
-          borderRadius: 0,
-          borderRadiusLG: 0,
-          borderRadiusSM: 0,
-          fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-          boxShadow: 'none',
-          boxShadowSecondary: 'none',
+          colorPrimary: '#c96442',
+          colorInfo: '#c96442',
+          colorLink: '#c96442',
+          colorLinkHover: '#b5573a',
+          colorBgLayout: '#faf9f5',
+          colorBgContainer: '#ffffff',
+          colorBgElevated: '#ffffff',
+          colorBorder: '#d9d6cc',
+          colorBorderSecondary: '#e8e6dc',
+          colorSplit: '#e8e6dc',
+          colorText: '#141413',
+          colorTextSecondary: '#5e5d59',
+          colorTextTertiary: '#87867f',
+          colorTextQuaternary: '#b0aea5',
+          colorFillAlter: '#faf9f5',
+          borderRadius: 8,
+          borderRadiusLG: 12,
+          borderRadiusSM: 6,
+          fontFamily: FONT_SANS,
+          boxShadow: '0 6px 24px rgba(20, 20, 19, 0.08)',
+          boxShadowSecondary: '0 6px 24px rgba(20, 20, 19, 0.08)',
         },
         components: {
           Layout: {
-            siderBg: '#000000',
-            triggerBg: '#0a0a0a',
-            triggerColor: '#808080',
+            siderBg: '#f5f4ee',
+            headerBg: '#faf9f5',
+            bodyBg: '#faf9f5',
+            footerBg: '#faf9f5',
+            triggerBg: '#f5f4ee',
+            triggerColor: '#5e5d59',
+            lightSiderBg: '#f5f4ee',
+            lightTriggerBg: '#f5f4ee',
+            lightTriggerColor: '#5e5d59',
           },
           Menu: {
-            darkItemBg: '#000000',
-            darkItemSelectedBg: '#10a37f',
-            darkItemSelectedColor: '#000000',
-            darkItemHoverBg: '#1a1a1a',
-            darkItemHoverColor: '#e0e0e0',
-            darkSubMenuItemBg: '#000000',
-            itemBorderRadius: 0,
-          },
-          Card: {
-            borderRadiusLG: 0,
-            borderRadius: 0,
-            boxShadow: 'none',
-          },
-          Button: {
-            borderRadius: 0,
-            borderRadiusLG: 0,
-          },
-          Input: {
-            borderRadius: 0,
-            activeBorderColor: '#10a37f',
-            hoverBorderColor: '#555555',
+            itemBg: 'transparent',
+            itemColor: '#5e5d59',
+            itemHoverBg: '#ebe9e1',
+            itemHoverColor: '#141413',
+            itemSelectedBg: '#e8e6dc',
+            itemSelectedColor: '#141413',
+            itemActiveBg: '#e8e6dc',
+            itemBorderRadius: 8,
+            itemMarginInline: 8,
+            activeBarBorderWidth: 0,
           },
           Table: {
-            borderRadius: 0,
-            headerBg: '#0a0a0a',
-            headerColor: '#e0e0e0',
-            rowHoverBg: '#1a1a1a',
+            headerBg: '#faf9f5',
+            headerColor: '#5e5d59',
+            headerSplitColor: 'transparent',
+            rowHoverBg: '#faf9f5',
+            borderColor: '#e8e6dc',
           },
-          Tag: {
-            borderRadiusSM: 0,
+          Card: {
+            headerFontSize: 16,
           },
-          Modal: {
-            borderRadiusLG: 0,
-            contentBg: '#0a0a0a',
-            headerBg: '#0a0a0a',
+          Button: {
+            primaryShadow: 'none',
+            defaultShadow: 'none',
+            dangerShadow: 'none',
           },
         },
       }}

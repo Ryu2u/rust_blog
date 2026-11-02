@@ -1,5 +1,6 @@
 import {LockOutlined, UserOutlined} from '@ant-design/icons';
-import {Button, Checkbox, Form, Input, message, Card, Space} from 'antd';
+import {Button, Checkbox, Form, Input, message} from 'antd';
+import "./LoginPage.scss";
 import { useNavigate} from "react-router";
 import LoginService from "../service/LoginService";
 import { useState } from "react";
@@ -30,111 +31,58 @@ export function LoginPage() {
     return (
         <>
             {contextHolder}
-            <div style={{
-                minHeight: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#000000',
-                fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-            }}>
-                <Card
-                    title={
-                        <div style={{
-                            textAlign: 'left',
-                            fontSize: '14px',
-                            fontWeight: 700,
-                            color: '#e0e0e0',
-                            fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                        }}>
-                            <span style={{ color: '#10a37f' }}>&gt;</span> login
-                        </div>
-                    }
-                    style={{
-                        width: 400,
-                        background: '#0a0a0a',
-                        border: '1px solid #333333',
-                        borderRadius: 0,
-                        boxShadow: 'none',
-                    }}
-                    headStyle={{
-                        borderBottom: '1px solid #333333',
-                        background: '#0a0a0a',
-                    }}
-                    bodyStyle={{
-                        padding: '24px',
-                    }}
-                >
+            <div className="login-page">
+                <div className="login-card">
+                    <span className="login-card__mark">H</span>
+                    <h1 className="login-card__title">欢迎回来</h1>
+                    <p className="login-card__subtitle">登录 Hai Tao 的博客后台</p>
                     <Form
                         name="normal_login"
+                        layout="vertical"
+                        requiredMark={false}
                         initialValues={{remember: true}}
                         onFinish={onFinish}
                     >
                         <Form.Item
+                            label="用户名"
                             name="username"
                             rules={[{required: true, message: '请输入用户名!'}]}
                         >
                             <Input
-                                prefix={<UserOutlined style={{ color: '#555555' }} />}
+                                prefix={<UserOutlined className="login-card__icon"/>}
                                 size="large"
-                                placeholder="username"
-                                style={{
-                                    background: '#000000',
-                                    border: '1px solid #333333',
-                                    borderRadius: 0,
-                                    color: '#e0e0e0',
-                                    fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                                }}
+                                placeholder="用户名"
                             />
                         </Form.Item>
                         <Form.Item
+                            label="密码"
                             name="password"
                             rules={[{required: true, message: '请输入密码!'}]}
                         >
                             <Input
                                 size="large"
-                                prefix={<LockOutlined style={{ color: '#555555' }} />}
+                                prefix={<LockOutlined className="login-card__icon"/>}
                                 type="password"
-                                placeholder="password"
-                                style={{
-                                    background: '#000000',
-                                    border: '1px solid #333333',
-                                    borderRadius: 0,
-                                    color: '#e0e0e0',
-                                    fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                                }}
+                                placeholder="密码"
                             />
                         </Form.Item>
-                        <Form.Item>
-                            <Space direction="vertical" style={{ width: '100%' }}>
-                                <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                                    <Form.Item name="remember" valuePropName="checked" noStyle>
-                                        <Checkbox style={{ color: '#808080', fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace" }}>remember me</Checkbox>
-                                    </Form.Item>
-                                    <a href="#" style={{ color: '#10a37f', fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace" }}>
-                                        forgot password
-                                    </a>
-                                </Space>
-                                <Button
-                                    size="large"
-                                    type="primary"
-                                    htmlType="submit"
-                                    style={{
-                                        width: '100%',
-                                        height: 40,
-                                        borderRadius: 0,
-                                        fontWeight: 700,
-                                        fontSize: 14,
-                                        fontFamily: "Monaco, 'Courier New', 'Fira Code', monospace",
-                                    }}
-                                    loading={loading}
-                                >
-                                    $ enter
-                                </Button>
-                            </Space>
-                        </Form.Item>
+                        <div className="login-card__row">
+                            <Form.Item name="remember" valuePropName="checked" noStyle>
+                                <Checkbox>记住我</Checkbox>
+                            </Form.Item>
+                            <a href="#">忘记密码？</a>
+                        </div>
+                        <Button
+                            block
+                            size="large"
+                            type="primary"
+                            htmlType="submit"
+                            loading={loading}
+                        >
+                            登录
+                        </Button>
                     </Form>
-                </Card>
+                </div>
             </div>
         </>
     )

@@ -106,7 +106,7 @@ export function UserInfo() {
 
                     <div className={"user-link"}>
                         <span className={"link-item"}>
-                        <Tooltip title={"799021220"} color={"#2db7f5"}>
+                        <Tooltip title={"799021220"}>
                             <a>
                             <span className={"fa fa-qq"}></span>
                                 QQ
@@ -120,7 +120,7 @@ export function UserInfo() {
                             </a>
                         </span>
                         <span className={"link-item"}>
-                        <Tooltip title={"cht799021220"} color={"#2db7f5"}>
+                        <Tooltip title={"cht799021220"}>
                             <a>
                             <span className={"fa fa-wechat"}></span>
                                WeChat
