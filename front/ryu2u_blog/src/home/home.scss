@@ -86,6 +86,63 @@
   }
 }
 
+/* ---------- 顶栏右侧：导航 + 当前用户 ---------- */
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+}
+
+.header-user__name {
+  max-width: 120px;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-user__logout {
+  padding: 5px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--color-surface-muted);
+    color: var(--color-text);
+  }
+}
+
+@media (max-width: 600px) {
+  .header-right {
+    gap: 4px;
+  }
+
+  .header-user {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .header-user__name,
+  .header-menu__placeholder {
+    display: none;
+  }
+}
+
 /* ---------- 通用两栏容器 ---------- */
 
 .container {

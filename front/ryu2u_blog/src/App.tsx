@@ -9,6 +9,7 @@ import {MomentPage} from "./moment/MomentPage.tsx";
 import {Header} from "./components/Header";
 import {Footer} from "./components/Footer";
 import {AuthProvider} from "./auth/AuthProvider";
+import {LoginPage} from "./login/LoginPage.tsx";
 
 function App() {
 
@@ -18,6 +19,7 @@ function App() {
                 <AuthProvider>
                     <Header/>
                     <Routes>
+                    <Route path={"/login"} element={<LoginPage />}></Route>
                     <Route path={"/"} element={<Navigate to={"/home"}/>}></Route>
                     <Route path={"/home"} element={<Home />}></Route>
                     <Route path={"/post/:id"} element={<PostPage />}></Route>
