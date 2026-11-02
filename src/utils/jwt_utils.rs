@@ -19,7 +19,7 @@ fn jwt_secret() -> Result<String, Exception> {
     env::var("JWT_SECRET").map_err(|_| Exception::InternalError)
 }
 
-fn jwt_exp_hours() -> i64 {
+pub fn jwt_exp_hours() -> i64 {
     env::var("JWT_EXPIRE_HOURS")
         .ok()
         .and_then(|value| value.parse::<i64>().ok())
