@@ -1,0 +1,27 @@
+.auth-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--header-height));
+  margin-top: var(--header-height);
+}
+
+.auth-loading__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: auth-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes auth-pulse {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

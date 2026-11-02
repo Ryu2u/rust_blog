@@ -20,7 +20,10 @@ export function LoginPage() {
                 navigate('/');
             })
             .catch((error) => {
-                messageApi.error('登录失败，请检查用户名和密码');
+                // 429（尝试次数过多）：请求拦截器已经显示了服务端文案，不再叠加通用提示
+                if (error?.response?.status !== 429) {
+                    messageApi.error('登录失败，请检查用户名和密码');
+                }
                 console.error('Login error:', error);
             })
             .finally(() => {
