@@ -1,17 +1,28 @@
+use crate::user::login_support::{
+    auth_cookie, burn_dummy_verify, check_password, clear_auth_cookie, cookie_secure,
+    sanitize_for_log, validate_login_input, PasswordCheck,
+};
 use crate::user::structs::LoginDto;
-use crate::utils::jwt_utils::{create_jwt, AUTH_COOKIE_NAME};
+use crate::utils::client_ip::client_ip;
+use crate::utils::jwt_utils::{create_jwt, jwt_exp_hours};
+use crate::utils::login_guard::LoginGuard;
 use crate::{error, Exception, User, R};
-use actix_web::cookie::{time::Duration, Cookie, SameSite};
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use rbatis::RBatis;
 use serde::Deserialize;
-use tracing::log::info;
-use tracing::{instrument, span, Level};
+use std::time::Instant;
+use tracing::instrument;
+use tracing::log::{info, warn};
 
 /// 用户 接口
 pub fn user_scope() -> actix_web::Scope {
     actix_web::web::scope("/user")
-        .service(api_login)
+        // 登录接口单独限制请求体大小，超出由 Actix 直接返回 413
+        .service(
+            web::resource("/login")
+                .app_data(web::JsonConfig::default().limit(LOGIN_BODY_LIMIT))
+                .route(web::post().to(api_login)),
+        )
         .service(api_logout)
         .service(api_user_get)
         .service(api_user_get_admin)
@@ -22,10 +33,6 @@ pub fn user_scope() -> actix_web::Scope {
         .service(api_user_lock)
 }
 
-fn is_bcrypt_hash(s: &str) -> bool {
-    s.starts_with("$2b$") || s.starts_with("$2a$") || s.starts_with("$2y$")
-}
-
 #[derive(Debug, Deserialize)]
 struct UserPageQuery {
     page_num: i32,
@@ -34,86 +41,93 @@ struct UserPageQuery {
     status: Option<i32>,
 }
 
-#[post("/login")]
-async fn api_login(
+/// 登录请求体上限（字节）。正常的用户名 + 密码远小于这个值，防止被喂超大请求体
+const LOGIN_BODY_LIMIT: usize = 4096;
+
+/// 登录失败：记一次失败、写一条 warn（不含密码），统一返回「账号或密码错误!」
+fn fail_login(guard: &LoginGuard, ip: &str, username: &str) -> Exception {
+    guard.record_failure(ip, username, Instant::now());
+    warn!("login failed: ip={} username={}", ip, sanitize_for_log(username));
+    Exception::BadRequest("账号或密码错误!".to_string())
+}
+
+/// 旧明文密码登录成功后升级为 bcrypt；全程绑定参数，不拼接 SQL
+async fn upgrade_password_hash(db: &RBatis, user_id: i32, plain: &str) {
+    match bcrypt::hash(plain, bcrypt::DEFAULT_COST) {
+        Ok(hashed) => {
+            let res = db
+                .exec(
+                    "update tb_user set password = ? where id = ?",
+                    vec![rbs::to_value!(hashed), rbs::to_value!(user_id)],
+                )
+                .await;
+            match res {
+                Ok(_) => info!("upgraded plaintext password to bcrypt for user id: {}", user_id),
+                Err(e) => error!("upgrade password hash failed for user id {}: {}", user_id, e),
+            }
+        }
+        Err(e) => error!("bcrypt hash failed during upgrade: {}", e),
+    }
+}
+
+/// 登录。顺序很重要：先查锁（被锁时不查库、不算 bcrypt），再校验密码；
+/// 用户不存在时也做一次等价的 bcrypt 校验，抹平响应时间差。
+pub async fn api_login(
+    req: HttpRequest,
     login_dto: web::Json<LoginDto>,
     db: web::Data<RBatis>,
+    guard: web::Data<LoginGuard>,
 ) -> Result<impl Responder, Exception> {
-    let _ = span!(Level::DEBUG, "api_login");
     let username = login_dto.username.as_str();
     let password = login_dto.password.as_str();
-    info!("username -> {}", username);
+    validate_login_input(username, password)?;
 
-    let user_res = User::select_by_username(&**db, username).await;
-    match user_res {
-        Ok(mut user_vec) => {
-            if user_vec.is_empty() {
-                return Err(Exception::BadRequest("账号或密码错误!".to_string()));
-            }
-            let user = user_vec.get_mut(0).unwrap();
+    let ip = client_ip(&req);
+    if let Err(retry_after_secs) = guard.check(&ip, username, Instant::now()) {
+        warn!("login locked: ip={} username={}", ip, sanitize_for_log(username));
+        return Err(Exception::too_many_requests(retry_after_secs));
+    }
 
-            let password_valid = if is_bcrypt_hash(&user.password) {
-                bcrypt::verify(password, &user.password).unwrap_or(false)
-            } else {
-                // 兼容旧明文密码
-                let matched = password == user.password;
-                if matched {
-                    // 自动升级为 bcrypt hash
-                    if let Ok(hashed) = bcrypt::hash(password, bcrypt::DEFAULT_COST) {
-                        let sql = format!(
-                            "UPDATE tb_user SET password = '{}' WHERE id = {}",
-                            hashed.replace('\'', "''"),
-                            user.id.unwrap_or(0)
-                        );
-                        let _ = db.exec(&sql, vec![]).await;
-                        info!("upgraded plaintext password to bcrypt for user: {}", username);
-                    }
-                }
-                matched
-            };
+    let found = User::select_by_username(&**db, username).await.map_err(|e| {
+        error!("login query failed: {}", e);
+        Exception::InternalError
+    })?;
+    let Some(mut user) = found.into_iter().next() else {
+        burn_dummy_verify(password);
+        return Err(fail_login(&guard, &ip, username));
+    };
 
-            if !password_valid {
-                return Err(Exception::BadRequest("账号或密码错误!".to_string()));
-            }
+    let upgrade_needed = match check_password(&user.password, password) {
+        PasswordCheck::Valid { upgrade_needed } => upgrade_needed,
+        PasswordCheck::Invalid => return Err(fail_login(&guard, &ip, username)),
+    };
 
-            if user.locked == 1 {
-                return Err(Exception::BadRequest("当前账号已被锁定".to_string()));
-            }
+    // 密码正确但账号被锁：只对知道密码的人透露「已锁定」，不算一次失败
+    if user.locked == 1 {
+        return Err(Exception::BadRequest("当前账号已被锁定".to_string()));
+    }
 
-            let token = create_jwt(
-                user.id.unwrap_or_default(),
-                &user.username,
-                &user.role,
-            )?;
-            user.filter_pwd();
-            info!("login success -> {:?}", user);
-
-            let cookie = Cookie::build(AUTH_COOKIE_NAME, token)
-                .path("/")
-                .http_only(true)
-                .same_site(SameSite::Lax)
-                .finish();
-
-            Ok(HttpResponse::Ok()
-                .cookie(cookie)
-                .json(R::<User>::ok_msg_obj("登录成功!", user.clone())))
-        }
-        Err(e) => {
-            error!("{}", e);
-            Err(Exception::BadRequest("Error".to_string()))
+    guard.record_success(&ip, username);
+    if upgrade_needed {
+        if let Some(id) = user.id {
+            upgrade_password_hash(&**db, id, password).await;
         }
     }
+
+    let token = create_jwt(user.id.unwrap_or_default(), &user.username, &user.role)?;
+    user.filter_pwd();
+    info!("login success: id={:?} username={}", user.id, sanitize_for_log(&user.username));
+
+    let cookie = auth_cookie(&token, jwt_exp_hours(), cookie_secure());
+    Ok(HttpResponse::Ok()
+        .cookie(cookie)
+        .json(R::<User>::ok_msg_obj("登录成功!", user)))
 }
 
 #[post("/logout")]
 pub async fn api_logout() -> Result<impl Responder, Exception> {
     info!("api_logout in");
-    let cookie = Cookie::build(AUTH_COOKIE_NAME, "")
-        .path("/")
-        .http_only(true)
-        .same_site(SameSite::Lax)
-        .max_age(Duration::seconds(0))
-        .finish();
+    let cookie = clear_auth_cookie(cookie_secure());
 
     Ok(HttpResponse::Ok().cookie(cookie).json(R::<()>::ok()))
 }
@@ -298,6 +312,24 @@ async fn api_user_lock(
         .await
         .map_err(|_| Exception::BadRequest("操作失败，请重试".to_string()))?;
     Ok(R::<()>::ok_msg("操作成功!"))
+}
+
+#[cfg(test)]
+mod login_tests {
+    use super::*;
+    use crate::utils::login_guard::LoginGuardConfig;
+
+    #[test]
+    fn fail_login_records_a_failure_and_returns_a_uniform_message() {
+        let guard = LoginGuard::new(LoginGuardConfig::default());
+        for _ in 0..4 {
+            let e = fail_login(&guard, "10.0.0.1", "alice");
+            assert_eq!(e.to_string(), "账号或密码错误!");
+        }
+        assert!(guard.check("10.0.0.1", "alice", Instant::now()).is_ok(), "4 次还不该锁");
+        fail_login(&guard, "10.0.0.1", "alice");
+        assert!(guard.check("10.0.0.1", "alice", Instant::now()).is_err(), "第 5 次应锁定");
+    }
 }
 
 #[cfg(test)]

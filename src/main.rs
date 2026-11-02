@@ -6,6 +6,7 @@ use crate::post::category_apis::category_scope;
 use crate::post::structs::Post;
 use crate::post::tag_apis::tag_scope;
 use crate::user::structs::User;
+use crate::utils::login_guard::{LoginGuard, LoginGuardConfig};
 use crate::comment::apis::comment_scope;
 use actix_cors::Cors;
 use actix_easy_multipart::MultipartFormConfig;
@@ -42,6 +43,13 @@ async fn main() -> std::io::Result<()> {
 
     // 确保数据库表已创建
     info!("database init completed!");
+
+    // 登录限频状态必须在所有 worker 之间共享：Data 在闭包外创建，闭包内 clone（共享同一个 Arc）。
+    // 若在闭包内创建，每个 worker 各有一份计数，限频阈值会被放大 worker 数倍。
+    let login_guard = web::Data::new(LoginGuard::new(LoginGuardConfig::from_env()));
+    // 预热「用户不存在」时用来抹平耗时的假 bcrypt 哈希，避免第一次登录多花一次哈希时间
+    user::login_support::dummy_bcrypt_hash();
+
     HttpServer::new(move || {
         // 跨域设置
         let cors = Cors::default()
@@ -71,6 +79,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // 配置全局对象
             .app_data(web::Data::new(rbatis.clone()))
+            .app_data(login_guard.clone())
             .app_data(web::Data::new(AppState {
                 app_name: "rust_blog".to_string(),
                 admin_route_prefixes: vec![
