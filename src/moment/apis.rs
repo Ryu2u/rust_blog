@@ -1,5 +1,5 @@
 use crate::config::Exception;
-use crate::moment::Moment;
+use crate::moment::{parse_images, serialize_images, Moment};
 use crate::post::structs::PageInfo;
 use crate::utils::time_utils::get_sys_time;
 use crate::R;
@@ -59,20 +59,6 @@ pub fn moment_scope() -> actix_web::Scope {
         .service(api_admin_moment_toggle_public)
 }
 
-fn parse_images(images: Option<String>) -> Vec<String> {
-    images
-        .and_then(|value| serde_json::from_str::<Vec<String>>(&value).ok())
-        .unwrap_or_default()
-}
-
-fn serialize_images(images: Option<Vec<String>>) -> Option<String> {
-    let values = images.unwrap_or_default();
-    if values.is_empty() {
-        None
-    } else {
-        serde_json::to_string(&values).ok()
-    }
-}
 
 fn to_payload(moment: Moment) -> MomentPayload {
     MomentPayload {

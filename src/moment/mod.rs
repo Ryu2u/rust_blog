@@ -70,6 +70,23 @@ impl Moment {
     }
 }
 
+/// 图片列的 JSON 数组 → 列表；NULL / 坏 JSON 都得到空列表
+pub fn parse_images(images: Option<String>) -> Vec<String> {
+    images
+        .and_then(|value| serde_json::from_str::<Vec<String>>(&value).ok())
+        .unwrap_or_default()
+}
+
+/// 列表 → 图片列的 JSON 数组；空列表存 NULL
+pub fn serialize_images(images: Option<Vec<String>>) -> Option<String> {
+    let values = images.unwrap_or_default();
+    if values.is_empty() {
+        None
+    } else {
+        serde_json::to_string(&values).ok()
+    }
+}
+
 fn escape_sql(value: &str) -> String {
     value.replace('\\', "\\\\").replace('\'', "''")
 }

@@ -29,6 +29,21 @@ impl_select!(NoteSyncMap {
     select_by_post_id(post_id: i32) => "`where post_id = #{post_id}`"
 });
 
+/// 说说 ↔ 仓库 `说说/` 目录下文件 的映射
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MomentSyncMap {
+    pub id: Option<i32>,
+    pub moment_id: i32,
+    /// 仓库内相对路径，如 "说说/2026_09_17_22_15.md"，唯一
+    pub github_path: String,
+    /// 上次同步时仓库文件的 git blob sha（判断仓库有没有变；写回时带的旧 sha）
+    pub blob_sha: String,
+    /// 上次同步时 sha256(按库里数据渲染出的文件文本)（判断后台有没有变）
+    pub local_sha: String,
+    pub synced_at: i64,
+}
+crud!(MomentSyncMap {});
+
 /// LLM 配置（单行表，id=1）
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NoteSyncConfig {

@@ -155,3 +155,19 @@ CREATE TABLE `note_sync_config` (
   `updated_at` BIGINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------
+-- 说说 ↔ 仓库文件映射（说说双向同步）
+-- ----------------------------
+DROP TABLE IF EXISTS `moment_sync_map`;
+CREATE TABLE `moment_sync_map` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `moment_id` INT NOT NULL,
+  `github_path` VARCHAR(512) NOT NULL,
+  `blob_sha` CHAR(40) NOT NULL,
+  `local_sha` CHAR(64) NOT NULL,
+  `synced_at` BIGINT NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_moment_id` (`moment_id`),
+  UNIQUE KEY `uk_github_path` (`github_path`(255))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='说说与仓库文件映射';
