@@ -4,7 +4,8 @@ use tracing::{error, info, warn};
 
 use crate::note_sync::ai_client::{self, AiSettings};
 use crate::note_sync::derive::{sha256_hex, word_count};
-use crate::note_sync::github_client::{GithubClient, TreeFetch};
+use crate::note_sync::github_client::GithubClient;
+use crate::note_sync::moment_sync::MomentSyncConfig;
 use crate::note_sync::structs::{AiMeta, NoteSyncConfig, NoteSyncMap};
 use crate::post::structs::{Category, Post, PostCategory, PostTag, Tag};
 use crate::utils::md_to_html;
@@ -25,11 +26,18 @@ pub enum SyncAction {
     SoftDelete { map_id: i32, post_id: i32 },
 }
 
-/// 过滤：root 前缀 + .md 后缀 + 排除目录段 + 大小上限
-pub fn filter_entries(entries: &[TreeEntry], root: &str, exclude_dirs: &[&str], max_kb: i64) -> Vec<TreeEntry> {
+/// 过滤：root 前缀 + .md 后缀 + 排除路径前缀（说说目录）+ 排除目录段 + 大小上限
+pub fn filter_entries(
+    entries: &[TreeEntry],
+    root: &str,
+    exclude_dirs: &[&str],
+    exclude_prefixes: &[&str],
+    max_kb: i64,
+) -> Vec<TreeEntry> {
     entries
         .iter()
         .filter(|e| e.path.starts_with(root) && e.path.ends_with(".md"))
+        .filter(|e| !exclude_prefixes.iter().any(|p| e.path.starts_with(p)))
         .filter(|e| !e.path.split('/').any(|seg| exclude_dirs.contains(&seg)))
         .filter(|e| e.size <= max_kb * 1024)
         .cloned()
@@ -151,6 +159,8 @@ pub struct SyncPlan {
     pub category: String,
     pub allow_http: bool,
     pub enc_key: String,
+    /// 说说双向同步的配置；None = 关闭（NOTE_SYNC_MOMENT_DIR 留空）
+    pub moment: Option<MomentSyncConfig>,
 }
 
 /// 从 DB 读 LLM 配置并解密；未启用/未配置/校验失败返回 None（走降级路径）
@@ -168,26 +178,19 @@ pub async fn load_ai_settings(db: &RBatis, enc_key: &str, allow_http: bool) -> O
     Some(AiSettings { base_url: cfg.ai_base_url, api_key: key, model: cfg.ai_model })
 }
 
+/// 笔记 → 文章的一轮同步。仓库树由调度层拉取后传入（ETag 缓存在 `gh` 上，一轮只能拉一次）
 pub async fn run_sync_cycle(
     db: &RBatis,
     gh: &mut GithubClient,
     plan: &SyncPlan,
     ai: Option<AiSettings>,
+    entries: &[TreeEntry],
 ) -> SyncStats {
     let mut stats = SyncStats::default();
-    let entries = match gh.list_tree().await {
-        Ok(TreeFetch::Unchanged) => {
-            info!("note_sync: 仓库无变化 (ETag 304)");
-            return stats;
-        }
-        Ok(TreeFetch::Changed { entries, .. }) => entries,
-        Err(e) => {
-            error!("note_sync: {}", e);
-            return stats;
-        }
-    };
     let excludes: Vec<&str> = plan.exclude_dirs.iter().map(|s| s.as_str()).collect();
-    let filtered = filter_entries(&entries, &plan.root, &excludes, plan.max_kb);
+    // 说说目录由说说同步负责：NOTE_SYNC_ROOT 被配成空（整个仓库）时，也不能把里面的 .md 当文章
+    let moment_dir: Vec<&str> = plan.moment.iter().map(|c| c.dir.as_str()).collect();
+    let filtered = filter_entries(entries, &plan.root, &excludes, &moment_dir, plan.max_kb);
 
     let maps = NoteSyncMap::select_all(db).await.unwrap_or_default();
     let deleted_posts = Post::select_by_column(db, "is_deleted", 1).await.unwrap_or_default();
@@ -495,7 +498,7 @@ mod tests {
     fn test_filter_keeps_only_md_under_root() {
         let es = vec![entry("笔记/Rust/axum.md", "a", 10), entry("todo/x.md", "b", 10),
             entry("笔记/img.png", "c", 10), entry("笔记/a.txt", "d", 10)];
-        let out = filter_entries(&es, "笔记/", &[], 1024);
+        let out = filter_entries(&es, "笔记/", &[], &[], 1024);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].path, "笔记/Rust/axum.md");
     }
@@ -503,9 +506,21 @@ mod tests {
     fn test_filter_excludes_dirs_and_oversize() {
         let es = vec![entry("笔记/.obsidian/x.md", "a", 10), entry("笔记/.trash/y.md", "b", 10),
             entry("笔记/big.md", "c", 2048 * 1024), entry("笔记/ok.md", "d", 10)];
-        let out = filter_entries(&es, "笔记/", &[".obsidian", ".trash"], 1024);
+        let out = filter_entries(&es, "笔记/", &[".obsidian", ".trash"], &[], 1024);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].path, "笔记/ok.md");
+    }
+
+    #[test]
+    fn test_filter_excludes_moment_dir_even_when_root_is_empty() {
+        let es = vec![entry("说说/2026_09_17_22_15.md", "a", 10), entry("笔记/x.md", "b", 10),
+            entry("README.md", "c", 10)];
+        // root 为空 = 整个仓库；说说目录必须被排除，否则说说文件会被当成文章
+        let out = filter_entries(&es, "", &[], &["说说/"], 1024);
+        let paths: Vec<&str> = out.iter().map(|e| e.path.as_str()).collect();
+        assert_eq!(paths, vec!["笔记/x.md", "README.md"]);
+        // 不排除时（说说同步关闭）行为不变
+        assert_eq!(filter_entries(&es, "", &[], &[], 1024).len(), 3);
     }
 
     // ---- plan_actions ----
