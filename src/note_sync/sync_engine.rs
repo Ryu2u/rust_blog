@@ -307,7 +307,7 @@ async fn meta_for(ai: Option<&AiSettings>, path: &str, content: &str, categories
 }
 
 /// ExecResult.last_insert_id（rbs::Value，MySQL 驱动回填 u64）转 i32；不识别返回 0
-fn value_to_i32(v: &rbs::Value) -> i32 {
+pub(crate) fn value_to_i32(v: &rbs::Value) -> i32 {
     match v {
         rbs::Value::I32(x) => *x,
         rbs::Value::I64(x) => *x as i32,

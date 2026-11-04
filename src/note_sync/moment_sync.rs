@@ -6,11 +6,15 @@
 use std::collections::{HashMap, HashSet};
 
 use chrono::{FixedOffset, NaiveDate, TimeZone};
+use rbatis::RBatis;
+use tracing::{error, info, warn};
 
-use crate::moment::{parse_images, Moment};
+use crate::moment::{parse_images, serialize_images, Moment};
 use crate::note_sync::derive::sha256_hex;
+use crate::note_sync::github_client::{GhError, GithubClient};
 use crate::note_sync::structs::MomentSyncMap;
-use crate::note_sync::sync_engine::TreeEntry;
+use crate::note_sync::sync_engine::{value_to_i32, TreeEntry};
+use crate::utils::time_utils::get_sys_time;
 
 /// 文件名里的时间按 +08:00 解释（设计文档 §6.1）
 const TZ_OFFSET_SECS: i32 = 8 * 3600;
@@ -373,6 +377,405 @@ pub fn plan_push(moments: &[Moment], maps: &[MomentSyncMap]) -> Vec<PushAction> 
     all.extend(create_ids.into_iter().map(|moment_id| PushAction::Create { moment_id }));
     all.truncate(MAX_PUSH_OPS);
     all
+}
+
+// ---------- 带 IO 的同步阶段 ----------
+
+#[derive(Default, Debug)]
+pub struct MomentStats {
+    pub adopted: u32,
+    pub created: u32,
+    pub updated: u32,
+    pub removed: u32,
+    pub skipped: u32,
+    pub failed: u32,
+    pub pushed_created: u32,
+    pub pushed_updated: u32,
+    pub pushed_deleted: u32,
+}
+
+/// 一轮说说同步。`entries` 是这一轮拉到的仓库树；树没变（304）时传 None：
+/// 跳过拉取阶段，写回阶段照常执行（后台的改动不会让仓库树变化）。
+pub async fn run_moment_cycle(
+    db: &RBatis,
+    gh: &mut GithubClient,
+    cfg: &MomentSyncConfig,
+    entries: Option<&[TreeEntry]>,
+) -> MomentStats {
+    let mut stats = MomentStats::default();
+    if let Some(entries) = entries {
+        let excludes: Vec<&str> = cfg.exclude_dirs.iter().map(String::as_str).collect();
+        let files = filter_moment_files(entries, &cfg.dir, &excludes, cfg.max_kb);
+        pull_phase(db, gh, &files, &mut stats).await;
+    }
+    if cfg.push {
+        push_phase(db, gh, cfg, entries, &mut stats).await;
+    }
+    info!("moment_sync: {:?}", stats);
+    stats
+}
+
+async fn load_state(db: &RBatis) -> Option<(Vec<Moment>, Vec<MomentSyncMap>)> {
+    let moments = match Moment::select_all(db).await {
+        Ok(v) => v,
+        Err(e) => {
+            error!("moment_sync: 读取说说失败: {e}");
+            return None;
+        }
+    };
+    let maps = match MomentSyncMap::select_all(db).await {
+        Ok(v) => v,
+        Err(e) => {
+            error!("moment_sync: 读取映射失败: {e}");
+            return None;
+        }
+    };
+    Some((moments, maps))
+}
+
+// ----- 数据库小工具 -----
+
+async fn insert_moment(db: &RBatis, m: &Moment) -> Result<i32, String> {
+    let r = Moment::insert(db, m).await.map_err(|e| format!("插入说说失败: {e}"))?;
+    match value_to_i32(&r.last_insert_id) {
+        0 => Err("插入说说后取不到自增 id".to_string()),
+        id => Ok(id),
+    }
+}
+
+async fn insert_map(
+    db: &RBatis,
+    moment_id: i32,
+    path: &str,
+    blob_sha: &str,
+    local_sha: &str,
+) -> Result<(), String> {
+    let row = MomentSyncMap {
+        id: None,
+        moment_id,
+        github_path: path.to_string(),
+        blob_sha: blob_sha.to_string(),
+        local_sha: local_sha.to_string(),
+        synced_at: get_sys_time(),
+    };
+    MomentSyncMap::insert(db, &row)
+        .await
+        .map(|_| ())
+        .map_err(|e| format!("写入映射失败 {path}: {e}"))
+}
+
+async fn update_map(db: &RBatis, map_id: i32, blob_sha: &str, local_sha: &str) -> Result<(), String> {
+    db.exec(
+        "update moment_sync_map set blob_sha = ?, local_sha = ?, synced_at = ? where id = ?",
+        vec![
+            rbs::to_value!(blob_sha),
+            rbs::to_value!(local_sha),
+            rbs::to_value!(get_sys_time()),
+            rbs::to_value!(map_id),
+        ],
+    )
+    .await
+    .map(|_| ())
+    .map_err(|e| format!("更新映射失败 {map_id}: {e}"))
+}
+
+async fn delete_map(db: &RBatis, map_id: i32) -> Result<(), String> {
+    MomentSyncMap::delete_by_column(db, "id", map_id)
+        .await
+        .map(|_| ())
+        .map_err(|e| format!("删除映射失败 {map_id}: {e}"))
+}
+
+// ----- 拉取阶段（仓库 → 库，仓库为准）-----
+
+async fn pull_phase(db: &RBatis, gh: &mut GithubClient, files: &[TreeEntry], stats: &mut MomentStats) {
+    let Some((mut moments, maps)) = load_state(db).await else { return };
+    let mut mapped_ids: HashSet<i32> = maps.iter().map(|m| m.moment_id).collect();
+
+    for action in plan_pull(files, &maps) {
+        let result = match action {
+            PullAction::New { path, blob_sha } => {
+                pull_new(db, gh, &path, &blob_sha, &mut moments, &mut mapped_ids, stats).await
+            }
+            PullAction::Update { map, blob_sha } => {
+                pull_update(db, gh, &map, &blob_sha, &mut moments, &mut mapped_ids, stats).await
+            }
+            PullAction::Remove { map } => {
+                let r = pull_remove(db, &map, &mut moments, &mut mapped_ids).await;
+                if r.is_ok() {
+                    stats.removed += 1;
+                }
+                r
+            }
+        };
+        if let Err(what) = result {
+            stats.failed += 1;
+            error!("moment_sync: 拉取失败 {what}");
+        }
+    }
+}
+
+/// 仓库有文件、没有映射：认领库里已有的同一条说说，认领不到就新建
+async fn pull_new(
+    db: &RBatis,
+    gh: &mut GithubClient,
+    path: &str,
+    blob_sha: &str,
+    moments: &mut Vec<Moment>,
+    mapped_ids: &mut HashSet<i32>,
+    stats: &mut MomentStats,
+) -> Result<(), String> {
+    let text = gh.get_file(path).await.map_err(|e| format!("{path}: {e}"))?;
+    let Some(file) = parse_file(&text) else {
+        warn!("moment_sync: {path} 正文为空，已跳过");
+        stats.skipped += 1;
+        return Ok(());
+    };
+
+    if let Some(m) = find_adoptee(path, &file, moments, mapped_ids) {
+        let id = m.id.unwrap_or(0);
+        insert_map(db, id, path, blob_sha, &fingerprint(m)).await?;
+        mapped_ids.insert(id);
+        stats.adopted += 1;
+        return Ok(());
+    }
+
+    // 发布时间取自文件名；文件名不规范就取该文件最后一次提交的时间
+    let created_ms = match parse_name_time(path) {
+        Some(ms) => ms,
+        None => gh.last_commit_ms(path).await.ok().flatten().unwrap_or_else(get_sys_time),
+    };
+    let mut m = Moment::new(
+        file.content.clone(),
+        serialize_images(Some(file.images.clone())),
+        file.is_public as i32,
+        file.location.clone(),
+    );
+    m.created_time = Some(created_ms);
+    m.update_time = Some(created_ms);
+    let id = insert_moment(db, &m).await?;
+    m.id = Some(id);
+    insert_map(db, id, path, blob_sha, &fingerprint(&m)).await?;
+    mapped_ids.insert(id);
+    moments.push(m);
+    stats.created += 1;
+    Ok(())
+}
+
+/// 有映射、文件 sha 变了：仓库为准，覆盖库里的内容（已软删的说说同时恢复）
+async fn pull_update(
+    db: &RBatis,
+    gh: &mut GithubClient,
+    map: &MomentSyncMap,
+    blob_sha: &str,
+    moments: &mut Vec<Moment>,
+    mapped_ids: &mut HashSet<i32>,
+    stats: &mut MomentStats,
+) -> Result<(), String> {
+    let path = map.github_path.as_str();
+    let map_id = map.id.unwrap_or(0);
+
+    let Some(idx) = moments.iter().position(|m| m.id == Some(map.moment_id)) else {
+        // 映射指向的说说在库里已不存在：丢弃映射，按新文件处理
+        delete_map(db, map_id).await?;
+        mapped_ids.remove(&map.moment_id);
+        return pull_new(db, gh, path, blob_sha, moments, mapped_ids, stats).await;
+    };
+
+    let text = gh.get_file(path).await.map_err(|e| format!("{path}: {e}"))?;
+    let Some(file) = parse_file(&text) else {
+        warn!("moment_sync: {path} 正文为空，保持库里原样");
+        stats.skipped += 1;
+        return Ok(());
+    };
+
+    let old = moments[idx].clone();
+    let restored = old.is_deleted == Some(1);
+    let differs = normalized(&old).as_ref() != Some(&file);
+
+    // 后台在两次同步之间也改过、且内容确实不同：仓库为准，把被覆盖的内容留在日志里
+    if differs && !restored && fingerprint(&old) != map.local_sha {
+        let preview: String = old.content.chars().take(500).collect();
+        warn!(
+            "moment_sync: {path} 仓库与后台都改了，以仓库为准；被覆盖的后台内容(前500字): {preview:?}"
+        );
+    }
+
+    let mut m = old;
+    if differs || restored {
+        m.content = file.content.clone();
+        m.images = serialize_images(Some(file.images.clone()));
+        m.location = file.location.clone();
+        m.is_public = file.is_public as i32;
+        m.update_time = Some(get_sys_time());
+        m.is_deleted = Some(0);
+        Moment::update_by_column(db, &m, "id")
+            .await
+            .map_err(|e| format!("更新说说失败 {path}: {e}"))?;
+        stats.updated += 1;
+    }
+    update_map(db, map_id, blob_sha, &fingerprint(&m)).await?;
+    moments[idx] = m;
+    Ok(())
+}
+
+/// 有映射、文件已不在仓库里：说说软删，映射删除
+async fn pull_remove(
+    db: &RBatis,
+    map: &MomentSyncMap,
+    moments: &mut [Moment],
+    mapped_ids: &mut HashSet<i32>,
+) -> Result<(), String> {
+    if let Some(m) = moments.iter_mut().find(|m| m.id == Some(map.moment_id)) {
+        if m.is_deleted != Some(1) {
+            m.is_deleted = Some(1);
+            m.update_time = Some(get_sys_time());
+            Moment::update_by_column(db, m, "id")
+                .await
+                .map_err(|e| format!("软删说说失败 {}: {e}", map.github_path))?;
+        }
+    }
+    delete_map(db, map.id.unwrap_or(0)).await?;
+    mapped_ids.remove(&map.moment_id);
+    Ok(())
+}
+
+// ----- 写回阶段（库 → 仓库）-----
+
+enum PushStep {
+    Continue,
+    Stop,
+}
+
+async fn push_phase(
+    db: &RBatis,
+    gh: &mut GithubClient,
+    cfg: &MomentSyncConfig,
+    entries: Option<&[TreeEntry]>,
+    stats: &mut MomentStats,
+) {
+    // 重新读取：拉取阶段可能已经改了说说和映射
+    let Some((moments, maps)) = load_state(db).await else { return };
+    let actions = plan_push(&moments, &maps);
+    if actions.is_empty() {
+        return;
+    }
+    let by_id: HashMap<i32, &Moment> =
+        moments.iter().filter_map(|m| m.id.map(|id| (id, m))).collect();
+    // 新建文件选路径时要避开的已知路径：所有映射 + 这一轮树里的所有条目
+    let mut taken: HashSet<String> = maps.iter().map(|m| m.github_path.clone()).collect();
+    if let Some(entries) = entries {
+        taken.extend(entries.iter().map(|e| e.path.clone()));
+    }
+
+    for action in actions {
+        if let PushStep::Stop = push_one(db, gh, cfg, &by_id, &mut taken, action, stats).await {
+            break;
+        }
+    }
+}
+
+async fn push_one(
+    db: &RBatis,
+    gh: &mut GithubClient,
+    cfg: &MomentSyncConfig,
+    by_id: &HashMap<i32, &Moment>,
+    taken: &mut HashSet<String>,
+    action: PushAction,
+    stats: &mut MomentStats,
+) -> PushStep {
+    match action {
+        PushAction::Delete { map } => {
+            let msg = commit_message("删除", &map.github_path);
+            match gh.delete_file(&map.github_path, &map.blob_sha, &msg).await {
+                // 文件已经不在了（404）也算删除完成
+                Ok(()) | Err(GhError::Other(404, _)) => {
+                    match delete_map(db, map.id.unwrap_or(0)).await {
+                        Ok(()) => stats.pushed_deleted += 1,
+                        Err(e) => {
+                            stats.failed += 1;
+                            error!("moment_sync: {e}");
+                        }
+                    }
+                    PushStep::Continue
+                }
+                Err(e) => handle_push_err(e, &map.github_path, stats),
+            }
+        }
+        PushAction::Update { map } => {
+            let Some(m) = by_id.get(&map.moment_id) else { return PushStep::Continue };
+            let text = render_moment(m);
+            let msg = commit_message("更新", &map.github_path);
+            match gh.put_file(&map.github_path, &text, &msg, Some(&map.blob_sha)).await {
+                Ok(new_sha) => {
+                    match update_map(db, map.id.unwrap_or(0), &new_sha, &sha256_hex(&text)).await {
+                        Ok(()) => stats.pushed_updated += 1,
+                        Err(e) => {
+                            stats.failed += 1;
+                            error!("moment_sync: {e}");
+                        }
+                    }
+                    PushStep::Continue
+                }
+                Err(e) => handle_push_err(e, &map.github_path, stats),
+            }
+        }
+        PushAction::Create { moment_id } => {
+            let Some(m) = by_id.get(&moment_id) else { return PushStep::Continue };
+            let text = render_moment(m);
+            let created_ms = m.created_time.unwrap_or_else(get_sys_time);
+            for path in path_candidates(&cfg.dir, created_ms) {
+                if taken.contains(&path) {
+                    continue;
+                }
+                let msg = commit_message("新增", &path);
+                match gh.put_file(&path, &text, &msg, None).await {
+                    Ok(new_sha) => {
+                        taken.insert(path.clone());
+                        match insert_map(db, moment_id, &path, &new_sha, &sha256_hex(&text)).await {
+                            Ok(()) => stats.pushed_created += 1,
+                            // 文件已经写进仓库但映射没写成：下一轮会被「认领」绑回这条说说
+                            Err(e) => {
+                                stats.failed += 1;
+                                error!("moment_sync: {e}");
+                            }
+                        }
+                        return PushStep::Continue;
+                    }
+                    // 路径已被占用：换下一个候选
+                    Err(GhError::Conflict(_)) => {
+                        taken.insert(path);
+                    }
+                    Err(e) => return handle_push_err(e, &path, stats),
+                }
+            }
+            warn!("moment_sync: 说说 {moment_id} 找不到可用的文件名，本轮跳过");
+            stats.skipped += 1;
+            PushStep::Continue
+        }
+    }
+}
+
+fn handle_push_err(e: GhError, path: &str, stats: &mut MomentStats) -> PushStep {
+    match e {
+        // 仓库端在这之前变了：本条本轮跳过，下一轮拉取会按「仓库为准」处理
+        GhError::Conflict(_) => {
+            warn!("moment_sync: {path} 仓库端已变化，本轮跳过，下轮重新比较");
+            stats.skipped += 1;
+            PushStep::Continue
+        }
+        GhError::Network(_) | GhError::Other(..) => {
+            error!("moment_sync: 写回失败 {path}: {e}");
+            stats.failed += 1;
+            PushStep::Continue
+        }
+        // 权限 / 限流 / 令牌失效：继续写也只会继续失败，本轮写回到此为止
+        GhError::Forbidden(_) | GhError::RateLimited | GhError::Unauthorized(_) => {
+            error!("moment_sync: 写回停止（{path}）: {e}");
+            stats.failed += 1;
+            PushStep::Stop
+        }
+    }
 }
 
 #[cfg(test)]
