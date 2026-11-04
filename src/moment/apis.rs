@@ -1,4 +1,6 @@
 use crate::config::Exception;
+use crate::cos::validate::validate_image_urls;
+use crate::cos::{issue_upload, CosConfig, UploadGrant};
 use crate::moment::{parse_images, serialize_images, Moment};
 use crate::post::structs::PageInfo;
 use crate::utils::time_utils::get_sys_time;
@@ -57,6 +59,18 @@ pub fn moment_scope() -> actix_web::Scope {
         .service(api_admin_moment_update)
         .service(api_admin_moment_delete)
         .service(api_admin_moment_toggle_public)
+        .service(api_admin_moment_upload_sign)
+}
+
+/// 图片 URL 校验（规则见 cos/validate.rs）。`existing` 是该说说库里已有的图片
+fn check_images(
+    payload: &MomentPayload,
+    existing: &[String],
+    cos: &web::Data<Option<CosConfig>>,
+) -> Result<(), Exception> {
+    let new = payload.images.as_deref().unwrap_or(&[]);
+    let prefix = cos.get_ref().as_ref().map(CosConfig::allowed_url_prefix);
+    validate_image_urls(new, existing, prefix.as_deref()).map_err(Exception::BadRequest)
 }
 
 fn to_payload(moment: Moment) -> MomentPayload {
@@ -161,15 +175,18 @@ async fn api_admin_moment_get(
     Ok(R::ok_obj(to_payload(rows.pop().unwrap())))
 }
 
-#[instrument]
+#[instrument(skip(cos))]
 #[post("/admin/add")]
 async fn api_admin_moment_add(
     payload: web::Json<MomentPayload>,
     db: web::Data<RBatis>,
+    cos: web::Data<Option<CosConfig>>,
 ) -> Result<impl Responder, Exception> {
     if payload.content.trim().is_empty() {
         return Err(Exception::BadRequest("说说内容不能为空".to_string()));
     }
+    // 新增说说没有已有图片，每一张都必须来自上传位置
+    check_images(&payload, &[], &cos)?;
 
     let moment = Moment::new(
         payload.content.clone(),
@@ -184,11 +201,12 @@ async fn api_admin_moment_add(
     Ok(R::<()>::ok_msg("发布成功"))
 }
 
-#[instrument]
+#[instrument(skip(cos))]
 #[post("/admin/update")]
 async fn api_admin_moment_update(
     payload: web::Json<MomentPayload>,
     db: web::Data<RBatis>,
+    cos: web::Data<Option<CosConfig>>,
 ) -> Result<impl Responder, Exception> {
     let Some(id) = payload.id else {
         return Err(Exception::BadRequest("说说不存在".to_string()));
@@ -205,8 +223,12 @@ async fn api_admin_moment_update(
     }
 
     let mut moment = rows.pop().unwrap();
+    // 库里已有的图片（含外链、仓库同步来的）原样保留；只有新增的才要求来自上传位置
+    check_images(&payload, &parse_images(moment.images.clone()), &cos)?;
     moment.content = payload.content.clone();
-    moment.images = serialize_images(payload.images.clone());
+    // rbatis 的 update_by_column 会跳过值为 None 的列：写 NULL 清不掉旧图片，
+    // 所以「删光全部图片」要存成 "[]"（parse_images 读出来就是空列表）
+    moment.images = Some(serialize_images(payload.images.clone()).unwrap_or_else(|| "[]".to_string()));
     moment.is_public = payload.is_public;
     moment.location = payload.location.clone();
     moment.update_time = Some(get_sys_time());
@@ -261,6 +283,27 @@ async fn api_admin_moment_toggle_public(
     Ok(R::<()>::ok_msg("状态已更新"))
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct UploadSignRequest {
+    pub content_type: String,
+    pub size: i64,
+}
+
+/// 为一张图片签发直传 COS 的预签名链接（只有管理员能调：路径在 `/moment/admin` 前缀下）。
+/// skip(cos)：配置里有永久密钥，不进日志。
+#[instrument(skip(cos))]
+#[post("/admin/upload_sign")]
+async fn api_admin_moment_upload_sign(
+    req: web::Json<UploadSignRequest>,
+    cos: web::Data<Option<CosConfig>>,
+) -> Result<impl Responder, Exception> {
+    let Some(cfg) = cos.get_ref().as_ref() else {
+        return Err(Exception::BadRequest("未配置对象存储（COS_*），无法上传图片".to_string()));
+    };
+    let grant: UploadGrant = issue_upload(cfg, &req.content_type, req.size).await?;
+    Ok(R::ok_obj(grant))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -308,6 +351,121 @@ mod tests {
     fn to_public_tolerates_missing_or_broken_images() {
         assert!(to_public(sample(None)).images.is_empty());
         assert!(to_public(sample(Some("not json"))).images.is_empty());
+    }
+
+    // ---------- 上传签名接口（模拟 STS / COS，不需要数据库） ----------
+
+    use crate::cos::test_support::{start_mock, test_config};
+    use actix_web::test as actix_test;
+    use actix_web::{http::StatusCode, App};
+    use serde_json::{json, Value};
+
+    macro_rules! sign_app {
+        ($cos:expr) => {
+            actix_test::init_service(
+                App::new().app_data(web::Data::new($cos)).service(moment_scope()),
+            )
+            .await
+        };
+    }
+
+    macro_rules! call_sign {
+        ($app:expr, $body:expr) => {{
+            let req = actix_test::TestRequest::post().uri("/moment/admin/upload_sign").set_json($body).to_request();
+            let resp = actix_test::call_service(&$app, req).await;
+            let status = resp.status();
+            let body: Value = actix_test::read_body_json(resp).await;
+            (status, body)
+        }};
+    }
+
+    #[actix_web::test]
+    async fn upload_sign_returns_a_grant_that_cos_accepts() {
+        let (mock, base) = start_mock().await;
+        let app = sign_app!(Some(test_config(&base)));
+        let (status, body) = call_sign!(app, json!({ "content_type": "image/png", "size": 2048 }));
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["code"], 200);
+        let obj = &body["obj"];
+        assert_eq!(obj["content_type"], "image/png");
+        let public_url = obj["public_url"].as_str().unwrap();
+        assert!(public_url.starts_with("https://ryu2u-1305537946.cos.ap-nanjing.myqcloud.com/moment/"), "{public_url}");
+        assert!(public_url.ends_with(".png"), "{public_url}");
+
+        // 用返回的链接真的 PUT 一次：模拟 COS 会重新验签
+        let put = reqwest::Client::new()
+            .put(obj["upload_url"].as_str().unwrap())
+            .header("Content-Type", "image/png")
+            .body(vec![0u8; 8])
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(put.status(), 200);
+        assert_eq!(mock.stored.lock().unwrap().len(), 1);
+    }
+
+    #[actix_web::test]
+    async fn upload_sign_rejects_bad_requests_with_a_readable_message() {
+        let (_mock, base) = start_mock().await;
+        let app = sign_app!(Some(test_config(&base)));
+        for (body, expect) in [
+            (json!({ "content_type": "text/html", "size": 10 }), "不支持的图片类型"),
+            (json!({ "content_type": "image/png", "size": 0 }), "图片大小须在"),
+            (json!({ "content_type": "image/png", "size": 99_999_999 }), "图片大小须在"),
+        ] {
+            let (status, resp) = call_sign!(app, body);
+            assert_eq!(status, StatusCode::BAD_REQUEST);
+            assert!(resp["msg"].as_str().unwrap().contains(expect), "{resp}");
+        }
+    }
+
+    #[actix_web::test]
+    async fn upload_sign_without_cos_config_says_so() {
+        let app = sign_app!(None::<CosConfig>);
+        let (status, resp) = call_sign!(app, json!({ "content_type": "image/png", "size": 10 }));
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert_eq!(resp["msg"], "未配置对象存储（COS_*），无法上传图片");
+    }
+
+    #[actix_web::test]
+    async fn upload_sign_reports_sts_failure_without_leaking_details() {
+        let (mock, base) = start_mock().await;
+        mock.sts_fail.store(true, std::sync::atomic::Ordering::SeqCst);
+        let app = sign_app!(Some(test_config(&base)));
+        let (status, resp) = call_sign!(app, json!({ "content_type": "image/png", "size": 10 }));
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert_eq!(resp["msg"], "获取上传授权失败，请查看后端日志");
+    }
+
+    #[test]
+    fn image_check_helper_uses_the_configured_prefix() {
+        let (cfg, _) = crate::cos::CosConfig::from_lookup(&|n| {
+            [("COS_SECRET_ID", "i"), ("COS_SECRET_KEY", "k"), ("COS_BUCKET", "b-1250000000"), ("COS_REGION", "ap-nanjing")]
+                .iter()
+                .find(|(k, _)| *k == n)
+                .map(|(_, v)| v.to_string())
+        })
+        .unwrap();
+        let prefix = cfg.allowed_url_prefix();
+        let data = web::Data::new(Some(cfg));
+        let mut payload = MomentPayload {
+            id: None,
+            content: "x".into(),
+            images: Some(vec![format!("{prefix}2026/11/a.jpg")]),
+            is_public: 1,
+            location: None,
+            likes: None,
+            comments: None,
+            created_time: None,
+            update_time: None,
+        };
+        assert!(check_images(&payload, &[], &data).is_ok());
+        payload.images = Some(vec!["https://evil.example.com/a.jpg".into()]);
+        assert!(matches!(check_images(&payload, &[], &data), Err(Exception::BadRequest(_))));
+        // 同一个外链若是库里本来就有的，放行
+        assert!(check_images(&payload, &["https://evil.example.com/a.jpg".to_string()], &data).is_ok());
+        let unconfigured = web::Data::new(None::<CosConfig>);
+        assert!(matches!(check_images(&payload, &[], &unconfigured), Err(Exception::BadRequest(_))));
     }
 
     #[test]

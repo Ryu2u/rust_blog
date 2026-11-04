@@ -280,6 +280,7 @@ const C2: &str = "这台机器第一次编译 actix-web 花了 30 秒，之后�
 #[actix_web::test]
 #[ignore = "需要 E2E_DATABASE_URL 指向库名含 e2e 的临时库"]
 async fn moment_e2e_scenarios() {
+    let _guard = crate::config::E2E_DB_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let mut e = setup().await;
 
     // ① 首轮：#1 被认领（不重复创建），#2 被写成文件；之后再跑不再有任何操作

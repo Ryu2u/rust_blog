@@ -1,4 +1,6 @@
 pub mod apis;
+#[cfg(test)]
+mod upload_e2e;
 
 use crate::utils::time_utils::get_sys_time;
 use rbatis::{crud, impl_select};

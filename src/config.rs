@@ -184,6 +184,10 @@ impl<T: Serialize> Responder for R<T> {
     }
 }
 
+/// 端到端测试共用同一个临时库：串行化，避免两个 #[ignore] 测试同时 DROP / CREATE 同一张表
+#[cfg(test)]
+pub static E2E_DB_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 pub async fn init_rbatis(db_url: String) -> RBatis {
     let rbatis = RBatis::new();
     rbatis.init(MysqlDriver {}, db_url.as_str()).unwrap();

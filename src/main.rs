@@ -36,6 +36,9 @@ async fn main() -> std::io::Result<()> {
 
     info!("config init success!");
 
+    // 腾讯云 COS 图片直传配置：未配置或配置不合法时为 None（功能关闭，启动日志里会说明原因）
+    let cos_config = web::Data::new(cos::CosConfig::from_env());
+
     // GitHub 笔记同步后台任务
     if env::var("NOTE_SYNC_ENABLED").unwrap_or_default() == "true" {
         info!("note_sync enabled, background task starting");
@@ -65,6 +68,7 @@ async fn main() -> std::io::Result<()> {
             // 配置全局对象
             .app_data(web::Data::new(rbatis.clone()))
             .app_data(login_guard.clone())
+            .app_data(cos_config.clone())
             .app_data(web::Data::new(AppState {
                 app_name: "rust_blog".to_string(),
                 admin_route_prefixes: vec![
