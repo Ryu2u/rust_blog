@@ -25,5 +25,9 @@ export default {
     },
     moment_toggle_public(id: number): Promise<Result> {
         return http_client.post(`/moment/admin/toggle/public/${id}`);
+    },
+    // 为一张图片申请直传对象存储的预签名链接，返回的 obj 是 UploadSign
+    moment_upload_sign(content_type: string, size: number): Promise<Result> {
+        return http_client.post(`/moment/admin/upload_sign`, { content_type, size });
     }
 }

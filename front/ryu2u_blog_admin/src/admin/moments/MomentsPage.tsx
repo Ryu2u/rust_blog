@@ -1,6 +1,8 @@
-import {Badge, Button, Col, Form, Image, Input, Modal, Popconfirm, Row, Space, Switch, Table, TableProps, Tag, message} from "antd";
+import {Badge, Button, Col, Form, Image, Input, Modal, Popconfirm, Row, Space, Switch, Table, TableProps, Tag, Upload, message} from "antd";
+import type {UploadFile, UploadProps} from "antd";
+import type {RcFile} from "antd/es/upload";
 import {useEffect, useRef, useState} from "react";
-import {Moment, PageInfo} from "../../common/Structs";
+import {Moment, PageInfo, UploadSign} from "../../common/Structs";
 import {formatDate} from "../../common/utils";
 import {
     DeleteOutlined,
@@ -14,6 +16,7 @@ import {
     SearchOutlined
 } from "@ant-design/icons";
 import MomentService from "../../service/MomentService";
+import {IMAGE_ACCEPT, IMAGE_TYPES, MAX_IMAGE_MB, MAX_IMAGES, putToCos} from "./cosUpload";
 
 const {Search, TextArea} = Input;
 
@@ -24,18 +27,32 @@ interface SearchParams {
 type MomentFormValues = {
     content: string;
     location?: string;
-    images?: string;
+    images?: UploadFile[];
     is_public: boolean;
 };
 
-function parseImageLines(value?: string): string[] {
-    if (!value) {
-        return [];
-    }
-    return value
-        .split(/\r?\n/)
-        .map((item) => item.trim())
-        .filter(Boolean);
+/** 库里已有的图片 URL → 上传组件里「已完成」的文件项（含旧的外链图片：可预览、可移除） */
+function toUploadFiles(urls: string[] = []): UploadFile[] {
+    return urls.map<UploadFile>((url, index) => ({
+        uid: `existing-${index}`,
+        name: url.split('?')[0].split('/').pop() || `image-${index + 1}`,
+        status: 'done',
+        url,
+        type: 'image/*',
+    }));
+}
+
+/** 上传组件的文件项 → 要提交的图片 URL：只取上传完成的 */
+function toImageUrls(files: UploadFile[] = []): string[] {
+    return files.filter((file) => file.status === 'done' && file.url).map((file) => file.url as string);
+}
+
+/** 上传成功的文件项：把后端给的 public_url 写进 url（Upload 默认只把 customRequest 的结果放在 response 里） */
+function normalizeUploadEvent(event: UploadFile[] | { fileList: UploadFile[] }): UploadFile[] {
+    const files = Array.isArray(event) ? event : event?.fileList ?? [];
+    return files.map((file) =>
+        file.status === 'done' && !file.url && file.response?.url ? { ...file, url: file.response.url } : file
+    );
 }
 
 export function MomentsPage() {
@@ -48,6 +65,9 @@ export function MomentsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMoment, setEditingMoment] = useState<Moment | null>(null);
     const [form] = Form.useForm<MomentFormValues>();
+    const watchedImages = Form.useWatch('images', form);
+    const uploading = (watchedImages ?? []).some((file) => file.status === 'uploading');
+    const [previewUrl, setPreviewUrl] = useState('');
 
     useEffect(() => {
         getDataList();
@@ -113,25 +133,29 @@ export function MomentsPage() {
             form.setFieldsValue({
                 content: moment.content,
                 location: moment.location || '',
-                images: (moment.images || []).join('\n'),
+                images: toUploadFiles(moment.images),
                 is_public: moment.is_public === 1,
             });
         } else {
             setEditingMoment(null);
             form.resetFields();
-            form.setFieldsValue({ is_public: true });
+            form.setFieldsValue({ is_public: true, images: [] });
         }
         setIsModalOpen(true);
     };
 
     const handleModalOk = () => {
         form.validateFields().then((values) => {
+            if ((values.images ?? []).some((file) => file.status === 'error')) {
+                messageApi.warning('有图片上传失败，请重试或移除后再保存');
+                return;
+            }
             setLoading(true);
             const payload: Moment = {
                 id: editingMoment?.id || 0,
                 content: values.content,
                 location: values.location || '',
-                images: parseImageLines(values.images),
+                images: toImageUrls(values.images),
                 is_public: values.is_public ? 1 : 0,
                 likes: editingMoment?.likes || 0,
                 comments: editingMoment?.comments || 0,
@@ -151,6 +175,39 @@ export function MomentsPage() {
                 setLoading(false);
             });
         });
+    };
+
+    const beforeUpload: UploadProps['beforeUpload'] = (file) => {
+        if (!IMAGE_TYPES.includes(file.type)) {
+            messageApi.error('仅支持 JPG / PNG / GIF / WebP 图片');
+            return Upload.LIST_IGNORE;
+        }
+        if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+            messageApi.error(`图片不能超过 ${MAX_IMAGE_MB} MB`);
+            return Upload.LIST_IGNORE;
+        }
+        return true;
+    };
+
+    // 先向后端要预签名链接，再由浏览器直传对象存储（文件不经过后端）
+    const uploadToCos: UploadProps['customRequest'] = async ({file, onSuccess, onError, onProgress}) => {
+        const image = file as RcFile;
+        let sign: UploadSign;
+        try {
+            const res = await MomentService.moment_upload_sign(image.type, image.size);
+            sign = res.obj;
+        } catch (error) {
+            // 后端的提示（类型不对、未配置 COS、授权失败……）已经由请求拦截器弹出
+            onError?.(error as Error);
+            return;
+        }
+        try {
+            await putToCos(sign, image, (percent) => onProgress?.({percent}));
+            onSuccess?.({url: sign.public_url});
+        } catch (error) {
+            messageApi.error((error as Error).message);
+            onError?.(error as Error);
+        }
     };
 
     const columns: TableProps<Moment>['columns'] = [
@@ -425,6 +482,7 @@ export function MomentsPage() {
                 okText="确定"
                 cancelText="取消"
                 confirmLoading={loading}
+                okButtonProps={{ disabled: uploading }}
                 style={{ top: 20 }}
             >
                 <Form form={form} layout="vertical" initialValues={{ is_public: true }}>
@@ -447,19 +505,45 @@ export function MomentsPage() {
                         />
                     </Form.Item>
                     <Form.Item
-                        label="图片地址"
+                        label="图片"
                         name="images"
-                        extra="每行填写一个图片 URL，可为空"
+                        valuePropName="fileList"
+                        getValueFromEvent={normalizeUploadEvent}
+                        extra={`最多 ${MAX_IMAGES} 张，支持 JPG / PNG / GIF / WebP，单张不超过 ${MAX_IMAGE_MB} MB；图片直接上传到对象存储`}
                     >
-                        <TextArea
-                            rows={4}
-                            placeholder={"https://example.com/1.jpg\nhttps://example.com/2.jpg"}
-                        />
+                        <Upload
+                            listType="picture-card"
+                            accept={IMAGE_ACCEPT}
+                            maxCount={MAX_IMAGES}
+                            multiple
+                            beforeUpload={beforeUpload}
+                            customRequest={uploadToCos}
+                            onPreview={(file) => setPreviewUrl(file.url || file.thumbUrl || '')}
+                        >
+                            <div>
+                                <PlusOutlined />
+                                <div style={{ marginTop: 8 }}>上传</div>
+                            </div>
+                        </Upload>
                     </Form.Item>
                     <Form.Item label="公开设置" name="is_public" valuePropName="checked">
                         <Switch checkedChildren="公开" unCheckedChildren="私密" />
                     </Form.Item>
                 </Form>
+                {previewUrl && (
+                    <Image
+                        wrapperStyle={{ display: 'none' }}
+                        src={previewUrl}
+                        preview={{
+                            visible: true,
+                            onVisibleChange: (visible) => {
+                                if (!visible) {
+                                    setPreviewUrl('');
+                                }
+                            },
+                        }}
+                    />
+                )}
             </Modal>
         </>
     );

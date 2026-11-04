@@ -89,3 +89,11 @@ export class Moment {
     created_time!: number;
     update_time?: number;
 }
+
+// POST /moment/admin/upload_sign 的返回：浏览器 PUT upload_url 直传对象存储
+export class UploadSign {
+    upload_url!: string; // 预签名上传链接，5 分钟内有效
+    public_url!: string; // 上传成功后图片的公开地址，存进说说
+    content_type!: string; // PUT 时的 Content-Type 必须与它完全一致
+    expires_at!: number; // 链接过期时间，Unix 毫秒
+}
