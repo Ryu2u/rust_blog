@@ -23,6 +23,11 @@ cargo test
 E2E_DATABASE_URL='mysql://user:pw@localhost:3306/rust_blog_e2e?charset=utf8mb4' \
   cargo test moment_e2e -- --ignored --nocapture
 
+# Moment image-URL validation end-to-end (same kind of throwaway database; it DROPs/CREATEs `moment`).
+# The two e2e tests share a lock (`config::E2E_DB_LOCK`), so the `e2e` filter runs both safely
+E2E_DATABASE_URL='mysql://user:pw@localhost:3306/rust_blog_e2e?charset=utf8mb4' \
+  cargo test e2e -- --ignored --nocapture
+
 # Frontend lint / typecheck+build
 npm run lint     # eslint, --max-warnings 0
 npm run build    # tsc && vite build
@@ -53,13 +58,15 @@ Modules: `user/`, `post/` (split into `apis.rs`, `tag_apis.rs`, `category_apis.r
 
 **Moment two-way sync** (`moment_sync.rs`) — 仓库根目录 `说说/*.md` ↔ `moment` 表。文件名 `YYYY_MM_DD_HH_mm.md` 就是发布时间（固定 +08:00，同一分钟重名加 `_ss`、`-N`）；文件默认是纯文本，有位置/私密时才带 YAML 文件头（`location`、`public: false`），图片以 Markdown 图片行写在正文末尾。映射表 `moment_sync_map`：`blob_sha` 判断仓库有没有变，`local_sha`（按库里数据渲染出的文本的 sha256）判断后台有没有变。每轮**先拉后推**，冲突时**仓库为准**（与笔记同步的「本地赢」相反，是有意的）；后台的发布/修改/删除随下一轮写回（`GithubClient::put_file` / `delete_file`，要求令牌有 Contents 写权限，写回每轮最多 50 个操作，403 时停止写回但拉取照常）。调度层（`scheduler.rs`）一轮只拉一次仓库树，交给笔记与说说两个阶段；树没变（304）时说说仍会跑写回。设计与规则见 `docs/superpowers/specs/2026-11-03-moment-two-way-sync-design.md`。
 
+**`cos/` module** — 说说图片直传腾讯云 COS：浏览器直传，后端只发临时授权，文件字节不经过后端。`POST /moment/admin/upload_sign`（在 `moment/apis.rs`）校验类型（JPG/PNG/GIF/WebP）与大小 → 生成随机对象键 `moment/YYYY/MM/<32hex>.<ext>` → 用永久密钥（CAM 子账号）调 STS `GetFederationToken`（`sts.rs`，TC3-HMAC-SHA256；策略只允许 `PutObject` 到这一个对象，带大小/类型条件）→ 用临时密钥签出预签名 PUT 链接（`presign.rs`，COS sha1）→ 返回 `{upload_url, public_url, content_type, expires_at}`。`validate.rs` 的 `validate_image_urls` 在 `/moment/admin/add|update` 里校验**新增**的图片 URL：必须落在 `{COS_PUBLIC_BASE}/{COS_UPLOAD_PREFIX}` 之下，库里已有的旧 URL（含外链、仓库同步来的）原样放行。`COS_*` 未配置或不合法时 `CosConfig::from_env()` 返回 `None`（功能关闭，启动日志说明原因），`main.rs` 以 `web::Data<Option<CosConfig>>` 注册。仓库同步（`moment_sync.rs`）不校验、不改动。**rbatis 的 `update_by_column` 会跳过值为 `None` 的列**，所以修改说说时删光图片要存 `"[]"` 而不是 NULL。设计见 `docs/superpowers/specs/2026-11-04-moment-image-cos-upload-design.md`。
+
 **Key files**:
 - `main.rs` — entry: tracing, `.env`, rbatis init, CORS, `FilterWhiteList`, `AppState.admin_route_prefixes`, and the service scopes
 - `config.rs` — `AppState`, generic `R<T>` response struct, `Exception` error enum, `ContentTypeGuard`, `init_rbatis`
 - `middleware.rs` — `AuthFilter`: whitelist bypass → JWT verify → account status check → admin role check. It must stay **inside** the CORS middleware (`.wrap(AuthFilter)` before `.wrap(cors)` in `main.rs`) and return normal 401/403 responses instead of `Err`, otherwise rejected responses carry no CORS headers and browsers hide the status code from the frontend
 - `src/utils/jwt_utils.rs` — `create_jwt` / `verify_jwt`, `AUTH_COOKIE_NAME`, claims (`sub`, `username`, `role`, `exp`)
 
-**Routes** (scope → handlers): `/user` (`login`, `logout`, `me`, `get`, `admin/*`), `/post` (`get`, `page`, `list_by_category`, `admin/*`), `/tag`, `/category`, `/comment` (`add`, `list/{post_id}`, `admin/*`), `/moment` (`POST /moment/page` is open to any logged-in user — only `is_public=1` and not deleted, page_size ≤ 50; everything else is `admin/*`), `/note_sync` (`admin/config`, `admin/ai_test` only). Every mutation is a GET or POST — CORS only allows `GET, POST, OPTIONS`.
+**Routes** (scope → handlers): `/user` (`login`, `logout`, `me`, `get`, `admin/*`), `/post` (`get`, `page`, `list_by_category`, `admin/*`), `/tag`, `/category`, `/comment` (`add`, `list/{post_id}`, `admin/*`), `/moment` (`POST /moment/page` is open to any logged-in user — only `is_public=1` and not deleted, page_size ≤ 50; everything else is `admin/*`, including `admin/upload_sign`), `/note_sync` (`admin/config`, `admin/ai_test` only). Every mutation is a GET or POST — CORS only allows `GET, POST, OPTIONS`.
 
 **Response format**: all handlers return `Result<impl Responder, Exception>` producing `R<T>` → `{ "code", "msg", "obj" }`. Handlers take `db: web::Data<RBatis>` (not `AppState`) as their data param; `AppState` only carries `app_name` and `admin_route_prefixes`. `Exception` maps to HTTP 400/500/404. Note `error_response` sets `ContentType::html()` even though the body is JSON.
 
@@ -125,3 +132,11 @@ GitHub 笔记同步（`note_sync` 模块，见 `.env.example`）:
 - `NOTE_SYNC_MOMENT_DIR` — 说说双向同步的仓库目录（默认 `说说/`；设为空 = 关闭说说同步）
 - `NOTE_SYNC_MOMENT_PUSH` — 是否把后台的说说改动写回仓库（默认 true；`false`/`0` = 只拉取）
 - `NOTE_SYNC_API_BASE` — GitHub API 根地址，仅供本地模拟 GitHub 测试（非 https 只允许 localhost/127.0.0.1/[::1]），正常留空
+
+腾讯云 COS 图片直传（`cos` 模块，见 `.env.example`；前四项缺任意一个、桶名不是 `<名称>-<APPID>`、或 `COS_UPLOAD_PREFIX` 非法，上传功能关闭）:
+- `COS_SECRET_ID` / `COS_SECRET_KEY` — CAM 子账号的永久密钥，只用来调 STS（最小权限：`sts:GetFederationToken` + `moment/*` 的 `name/cos:PutObject`）
+- `COS_BUCKET` / `COS_REGION` — 桶名（形如 `name-1250000000`，APPID 取最后一段数字）与地域
+- `COS_PUBLIC_BASE` — 存进说说的图片地址前缀（默认 `https://<桶>.cos.<地域>.myqcloud.com`，可填 CDN / 自定义域名）
+- `COS_UPLOAD_PREFIX` — 对象键前缀，也是后台校验新增图片地址的前缀（默认 `moment/`，只允许 `[A-Za-z0-9._/-]`）
+- `COS_MAX_IMAGE_MB` — 单张上限（默认 5）；`COS_SIGN_EXPIRE_SECS` — 预签名链接有效期（默认 300，最大 1800）
+- `COS_STS_ENDPOINT` / `COS_UPLOAD_BASE` — 仅供本地模拟 STS / COS 测试（非 https 只允许 localhost/127.0.0.1/[::1]），正常留空
