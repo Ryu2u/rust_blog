@@ -7,6 +7,8 @@
 pub mod presign;
 pub mod sts;
 #[cfg(test)]
+mod smoke;
+#[cfg(test)]
 pub mod test_support;
 pub mod validate;
 

@@ -28,6 +28,10 @@ E2E_DATABASE_URL='mysql://user:pw@localhost:3306/rust_blog_e2e?charset=utf8mb4' 
 E2E_DATABASE_URL='mysql://user:pw@localhost:3306/rust_blog_e2e?charset=utf8mb4' \
   cargo test e2e -- --ignored --nocapture
 
+# Real Tencent STS/COS smoke test: writes ONE tiny object into the real bucket, needs COS_* in .env and
+# the explicit confirm variable. Never run a bare `cargo test -- --ignored` (it would include this test)
+COS_SMOKE_CONFIRM=yes cargo test cos_real_smoke -- --ignored --nocapture
+
 # Frontend lint / typecheck+build
 npm run lint     # eslint, --max-warnings 0
 npm run build    # tsc && vite build

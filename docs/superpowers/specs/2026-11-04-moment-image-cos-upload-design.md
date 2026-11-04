@@ -299,10 +299,11 @@ rbatis 的 `update_by_column` 会**跳过值为 `None` 的列**：把 `images` �
 | 官方 STS `GetFederationToken` 的参数、返回结构、只接受永久密钥、权限为交集 | **已核实**（官方接口文档） | — |
 | TC3-HMAC-SHA256 签名步骤与陷阱（UTC 日期、`Content-Type` 逐字一致、5 分钟时钟） | **已核实**（官方「签名方法 v3」） | 实现时用不含密钥的中间值与 Python 黄金值测试 |
 | COS sha1 签名与预签名 URL 的写法（`x-cos-security-token` 附在链接上、可签 `Content-Type`） | **已核实**（官方「请求签名」） | 同上 |
-| 用 `cos:content-length` 在 STS 策略里限制大小、资源收窄到单对象 | **已核实**（官方「限制上传文件大小和类型」「前端直传安全指引」） | 官方示例里条件常与 allow/deny 成对出现并要求请求携带 `Content-Length`；若联调发现单个上限条件不生效，改成官方的成对写法 |
-| `cos:content-type` 条件在 **STS 策略 JSON** 里的确切写法 | **未核实**（官方只给了控制台策略示例） | 联调时确认；即使该条件不生效，类型仍被签进链接，浏览器无法换类型，风险低 |
-| `Policy` 在 JSON 请求体里是**单次** urlencode（官方 GET 示例是两次，因为整个 URL 又编码一次） | **未核实** | 联调时确认；错了会得到 `StrategyFormatError` 一类错误，易发现 |
-| STS 失败响应的 `Response.Error` 结构 | API 3.0 的通用格式，**未逐项核实** | 联调时确认 |
+| 用 `cos:content-length` 在 STS 策略里限制大小、资源收窄到单对象 | **已核实**（官方「限制上传文件大小和类型」「前端直传安全指引」） | **2026-11-04 联调实测生效**：声明 10 字节却上传 70 字节，COS 返回 403，所以单个上限条件够用，不需要官方示例里的 allow / deny 成对写法 |
+| `cos:content-type` 条件在 **STS 策略 JSON** 里的确切写法 | **已联调**（2026-11-04）：带 `string_equal` / `cos:content-type` 条件的策略被 STS 接受，按它签发的链接上传成功，写法不会让合法上传失败 | 没有单独验证这条条件的强制效果；类型本来就被签进链接，篡改 Content-Type 的上传得到 403，所以这条是纵深防御 |
+| `Policy` 在 JSON 请求体里是**单次** urlencode（官方 GET 示例是两次，因为整个 URL 又编码一次） | **已联调**（2026-11-04）：STS 接受单次 urlencode | — |
+| STS 失败响应的 `Response.Error` 结构 | API 3.0 的通用格式，**仍未核实**：这次联调没有触发失败 | 失败时后端日志会记录错误码、Message、RequestId，届时对照 `sts::parse_response` |
+| 联调用的是沿用其它项目的永久密钥，权限范围未知 | 待办 | 上线前换成只有 `sts:GetFederationToken` 与 `moment/*` 的 `name/cos:PutObject` 的子账号（迁移文档第 1 节），并把联调用过的那把作废 |
 | 桶 CORS | **目前未放行 PUT**（对已有对象发 `PUT` 预检，来自 `http://localhost:8089` 与另一个域名都返回 403） | 上线前必须配置（§14）；后台对网络层失败给出提示 |
 | 服务器时钟漂移 | 已知必现风险 | 迁移文档要求开 NTP |
 | 孤儿对象（上传了但没保存、或移除了图片） | 已接受 | 非目标（§2） |
