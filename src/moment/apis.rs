@@ -59,7 +59,6 @@ pub fn moment_scope() -> actix_web::Scope {
         .service(api_admin_moment_toggle_public)
 }
 
-
 fn to_payload(moment: Moment) -> MomentPayload {
     MomentPayload {
         id: moment.id,
