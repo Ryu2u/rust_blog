@@ -101,6 +101,7 @@ Timestamps are `bigint` epoch **milliseconds**, not SQL datetime. Use `crate::ut
 - rbatis macros: `crud!(Model)` for basic CRUD — use the two-arg form `crud!(User {}, "tb_user")` when the struct name differs from the table. `impl_select!(Model { method(args) => "`where ...`" })` for custom queries; use `#{param}` for bound values.
 - Structs may declare fields that don't exist as columns (e.g. `Post.category` / `Post.tags`); they must be `None` on insert.
 - `select_page_admin` in `post/structs.rs` interpolates its offset with `${offset}` rather than `#{}` — follow `#{}` in new queries.
+- rbatis `update_by_column` **skips columns whose value is `None`**: setting a nullable field to `None` and updating does not clear it in the database (and leaves any in-memory fingerprint out of sync with the row). To clear a column, write NULL explicitly — see `save_moment` in `note_sync/moment_sync.rs`.
 - Passwords: bcrypt with a legacy plaintext fallback that auto-upgrades the row to a bcrypt hash on successful login (`user/apis.rs`).
 - Frontend: the admin directory is misspelled `comonents/` instead of `components/` — work with it as-is. The public blog uses `components/`.
 

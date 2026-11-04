@@ -473,4 +473,45 @@ async fn moment_e2e_scenarios() {
     assert!(file_of(&e, P1).is_none());
     assert!(commits_of(&e).is_empty());
     e.cfg.push = true;
+
+    // ⑪ 仓库文件里删掉图片行 / 位置 → 库里真的清掉，且不会被写回仓库（仓库为准）。
+    //    rbatis 的 update_by_column 会跳过值为 None 的列：只改内存里的结构体，库里会留着旧值，
+    //    指纹也和库里的数据对不上，下一轮就把旧的图片行写回仓库文件，用户的删除被还原。
+    reset(&mut e).await;
+    put_local(&e, P1, "---\nlocation: 上海\n---\n有图也有位置\n\n![](http://a/1.jpg)\n![](http://a/2.jpg)\n");
+    let (s, _) = cycle(&mut e).await;
+    assert_eq!((s.created, s.pushed_created, s.failed), (1, 0, 0), "⑪ {s:?}");
+    let id = all_moments(&e).await[0].id.unwrap();
+    let m = moment_of(&e, id).await;
+    assert_eq!(m.images.as_deref(), Some(r#"["http://a/1.jpg","http://a/2.jpg"]"#));
+    assert_eq!(m.location.as_deref(), Some("上海"));
+    //   (a) 删掉图片行：库里的图片清空，位置保留，仓库文件保持用户改的样子
+    let only_location = "---\nlocation: 上海\n---\n有图也有位置\n";
+    put_local(&e, P1, only_location);
+    let (s, _) = cycle(&mut e).await;
+    assert_eq!((s.updated, s.pushed_updated), (1, 0), "⑪a {s:?}");
+    let m = moment_of(&e, id).await;
+    assert_eq!((m.images.as_deref(), m.location.as_deref()), (None, Some("上海")), "⑪a 图片应被清空");
+    assert_eq!(file_of(&e, P1).as_deref(), Some(only_location), "⑪a 不能把图片行写回仓库");
+    assert!(commits_of(&e).is_empty(), "⑪a 不能有任何写回: {:?}", commits_of(&e));
+    assert_quiet(&cycle(&mut e).await.0, "⑪a 之后");
+    //   (b) 再删掉位置：位置清空
+    put_local(&e, P1, "有图也有位置\n");
+    let (s, _) = cycle(&mut e).await;
+    assert_eq!((s.updated, s.pushed_updated), (1, 0), "⑪b {s:?}");
+    let m = moment_of(&e, id).await;
+    assert_eq!((m.images.as_deref(), m.location.as_deref()), (None, None), "⑪b 位置应被清空");
+    assert_eq!(file_of(&e, P1).as_deref(), Some("有图也有位置\n"), "⑪b 不能把位置写回仓库");
+    assert!(commits_of(&e).is_empty(), "⑪b 不能有任何写回: {:?}", commits_of(&e));
+    assert_quiet(&cycle(&mut e).await.0, "⑪b 之后");
+    //   (c) 再加回来：图片和位置都能写进去
+    let back = "---\nlocation: 北京\n---\n有图也有位置\n\n![](http://a/3.jpg)\n";
+    put_local(&e, P1, back);
+    let (s, _) = cycle(&mut e).await;
+    assert_eq!((s.updated, s.pushed_updated), (1, 0), "⑪c {s:?}");
+    let m = moment_of(&e, id).await;
+    assert_eq!((m.images.as_deref(), m.location.as_deref()), (Some(r#"["http://a/3.jpg"]"#), Some("北京")), "⑪c");
+    assert_eq!(file_of(&e, P1).as_deref(), Some(back));
+    assert!(commits_of(&e).is_empty(), "⑪c 不能有任何写回: {:?}", commits_of(&e));
+    assert_quiet(&cycle(&mut e).await.0, "⑪c 之后");
 }

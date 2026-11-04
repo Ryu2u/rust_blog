@@ -562,6 +562,28 @@ async fn pull_new(
     Ok(())
 }
 
+/// 按 id 更新一条说说的全部列。
+///
+/// rbatis 的 `update_by_column` 会**跳过值为 `None` 的列**：仓库文件里删掉图片行 / 位置后，光改内存里的
+/// 结构体清不掉库里的旧值，指纹也会和库里的数据对不上，下一轮就把旧的图片行写回仓库文件，
+/// 用户的删除被还原。所以 `images` / `location` 为 `None` 时，要再显式写一次 NULL。
+/// 两步不在同一个事务里：第二步失败时映射不会更新，下一轮会重新比较并重试。
+async fn save_moment(db: &RBatis, m: &Moment) -> Result<(), rbatis::rbdc::Error> {
+    Moment::update_by_column(db, m, "id").await?;
+    let id = m.id.unwrap_or(0);
+    // 列名是常量，不是用户输入
+    for (column, cleared) in [("images", m.images.is_none()), ("location", m.location.is_none())] {
+        if cleared {
+            db.exec(
+                &format!("update moment set {column} = NULL where id = ?"),
+                vec![rbs::to_value!(id)],
+            )
+            .await?;
+        }
+    }
+    Ok(())
+}
+
 /// 有映射、文件 sha 变了：仓库为准，覆盖库里的内容（已软删的说说同时恢复）
 async fn pull_update(
     db: &RBatis,
@@ -609,7 +631,7 @@ async fn pull_update(
         m.is_public = file.is_public as i32;
         m.update_time = Some(get_sys_time());
         m.is_deleted = Some(0);
-        Moment::update_by_column(db, &m, "id")
+        save_moment(db, &m)
             .await
             .map_err(|e| format!("更新说说失败 {path}: {e}"))?;
         stats.updated += 1;
