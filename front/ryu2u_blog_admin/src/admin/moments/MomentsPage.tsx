@@ -326,6 +326,10 @@ export function MomentsPage() {
                     </Space>
                 </div>
 
+                <div style={{ marginBottom: 12, color: 'var(--color-text-muted)', fontSize: 12 }}>
+                    说说会与笔记仓库的「说说」文件夹双向同步：此处的改动将在下一轮同步（默认 30 分钟）写回仓库；仓库里的改动也会同步回来，两边都改过时以仓库为准。
+                </div>
+
                 <div className="admin-stat-grid">
                     {[
                         { label: '总说说', value: pageInfoRef.current.total },
