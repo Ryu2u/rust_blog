@@ -19,6 +19,7 @@ use tracing::log::{error, info};
 use user::apis::*;
 
 mod config;
+mod cos;
 mod middleware;
 mod post;
 mod user;
