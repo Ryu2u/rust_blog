@@ -15,8 +15,13 @@ cd front/ryu2u_blog && npm install && npm run dev
 # Admin panel frontend (React/Vite, :8089)
 cd front/ryu2u_blog_admin && npm install && npm run dev
 
-# Tests — there is no tests/ directory; the only tests are 2 #[test] fns in src/middleware.rs
+# Tests — unit tests are inline `#[cfg(test)]` modules (there is no tests/ directory)
 cargo test
+
+# Moment two-way sync end-to-end (real MySQL + in-process mock GitHub). Needs a throwaway database
+# whose name contains "e2e" — the test DROPs/CREATEs `moment` and `moment_sync_map` in it
+E2E_DATABASE_URL='mysql://user:pw@localhost:3306/rust_blog_e2e?charset=utf8mb4' \
+  cargo test moment_e2e -- --ignored --nocapture
 
 # Frontend lint / typecheck+build
 npm run lint     # eslint, --max-warnings 0
@@ -45,6 +50,8 @@ Blog platform: one Rust/Actix-web backend + two independent React frontends.
 Modules: `user/`, `post/` (split into `apis.rs`, `tag_apis.rs`, `category_apis.rs`), `comment/`, `moment/` (说说/动态), plus `config.rs`, `middleware.rs`, `utils/` (`time_utils`, `utils`, `jwt_utils`).
 
 **`note_sync/` module** — GitHub 笔记单向同步 (pull-only, md_note repo → blog posts). Sub-modules: `github_client.rs` (REST + ETag 条件请求), `ai_client.rs` (AI 五字段解析/降级/URL 校验), `derive.rs` (本地差分引擎：建/改/删/复活), `sync_engine.rs` (应用循环 + 分类标签落库), `scheduler.rs` (tokio 定时轮询，启动 10s 后首轮，防重入), `crypto.rs` (AES-GCM 配置加密), `apis.rs` (管理接口 `GET/POST /note_sync/admin/config`、`POST /note_sync/admin/ai_test`). **Synced posts are always shown (`is_view = 1`); sync never touches `is_view` on update, and the AI "public" judgment is only recorded in `note_sync_map` (`ai_is_view`/`ai_reason`) — hiding a post is only possible by hand in the admin.** Driven entirely by `.env` `NOTE_SYNC_*` vars; state lives in tables `note_sync_map` (path→post 映射 + AI 元数据) and `note_sync_config` (AI 配置，API key AES 密文存储/掩码回显).
+
+**Moment two-way sync** (`moment_sync.rs`) — 仓库根目录 `说说/*.md` ↔ `moment` 表。文件名 `YYYY_MM_DD_HH_mm.md` 就是发布时间（固定 +08:00，同一分钟重名加 `_ss`、`-N`）；文件默认是纯文本，有位置/私密时才带 YAML 文件头（`location`、`public: false`），图片以 Markdown 图片行写在正文末尾。映射表 `moment_sync_map`：`blob_sha` 判断仓库有没有变，`local_sha`（按库里数据渲染出的文本的 sha256）判断后台有没有变。每轮**先拉后推**，冲突时**仓库为准**（与笔记同步的「本地赢」相反，是有意的）；后台的发布/修改/删除随下一轮写回（`GithubClient::put_file` / `delete_file`，要求令牌有 Contents 写权限，写回每轮最多 50 个操作，403 时停止写回但拉取照常）。调度层（`scheduler.rs`）一轮只拉一次仓库树，交给笔记与说说两个阶段；树没变（304）时说说仍会跑写回。设计与规则见 `docs/superpowers/specs/2026-11-03-moment-two-way-sync-design.md`。
 
 **Key files**:
 - `main.rs` — entry: tracing, `.env`, rbatis init, CORS, `FilterWhiteList`, `AppState.admin_route_prefixes`, and the service scopes
@@ -76,7 +83,7 @@ Both use Ant Design 5, Axios, and `@bytemd` for Markdown. The admin app addition
 
 ### Database
 
-10 MySQL tables defined in `schema.sql` (no migration tool — manual DDL only):
+11 MySQL tables defined in `schema.sql` (no migration tool — manual DDL only):
 - `post` — soft delete (`is_deleted`), stores both Markdown and HTML content; content columns are `MEDIUMTEXT` (long notes exceed `TEXT`)
 - `tag`, `category` — slug/priority fields; category has self-referential `parent_id`
 - `PostTag`, `PostCategory` — many-to-many join tables (note the PascalCase table names — `crud!` needs the two-arg form for these)
@@ -85,6 +92,7 @@ Both use Ant Design 5, Axios, and `@bytemd` for Markdown. The admin app addition
 - `tb_user` — `role` ("admin"/"user"), `locked` flag
 - `note_sync_map` — GitHub path → `post_id` mapping: `blob_sha`/`local_sha` diff basis, `ai_*` metadata, `status` (`ok`/`conflicted`)
 - `note_sync_config` — single row (id=1) AI config: `ai_enabled`/`ai_base_url`/`ai_model`/`ai_api_key` (AES-GCM ciphertext)
+- `moment_sync_map` — 说说 ↔ 仓库文件映射：`moment_id`、`github_path` 各自唯一；`blob_sha`（仓库文件指纹）、`local_sha`（后台渲染文本指纹）
 
 Timestamps are `bigint` epoch **milliseconds**, not SQL datetime. Use `crate::utils::time_utils::get_sys_time()`.
 
@@ -113,3 +121,6 @@ GitHub 笔记同步（`note_sync` 模块，见 `.env.example`）:
 - `NOTE_SYNC_MAX_FILE_KB` — 单文件大小上限（默认 1024）
 - `NOTE_SYNC_AI_ENC_KEY` — `note_sync_config.ai_api_key` 的 AES-GCM 主密钥（`openssl rand -base64 32`）
 - `NOTE_SYNC_AI_ALLOW_HTTP` — 是否允许 AI base_url 用 http（0=仅 https，防 SSRF）
+- `NOTE_SYNC_MOMENT_DIR` — 说说双向同步的仓库目录（默认 `说说/`；设为空 = 关闭说说同步）
+- `NOTE_SYNC_MOMENT_PUSH` — 是否把后台的说说改动写回仓库（默认 true；`false`/`0` = 只拉取）
+- `NOTE_SYNC_API_BASE` — GitHub API 根地址，仅供本地模拟 GitHub 测试（非 https 只允许 localhost/127.0.0.1/[::1]），正常留空
