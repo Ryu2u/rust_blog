@@ -139,7 +139,7 @@ pub async fn api_user_me(user: web::ReqData<AuthUser>) -> Result<impl Responder,
     Ok(R::ok_obj(user.into_inner()))
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[get("/get/{id}")]
 pub async fn api_user_get(
     id: web::Path<i32>,
@@ -158,7 +158,7 @@ pub async fn api_user_get(
     }
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[get("/admin/get/{id}")]
 pub async fn api_user_get_admin(
     id: web::Path<i32>,
@@ -176,7 +176,7 @@ pub async fn api_user_get_admin(
     }
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/add")]
 async fn api_user_add(
     user: web::Json<User>,
@@ -214,7 +214,7 @@ async fn api_user_add(
     Ok(R::<()>::ok_msg("添加成功!"))
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/list/page")]
 async fn api_user_list_page(
     query: web::Json<UserPageQuery>,
@@ -240,7 +240,7 @@ async fn api_user_list_page(
     })))
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/update")]
 async fn api_user_update(
     user: web::Json<User>,
@@ -289,7 +289,7 @@ async fn api_user_update(
     Ok(R::<()>::ok_msg("更新成功!"))
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[get("/admin/del/{id}")]
 async fn api_user_del(
     id: web::Path<i32>,
@@ -301,7 +301,7 @@ async fn api_user_del(
     Ok(R::<()>::ok_msg("删除成功!"))
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[get("/admin/lock/{id}")]
 async fn api_user_lock(
     id: web::Path<i32>,

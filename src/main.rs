@@ -27,6 +27,8 @@ mod utils;
 mod comment;
 mod moment;
 mod note_sync;
+#[cfg(test)]
+mod log_guard;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {

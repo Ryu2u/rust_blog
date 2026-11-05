@@ -3,7 +3,7 @@ use rbatis::{crud, impl_select};
 use rbatis::{rbdc, RBatis};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: Option<i32>,
     pub username: String,
@@ -23,6 +23,26 @@ pub struct User {
     /// admin -> administrator
     /// user -> normal user
     pub role: String,
+}
+
+/// 手写 Debug：密码和盐一律输出 `***`，避免被 `#[instrument]` 或 `{:?}` 日志带出去。
+/// 新增字段时必须同步加到这里（`user_debug_lists_every_serialized_field` 会检查）。
+impl std::fmt::Debug for User {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("User")
+            .field("id", &self.id)
+            .field("username", &self.username)
+            .field("password", &"***")
+            .field("nick_name", &self.nick_name)
+            .field("salt", &self.salt.as_ref().map(|_| "***"))
+            .field("gender", &self.gender)
+            .field("avatar_path", &self.avatar_path)
+            .field("signature", &self.signature)
+            .field("created_time", &self.created_time)
+            .field("locked", &self.locked)
+            .field("role", &self.role)
+            .finish()
+    }
 }
 
 impl User {
@@ -117,11 +137,22 @@ impl_select!(
     User{select_by_id(id:i32) => "`where id = #{id}`"},"tb_user"
 );
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct LoginDto {
     pub username: String,
     pub password: String,
     pub remember: bool,
+}
+
+/// 手写 Debug：密码输出 `***`（登录请求体万一被 `#[instrument]` 或 `{:?}` 记录也不会泄露）。
+impl std::fmt::Debug for LoginDto {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LoginDto")
+            .field("username", &self.username)
+            .field("password", &"***")
+            .field("remember", &self.remember)
+            .finish()
+    }
 }
 
 /// 通过登录校验后放进请求扩展的「当前用户」，也是 `GET /user/me` 的响应体。
@@ -148,6 +179,46 @@ impl From<&User> for AuthUser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn sample_user() -> User {
+        let mut u = User::new("alice", "x", "Alice");
+        u.password = "s3cret-password".to_string();
+        u.salt = Some("salt-value-123".to_string());
+        u
+    }
+
+    #[test]
+    fn user_debug_hides_password_and_salt() {
+        let dbg = format!("{:?}", sample_user());
+        assert!(!dbg.contains("s3cret-password"), "密码不应出现在 Debug 里：{dbg}");
+        assert!(!dbg.contains("salt-value-123"), "盐不应出现在 Debug 里：{dbg}");
+        assert!(dbg.contains("alice") && dbg.contains("Alice"), "其它字段应保留：{dbg}");
+        // 取引用（`{:?}` 套在 Option / Vec 里、`#[instrument]` 的参数记录）走的是同一个 Debug
+        let dbg = format!("{:?}", Some(sample_user()));
+        assert!(!dbg.contains("s3cret-password"), "嵌套时密码不应出现：{dbg}");
+    }
+
+    #[test]
+    fn user_debug_lists_every_serialized_field() {
+        let u = sample_user();
+        let json = serde_json::to_value(&u).unwrap();
+        let dbg = format!("{:?}", u);
+        for key in json.as_object().unwrap().keys() {
+            assert!(dbg.contains(&format!("{key}: ")), "手写 Debug 漏了字段 {key}：{dbg}");
+        }
+    }
+
+    #[test]
+    fn login_dto_debug_hides_password() {
+        let dto = LoginDto { username: "alice".into(), password: "s3cret-password".into(), remember: true };
+        let dbg = format!("{:?}", dto);
+        assert!(!dbg.contains("s3cret-password"), "密码不应出现在 Debug 里：{dbg}");
+        assert!(dbg.contains("alice") && dbg.contains("remember: true"), "其它字段应保留：{dbg}");
+        let json = serde_json::to_value(&dto).unwrap();
+        for key in json.as_object().unwrap().keys() {
+            assert!(dbg.contains(&format!("{key}: ")), "手写 Debug 漏了字段 {key}：{dbg}");
+        }
+    }
 
     #[test]
     fn auth_user_exposes_only_identity_fields() {

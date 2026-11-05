@@ -34,7 +34,7 @@ pub fn post_scope() -> actix_web::Scope {
         .service(api_post_list_by_category)
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/add")]
 async fn api_post_add(
     post: web::Json<Post>,
@@ -60,7 +60,7 @@ async fn api_post_add(
     }
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/page")]
 async fn api_post_list_page(
     page_info: web::Json<PageInfo<Post>>,
@@ -69,7 +69,7 @@ async fn api_post_list_page(
     post_list_page(page_info, db, false).await
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/list/page")]
 async fn api_post_list_page_admin(
     page_info: web::Json<PageInfo<Post>>,
@@ -78,7 +78,7 @@ async fn api_post_list_page_admin(
     post_list_page(page_info, db, true).await
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[get("/admin/get/{id}")]
 async fn api_post_get_admin(
     id: web::Path<i32>,
@@ -87,7 +87,7 @@ async fn api_post_get_admin(
     post_get(id, db, true).await
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[get("/get/{id}")]
 async fn api_post_get(
     id: web::Path<i32>,
@@ -96,7 +96,7 @@ async fn api_post_get(
     post_get(id, db, false).await
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/update")]
 async fn api_post_update(
     mut post: web::Json<Post>,
@@ -121,7 +121,7 @@ async fn api_post_update(
     }
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[get("/admin/del/{id}")]
 async fn api_post_del(
     id: web::Path<i32>,
@@ -169,7 +169,7 @@ pub async fn api_file_test(form: MultipartForm<FileForm>) -> Result<impl Respond
     Ok(R::ok_obj(file_content))
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/list_by_category/{name}")]
 async fn api_post_list_by_category(
     name: web::Path<String>,

@@ -114,6 +114,10 @@ Timestamps are `bigint` epoch **milliseconds**, not SQL datetime. Use `crate::ut
 - `select_page_admin` in `post/structs.rs` interpolates its offset with `${offset}` rather than `#{}` — follow `#{}` in new queries.
 - rbatis `update_by_column` **skips columns whose value is `None`**: setting a nullable field to `None` and updating does not clear it in the database (and leaves any in-memory fingerprint out of sync with the row). To clear a column, write NULL explicitly — see `save_moment` in `note_sync/moment_sync.rs`.
 - Passwords: bcrypt with a legacy plaintext fallback that auto-upgrades the row to a bcrypt hash on successful login (`user/apis.rs`).
+- **Keep secrets out of the logs** (three layers, all covered by tests):
+  - Every `#[instrument]` on a function taking `db: web::Data<RBatis>` must skip it — `skip(db)`, `skip(db, cos)` or `skip_all`. `RBatis`'s `Debug` prints the connection URL's user and password. `src/log_guard.rs` scans `src/` and fails the tests naming the file and line when one is missing.
+  - Types that carry passwords (`User`, `LoginDto`, `Post`) have hand-written `Debug` impls that print `***`. Add new fields to them too — tests check that every serialized field is listed.
+  - SQL logging goes through `utils/sql_log.rs`: `RedactingLogInterceptor`, installed in `init_rbatis` in place of rbatis's default `LogInterceptor` (which prints every bound argument). It masks arguments bound to the columns in `SENSITIVE_COLUMNS` (`password`, `salt`, `ai_api_key`) and anything shaped like a bcrypt hash. Add new secret columns there. Query result rows are never printed.
 - Frontend: the admin directory is misspelled `comonents/` instead of `components/` — work with it as-is. The public blog uses `components/`.
 
 ## Environment Variables

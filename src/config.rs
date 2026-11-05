@@ -189,7 +189,9 @@ impl<T: Serialize> Responder for R<T> {
 pub static E2E_DB_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 pub async fn init_rbatis(db_url: String) -> RBatis {
-    let rbatis = RBatis::new();
+    let mut rbatis = RBatis::new();
+    // 用脱敏的日志拦截器替换 rbatis 默认的 LogInterceptor：后者会把绑定参数（含密码哈希）原样打进日志
+    rbatis.set_intercepts(vec![std::sync::Arc::new(crate::utils::sql_log::RedactingLogInterceptor)]);
     rbatis.init(MysqlDriver {}, db_url.as_str()).unwrap();
     rbatis
 }

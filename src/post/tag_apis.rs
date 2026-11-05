@@ -20,7 +20,7 @@ pub fn tag_scope() -> actix_web::Scope {
         .service(api_post_list_by_tag)
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/list")]
 async fn api_tag_list(db: web::Data<RBatis>) -> Result<impl Responder, Exception> {
     match Tag::select_all(&**db).await {
@@ -29,7 +29,7 @@ async fn api_tag_list(db: web::Data<RBatis>) -> Result<impl Responder, Exception
     }
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/add")]
 async fn api_tag_add(
     tag: web::Json<Tag>,
@@ -142,7 +142,7 @@ pub async fn get_tag_by_post_id(post_id: i32, db: &RBatis) -> Vec<Tag> {
 }
 
 /// 标签云：所有被文章引用的标签及文章数量，按数量倒序
-#[instrument]
+#[instrument(skip(db))]
 #[post("/cloud")]
 async fn api_tag_cloud(db: web::Data<RBatis>) -> Result<impl Responder, Exception> {
     match tag_cloud(&**db).await {
@@ -166,7 +166,7 @@ pub async fn tag_cloud(db: &RBatis) -> Result<Vec<TagCount>, rbdc::Error> {
 }
 
 /// 按标签名称分页查询已展示的文章
-#[instrument]
+#[instrument(skip(db))]
 #[post("/posts")]
 async fn api_post_list_by_tag(
     query: web::Json<TagPostsQuery>,

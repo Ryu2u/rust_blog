@@ -18,7 +18,7 @@ pub struct FileForm {
 }
 
 /// 文章实体对象
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Post {
     /// 主键
     pub id: Option<i32>,
@@ -60,6 +60,34 @@ pub struct Post {
     pub category: Option<Category>,
     /// 文章标签
     pub tags: Option<Vec<Tag>>,
+}
+
+/// 手写 Debug：文章口令输出 `***`（保留「有没有设置」的信息），避免被 `#[instrument]` 或 `{:?}` 日志带出去。
+/// 新增字段时必须同步加到这里（`post_debug_lists_every_serialized_field` 会检查）。
+impl std::fmt::Debug for Post {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Post")
+            .field("id", &self.id)
+            .field("title", &self.title)
+            .field("author", &self.author)
+            .field("is_view", &self.is_view)
+            .field("original_content", &self.original_content)
+            .field("format_content", &self.format_content)
+            .field("summary", &self.summary)
+            .field("cover_img", &self.cover_img)
+            .field("visits", &self.visits)
+            .field("disallow_comment", &self.disallow_comment)
+            .field("password", &self.password.as_ref().map(|_| "***"))
+            .field("top_priority", &self.top_priority)
+            .field("likes", &self.likes)
+            .field("word_count", &self.word_count)
+            .field("created_time", &self.created_time)
+            .field("update_time", &self.update_time)
+            .field("is_deleted", &self.is_deleted)
+            .field("category", &self.category)
+            .field("tags", &self.tags)
+            .finish()
+    }
 }
 
 impl Post {
@@ -274,3 +302,46 @@ pub struct PostCategory {
     pub category_id: i32,
 }
 crud!(PostCategory {}, "PostCategory");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_post() -> Post {
+        let mut p = Post::new(
+            "标题".to_string(),
+            "作者".to_string(),
+            "正文".to_string(),
+            "<p>正文</p>".to_string(),
+            2,
+            Some("摘要".to_string()),
+        );
+        p.password = Some("post-pass-9527".to_string());
+        p
+    }
+
+    #[test]
+    fn post_debug_hides_password() {
+        let dbg = format!("{:?}", sample_post());
+        assert!(!dbg.contains("post-pass-9527"), "文章口令不应出现在 Debug 里：{dbg}");
+        assert!(dbg.contains("password: Some(\"***\")"), "应保留「已设置口令」的信息：{dbg}");
+        assert!(dbg.contains("标题") && dbg.contains("作者"), "其它字段应保留：{dbg}");
+        // 没设置口令时仍是 None，不会被打成 ***
+        let mut p = sample_post();
+        p.password = None;
+        assert!(format!("{:?}", p).contains("password: None"));
+        // `#[instrument]` 记录的是 `web::Json<Post>`，它转发给内部类型的 Debug
+        let dbg = format!("{:?}", actix_web::web::Json(sample_post()));
+        assert!(!dbg.contains("post-pass-9527"), "Json 包装后口令也不应出现：{dbg}");
+    }
+
+    #[test]
+    fn post_debug_lists_every_serialized_field() {
+        let p = sample_post();
+        let json = serde_json::to_value(&p).unwrap();
+        let dbg = format!("{:?}", p);
+        for key in json.as_object().unwrap().keys() {
+            assert!(dbg.contains(&format!("{key}: ")), "手写 Debug 漏了字段 {key}：{dbg}");
+        }
+    }
+}

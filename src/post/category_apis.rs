@@ -8,7 +8,7 @@ pub fn category_scope() -> actix_web::Scope {
     actix_web::web::scope("/category").service(api_category_list)
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/list")]
 async fn api_category_list(db: web::Data<RBatis>) -> Result<impl Responder, Exception> {
     match Category::select_all(&**db).await {

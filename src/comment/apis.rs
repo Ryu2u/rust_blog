@@ -41,7 +41,7 @@ pub fn comment_scope() -> actix_web::Scope {
         .service(api_admin_comment_batch_delete)
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/add")]
 async fn api_comment_add(
     comment: web::Json<Comment>,
@@ -77,7 +77,7 @@ async fn api_comment_add(
 }
 
 // 公开API - 只返回已审核通过的评论
-#[instrument]
+#[instrument(skip(db))]
 #[get("/list/{post_id}")]
 async fn api_comment_list(
     post_id: web::Path<i32>,
@@ -108,7 +108,7 @@ pub struct CommentQuery {
 }
 
 // 管理员 - 分页查询评论列表
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/list")]
 async fn api_admin_comment_list(
     query: web::Json<CommentQuery>,
@@ -183,7 +183,7 @@ async fn api_admin_comment_list(
 }
 
 // 管理员 - 评论统计
-#[instrument]
+#[instrument(skip(db))]
 #[get("/admin/counts")]
 async fn api_admin_comment_counts(
     db: web::Data<RBatis>,
@@ -209,7 +209,7 @@ async fn api_admin_comment_counts(
 }
 
 // 管理员 - 审核通过评论
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/approve/{id}")]
 async fn api_admin_comment_approve(
     id: web::Path<i32>,
@@ -236,7 +236,7 @@ async fn api_admin_comment_approve(
 }
 
 // 管理员 - 拒绝评论
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/reject/{id}")]
 async fn api_admin_comment_reject(
     id: web::Path<i32>,
@@ -263,7 +263,7 @@ async fn api_admin_comment_reject(
 }
 
 // 管理员 - 删除评论
-#[instrument]
+#[instrument(skip(db))]
 #[get("/admin/del/{id}")]
 async fn api_admin_comment_delete(
     id: web::Path<i32>,
@@ -277,7 +277,7 @@ async fn api_admin_comment_delete(
 }
 
 // 管理员 - 批量审核通过
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/batch/approve")]
 async fn api_admin_comment_batch_approve(
     ids: web::Json<Vec<i32>>,
@@ -296,7 +296,7 @@ async fn api_admin_comment_batch_approve(
 }
 
 // 管理员 - 批量删除
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/batch/delete")]
 async fn api_admin_comment_batch_delete(
     ids: web::Json<Vec<i32>>,

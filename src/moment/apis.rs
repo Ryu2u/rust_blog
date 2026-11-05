@@ -135,7 +135,7 @@ async fn api_moment_list_page(
     Ok(R::ok_obj(page))
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/list/page")]
 async fn api_admin_moment_list_page(
     query: web::Json<MomentPageQuery>,
@@ -160,7 +160,7 @@ async fn api_admin_moment_list_page(
     Ok(R::ok_obj(page))
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[get("/admin/get/{id}")]
 async fn api_admin_moment_get(
     id: web::Path<i32>,
@@ -175,7 +175,7 @@ async fn api_admin_moment_get(
     Ok(R::ok_obj(to_payload(rows.pop().unwrap())))
 }
 
-#[instrument(skip(cos))]
+#[instrument(skip(db, cos))]
 #[post("/admin/add")]
 async fn api_admin_moment_add(
     payload: web::Json<MomentPayload>,
@@ -201,7 +201,7 @@ async fn api_admin_moment_add(
     Ok(R::<()>::ok_msg("发布成功"))
 }
 
-#[instrument(skip(cos))]
+#[instrument(skip(db, cos))]
 #[post("/admin/update")]
 async fn api_admin_moment_update(
     payload: web::Json<MomentPayload>,
@@ -239,7 +239,7 @@ async fn api_admin_moment_update(
     Ok(R::<()>::ok_msg("更新成功"))
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[get("/admin/del/{id}")]
 async fn api_admin_moment_delete(
     id: web::Path<i32>,
@@ -261,7 +261,7 @@ async fn api_admin_moment_delete(
     Ok(R::<()>::ok_msg("删除成功"))
 }
 
-#[instrument]
+#[instrument(skip(db))]
 #[post("/admin/toggle/public/{id}")]
 async fn api_admin_moment_toggle_public(
     id: web::Path<i32>,
