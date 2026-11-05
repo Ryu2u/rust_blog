@@ -515,4 +515,35 @@ async fn moment_e2e_scenarios() {
     assert_eq!(file_of(&e, P1).as_deref(), Some(back));
     assert!(commits_of(&e).is_empty(), "⑪c 不能有任何写回: {:?}", commits_of(&e));
     assert_quiet(&cycle(&mut e).await.0, "⑪c 之后");
+
+    // ⑫ 图片之间有空行（Obsidian / Typora 粘贴出来的格式）：三张图都识别成图片，不会有两张留在正文里；
+    //    文件保持用户写的样子不被改写；后台改了说说之后，再按规范格式（图片行紧挨着）写回，之后保持安静。
+    reset(&mut e).await;
+    let pasted = "接到她之后直奔高铁站。\n\n![a](http://a/1.jpg)\n\n![b](http://a/2.jpg)\n\n![c](http://a/3.jpg)\n";
+    put_local(&e, P1, pasted);
+    let (s, _) = cycle(&mut e).await;
+    assert_eq!((s.created, s.pushed_created, s.failed), (1, 0, 0), "⑫ {s:?}");
+    let id = all_moments(&e).await[0].id.unwrap();
+    let m = moment_of(&e, id).await;
+    assert_eq!(m.content, "接到她之后直奔高铁站。", "⑫ 图片行不应留在正文里");
+    assert_eq!(
+        m.images.as_deref(),
+        Some(r#"["http://a/1.jpg","http://a/2.jpg","http://a/3.jpg"]"#),
+        "⑫ 三张图都应识别"
+    );
+    assert_eq!(file_of(&e, P1).as_deref(), Some(pasted), "⑫ 不能改写用户的文件");
+    assert!(commits_of(&e).is_empty(), "⑫ 不能有任何写回: {:?}", commits_of(&e));
+    assert_quiet(&cycle(&mut e).await.0, "⑫ 之后");
+    //   后台改了正文 → 按规范格式写回（图片行紧挨着），再解析不变
+    let mut m = moment_of(&e, id).await;
+    m.content = "改过的正文".into();
+    save(&e, &m).await;
+    let (s, _) = cycle(&mut e).await;
+    assert_eq!((s.pushed_updated, s.failed), (1, 0), "⑫b {s:?}");
+    assert_eq!(
+        file_of(&e, P1).as_deref(),
+        Some("改过的正文\n\n![](http://a/1.jpg)\n![](http://a/2.jpg)\n![](http://a/3.jpg)\n"),
+        "⑫b 写回应是规范格式"
+    );
+    assert_quiet(&cycle(&mut e).await.0, "⑫b 之后");
 }

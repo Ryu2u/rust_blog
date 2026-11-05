@@ -185,9 +185,16 @@ pub fn parse_file(text: &str) -> Option<MomentFile> {
         }
     }
 
+    // 末尾的独立图片行提取为 images。图片行之间允许有空行（Obsidian / Typora 粘贴出来的格式就是每张图隔一个空行）；
+    // 但遇到正文文字就停：中间夹着文字的图片留在正文里。
     let mut lines: Vec<&str> = body.trim().lines().collect();
     let mut images = Vec::new();
-    while let Some(url) = lines.last().copied().and_then(image_url) {
+    while let Some(&last) = lines.last() {
+        if last.trim().is_empty() {
+            lines.pop(); // 图片之间的空行；正文末尾的空白本来就要丢（下面 trim）
+            continue;
+        }
+        let Some(url) = image_url(last) else { break };
         images.push(url.to_string());
         lines.pop();
     }
@@ -977,6 +984,66 @@ mod tests {
         assert!(f.content.contains("\"t\""));
     }
     #[test]
+    fn test_parse_lifts_images_separated_by_blank_lines() {
+        // Obsidian / Typora 粘贴出来的格式：每张图之间隔一个空行
+        let f = parse_file(
+            "正文第一段\n\n正文第二段\n\n\n![a](http://a/1.jpg)\n\n![b](http://a/2.jpg)\n\n![c](http://a/3.jpg)\n\n",
+        )
+        .unwrap();
+        assert_eq!(f.content, "正文第一段\n\n正文第二段");
+        assert_eq!(f.images, vec!["http://a/1.jpg", "http://a/2.jpg", "http://a/3.jpg"]);
+
+        // 空行里带空白字符、CRLF 也一样
+        let f = parse_file("正文\r\n\r\n![](http://a/1.jpg)\r\n  \r\n![](http://a/2.jpg)\r\n").unwrap();
+        assert_eq!((f.content.as_str(), f.images.len()), ("正文", 2));
+
+        // 空行和紧挨着可以混用
+        let f = parse_file("正文\n\n![](http://a/1.jpg)\n![](http://a/2.jpg)\n\n![](http://a/3.jpg)").unwrap();
+        assert_eq!((f.content.as_str(), f.images.len()), ("正文", 3));
+    }
+    #[test]
+    fn test_parse_blank_lines_do_not_pull_in_images_above_text() {
+        // 图片之间夹着文字：只提取末尾那一段，上面的图片留在正文里
+        let f = parse_file("正文\n\n![](http://a/1.jpg)\n\n中间一句\n\n![](http://a/2.jpg)\n\n![](http://a/3.jpg)").unwrap();
+        assert_eq!(f.images, vec!["http://a/2.jpg", "http://a/3.jpg"]);
+        assert_eq!(f.content, "正文\n\n![](http://a/1.jpg)\n\n中间一句");
+        // 开头的图片（后面还有字）同样留在正文里
+        let f = parse_file("![](http://a/1.jpg)\n\n后面还有字").unwrap();
+        assert!(f.images.is_empty());
+        assert_eq!(f.content, "![](http://a/1.jpg)\n\n后面还有字");
+        // 带标题的不算图片行，它把前面的图片隔断
+        let f = parse_file("正文\n\n![](http://a/1.jpg)\n\n![a](http://a/2.jpg \"t\")\n\n![](http://a/3.jpg)").unwrap();
+        assert_eq!(f.images, vec!["http://a/3.jpg"]);
+        // 没有图片时，段落之间的空行不受影响
+        let f = parse_file("段一\n\n段二\n\n\n段三").unwrap();
+        assert_eq!((f.content.as_str(), f.images.len()), ("段一\n\n段二\n\n\n段三", 0));
+    }
+    #[test]
+    fn test_parse_blank_separated_images_equal_canonical_render() {
+        // 空行分隔的写法与程序自己渲染出的紧挨写法，解析结果一致：认领、「两边都改了」的判断都靠这个
+        let pasted = parse_file("正文\n\n![](http://a/1.jpg)\n\n![](http://a/2.jpg)\n").unwrap();
+        let canonical = MomentFile { images: vec!["http://a/1.jpg".into(), "http://a/2.jpg".into()], ..file("正文") };
+        assert_eq!(pasted, canonical);
+        // 渲染永远写成紧挨着的规范形式，再解析不变
+        let text = render_file(&pasted);
+        assert_eq!(text, "正文\n\n![](http://a/1.jpg)\n![](http://a/2.jpg)\n");
+        assert_eq!(parse_file(&text), Some(pasted));
+    }
+    #[test]
+    fn test_old_split_rows_heal_only_when_text_changes() {
+        // 旧版本把「每张图隔一个空行」的文件解析成：前面的图片行留在正文里，只有最后一张进 images
+        let mut old = moment(1, "正文\n\n![](http://a/1.jpg)\n\n![](http://a/2.jpg)", M1_MS);
+        old.images = Some(r#"["http://a/3.jpg"]"#.into());
+        let all = "![](http://a/1.jpg)\n\n![](http://a/2.jpg)\n\n![](http://a/3.jpg)";
+        // 文件只改了空白：按规范形式比较是相等的，同步认为没变，库里的残缺数据不会被自动修正
+        let same = parse_file(&format!("正文\n\n{all}\n\n")).unwrap();
+        assert_eq!(normalized(&old).as_ref(), Some(&same));
+        // 改了正文文字：不相等，下一轮会用文件覆盖库里的内容，图片也就拆对了
+        let edited = parse_file(&format!("改过的正文\n\n{all}\n")).unwrap();
+        assert_ne!(normalized(&old).as_ref(), Some(&edited));
+        assert_eq!(edited.images.len(), 3);
+    }
+    #[test]
     fn test_parse_empty_body_is_none() {
         assert!(parse_file("").is_none());
         assert!(parse_file("  \n\n").is_none());
@@ -1111,6 +1178,18 @@ mod tests {
         assert!(find_adoptee("说说/2026_09_17_22_15.md", &public_file, &[m.clone()], &HashSet::new()).is_none());
         let private_file = parse_file("---\npublic: false\n---\n正文").unwrap();
         assert!(find_adoptee("说说/2026_09_17_22_15.md", &private_file, &[m], &HashSet::new()).is_some());
+    }
+
+    #[test]
+    fn test_adopt_matches_blank_separated_images() {
+        // 库里的说说有两张图；仓库文件是粘贴来的「每张图隔一个空行」写法：能被认领，不会再建一条重复的
+        let mut m = moment(1, "正文", M1_MS);
+        m.images = Some(r#"["http://a/1.jpg","http://a/2.jpg"]"#.into());
+        let f = parse_file("正文\n\n![](http://a/1.jpg)\n\n![](http://a/2.jpg)\n").unwrap();
+        assert!(find_adoptee("说说/2026_09_17_22_15.md", &f, &[m.clone()], &HashSet::new()).is_some());
+        // 图片不同仍然不认领
+        let other = parse_file("正文\n\n![](http://a/1.jpg)\n\n![](http://a/9.jpg)\n").unwrap();
+        assert!(find_adoptee("说说/2026_09_17_22_15.md", &other, &[m], &HashSet::new()).is_none());
     }
 
     // ---- 过滤 ----
